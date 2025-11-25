@@ -7,7 +7,10 @@ export interface User {
   uid: string;
   email: string;
   username: string;
+  firstName?: string;
+  lastName?: string;
   photoURL?: string;
+  bio?: string;
   isPrivate: boolean;
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -44,7 +47,10 @@ export type AuthError = {
 export interface CreateUserProfileData {
   email: string;
   username: string;
+  firstName?: string;
+  lastName?: string;
   photoURL?: string;
+  bio?: string;
   isPrivate?: boolean;
 }
 
@@ -53,6 +59,29 @@ export interface CreateUserProfileData {
  */
 export interface UpdateUserProfileData {
   username?: string;
+  firstName?: string;
+  lastName?: string;
   photoURL?: string;
+  bio?: string;
   isPrivate?: boolean;
+}
+
+/**
+ * Type pour les données de mise à jour du profil (formulaire)
+ */
+export interface UpdateProfileData {
+  username: string;
+  firstName?: string;
+  lastName?: string;
+  bio?: string;
+  isPrivate: boolean;
+}
+
+/**
+ * Statistiques du profil utilisateur
+ */
+export interface ProfileStats {
+  albumsCount: number;
+  followersCount: number;
+  followingCount: number;
 }
