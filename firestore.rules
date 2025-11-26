@@ -34,6 +34,23 @@ service cloud.firestore {
       allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
     }
 
+    // Collection des follows (système social)
+    match /follows/{followId} {
+      // Lecture : utilisateurs authentifiés
+      allow read: if request.auth != null;
+
+      // Création : utilisateur authentifié si followerId correspond
+      allow create: if request.auth != null && request.resource.data.followerId == request.auth.uid;
+
+      // Modification : seulement l'utilisateur suivi (pour accepter des demandes)
+      allow update: if request.auth != null && resource.data.followingId == request.auth.uid;
+
+      // Suppression : le follower ou le suivi peuvent supprimer
+      allow delete: if request.auth != null &&
+                       (resource.data.followerId == request.auth.uid ||
+                        resource.data.followingId == request.auth.uid);
+    }
+
     // Collection des collections d'utilisateurs (DEPRECATED - utiliser user_albums)
     match /collections/{userId}/albums/{albumId} {
       // Lecture : le propriétaire ou si le profil est public

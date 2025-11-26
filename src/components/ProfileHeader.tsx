@@ -1,20 +1,21 @@
 import React from 'react';
 import Link from 'next/link';
 import Avatar from './Avatar';
+import FollowButton from './FollowButton';
 import type { User, ProfileStats } from '@/types/user';
 
 interface ProfileHeaderProps {
   user: User;
   stats: ProfileStats;
   isOwnProfile: boolean;
-  onFollowClick?: () => void;
+  onFollowChange?: () => void;
 }
 
 export default function ProfileHeader({
   user,
   stats,
   isOwnProfile,
-  onFollowClick,
+  onFollowChange,
 }: ProfileHeaderProps) {
   const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ');
 
@@ -72,18 +73,24 @@ export default function ProfileHeader({
                 </span>
                 <span className="ml-1 text-sm text-[var(--foreground-muted)]">albums</span>
               </div>
-              <div>
+              <Link
+                href={`/profile/${user.username}/followers`}
+                className="transition-opacity hover:opacity-70"
+              >
                 <span className="text-xl font-bold text-[var(--foreground)]">
                   {stats.followersCount}
                 </span>
                 <span className="ml-1 text-sm text-[var(--foreground-muted)]">abonnés</span>
-              </div>
-              <div>
+              </Link>
+              <Link
+                href={`/profile/${user.username}/following`}
+                className="transition-opacity hover:opacity-70"
+              >
                 <span className="text-xl font-bold text-[var(--foreground)]">
                   {stats.followingCount}
                 </span>
                 <span className="ml-1 text-sm text-[var(--foreground-muted)]">abonnements</span>
-              </div>
+              </Link>
             </div>
           </div>
 
@@ -105,20 +112,11 @@ export default function ProfileHeader({
                 Modifier le profil
               </Link>
             ) : (
-              <button
-                onClick={onFollowClick}
-                className="flex items-center gap-2 rounded-full bg-[var(--primary)] px-6 py-2 font-semibold text-white transition-all hover:bg-[#d67118] active:scale-95"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-                Suivre
-              </button>
+              <FollowButton
+                targetUserId={user.uid}
+                targetUsername={user.username}
+                onFollowChange={onFollowChange}
+              />
             )}
           </div>
         </div>

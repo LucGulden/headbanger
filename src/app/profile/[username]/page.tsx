@@ -7,6 +7,7 @@ import ProfileHeader from '@/components/ProfileHeader';
 import AlbumGrid from '@/components/AlbumGrid';
 import { getUserByUsername } from '@/lib/user';
 import { subscribeToUserCollection, subscribeToUserWishlist } from '@/lib/user-albums';
+import { getFollowStats } from '@/lib/follows';
 import type { User, ProfileStats } from '@/types/user';
 import type { UserAlbumWithDetails } from '@/types/collection';
 
@@ -104,19 +105,37 @@ export default function ProfilePage() {
     };
   }, [profileUser, currentUser]);
 
-  // Calculer les stats réelles basées sur les albums
-  useEffect(() => {
-    setStats({
-      albumsCount: collection.length,
-      wishlistCount: wishlist.length,
-      followersCount: 0, // TODO: Phase 7
-      followingCount: 0, // TODO: Phase 7
-    });
-  }, [collection, wishlist]);
+  // Charger les stats de follow
+  const loadFollowStats = async () => {
+    if (!profileUser) return;
 
-  const handleFollowClick = () => {
-    // TODO: Implémenter la logique de follow (Phase ultérieure)
-    console.log('Follow clicked');
+    try {
+      const followStats = await getFollowStats(profileUser.uid);
+      setStats({
+        albumsCount: collection.length,
+        wishlistCount: wishlist.length,
+        followersCount: followStats.followersCount,
+        followingCount: followStats.followingCount,
+      });
+    } catch (error) {
+      console.error('Erreur lors du chargement des stats de follow:', error);
+      setStats({
+        albumsCount: collection.length,
+        wishlistCount: wishlist.length,
+        followersCount: 0,
+        followingCount: 0,
+      });
+    }
+  };
+
+  // Calculer les stats réelles basées sur les albums et follows
+  useEffect(() => {
+    loadFollowStats();
+  }, [collection, wishlist, profileUser]);
+
+  const handleFollowChange = () => {
+    // Rafraîchir les stats après un follow/unfollow
+    loadFollowStats();
   };
 
   if (loading || authLoading) {
@@ -142,7 +161,7 @@ export default function ProfilePage() {
         user={profileUser}
         stats={stats}
         isOwnProfile={isOwnProfile}
-        onFollowClick={handleFollowClick}
+        onFollowChange={handleFollowChange}
       />
 
       {/* Tabs */}
