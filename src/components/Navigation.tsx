@@ -66,6 +66,15 @@ export default function Navigation() {
             >
               Wishlist
             </Link>
+            <Link
+              href="/search"
+              className="flex items-center gap-2 text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
+            >
+              Recherche
+              <span className="rounded-full bg-[var(--primary)] px-2 py-0.5 text-xs font-medium text-white">
+                Test
+              </span>
+            </Link>
           </div>
         )}
 
