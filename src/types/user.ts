@@ -82,6 +82,7 @@ export interface UpdateProfileData {
  */
 export interface ProfileStats {
   albumsCount: number;
+  wishlistCount?: number; // Optionnel pour compatibilité
   followersCount: number;
   followingCount: number;
 }
