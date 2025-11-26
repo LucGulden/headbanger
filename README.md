@@ -145,13 +145,13 @@ Groovr utilise un design dark mode par défaut, inspiré de l'ambiance des vinyl
 - [x] Configuration Firebase
 - [x] Design system et thème
 - [x] Layout et navigation
-- [ ] Pages d'authentification (login/signup)
+- [X] Pages d'authentification (login/signup)
 
 ### Phase 2 - Gestion de la collection
-- [ ] Création de profil utilisateur
-- [ ] Ajout manuel de vinyles
-- [ ] Visualisation de la collection
-- [ ] Système de wishlist
+- [X] Création de profil utilisateur
+- [X] Ajout manuel de vinyles
+- [X] Visualisation de la collection
+- [X] Système de wishlist
 
 ### Phase 3 - Social features
 - [ ] Feed d'actualités
@@ -160,8 +160,8 @@ Groovr utilise un design dark mode par défaut, inspiré de l'ambiance des vinyl
 - [ ] Système de follow
 
 ### Phase 4 - Intégration Spotify
-- [ ] Recherche d'albums via Spotify API
-- [ ] Récupération des métadonnées
+- [X] Recherche d'albums via Spotify API
+- [X] Récupération des métadonnées
 - [ ] Recommandations personnalisées
 
 ## 🤝 Contribution
