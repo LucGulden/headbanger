@@ -16,9 +16,10 @@ interface PostCardProps {
   post: PostWithDetails;
   currentUserId?: string;
   onDelete?: () => void;
+  priority?: boolean; // Priority loading for first post (above-the-fold)
 }
 
-export default function PostCard({ post, currentUserId, onDelete }: PostCardProps) {
+export default function PostCard({ post, currentUserId, onDelete, priority = false }: PostCardProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(post.likesCount);
   const [commentsCount, setCommentsCount] = useState(post.commentsCount);
@@ -227,6 +228,7 @@ export default function PostCard({ post, currentUserId, onDelete }: PostCardProp
           alt={`${post.album.title} - ${post.album.artist}`}
           fill
           sizes="(max-width: 768px) 100vw, 448px"
+          priority={priority}
           className="rounded-xl shadow-md object-cover"
         />
       </div>

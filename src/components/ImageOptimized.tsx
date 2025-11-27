@@ -3,6 +3,10 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 
+// Generic gray blur placeholder (lightweight SVG)
+const GENERIC_BLUR_DATA_URL =
+  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iI2U1ZTdlYiIvPjwvc3ZnPg==";
+
 interface ImageOptimizedProps {
   src: string;
   alt: string;
@@ -21,8 +25,9 @@ interface ImageOptimizedProps {
  * Composant wrapper autour de next/image avec :
  * - Support AVIF/WebP automatique
  * - Gestion d'erreur avec fallback
- * - Placeholder shimmer pour meilleure UX
- * - Loading lazy par défaut
+ * - Blur placeholder générique
+ * - Loading lazy par défaut (priority=false)
+ * - Sizes attribute pour responsive
  *
  * Usage:
  * ```tsx
@@ -31,6 +36,8 @@ interface ImageOptimizedProps {
  *   alt="Album cover"
  *   width={300}
  *   height={300}
+ *   sizes="(max-width: 768px) 50vw, 25vw"
+ *   priority={false} // true only for above-the-fold critical images
  * />
  * ```
  */
@@ -110,6 +117,8 @@ export default function ImageOptimized({
         quality={quality}
         priority={priority}
         loading={priority ? undefined : 'lazy'}
+        placeholder="blur"
+        blurDataURL={GENERIC_BLUR_DATA_URL}
         className={`transition-opacity duration-300 ${
           imageLoaded ? 'opacity-100' : 'opacity-0'
         } ${className}`}

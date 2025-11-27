@@ -215,11 +215,12 @@ export default function Feed({ userId }: FeedProps) {
       )}
 
       {/* Posts List */}
-      {posts.map((post) => (
+      {posts.map((post, index) => (
         <PostCard
           key={post.id}
           post={post}
           currentUserId={userId}
+          priority={index === 0} // Priority loading for first post only
           onDelete={() => handleDeletePost(post.id)}
         />
       ))}

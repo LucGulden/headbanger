@@ -190,10 +190,11 @@ export default function WishlistPage() {
         {!loading && albums.length > 0 && (
           <>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-              {albums.map((userAlbum) => (
+              {albums.map((userAlbum, index) => (
                 <AlbumCard
                   key={userAlbum.id}
                   album={userAlbum.album}
+                  priority={index < 3} // Priority loading for first 3 albums only
                   actions={
                     <div className="flex flex-col gap-2">
                       {/* Bouton déplacer vers collection */}

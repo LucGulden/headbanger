@@ -6,9 +6,10 @@ interface AlbumCardProps {
   album: AlbumSearchResult | Album;
   actions?: React.ReactNode;
   onClick?: () => void;
+  priority?: boolean; // Priority loading for first 3 albums (above-the-fold)
 }
 
-export default function AlbumCard({ album, actions, onClick }: AlbumCardProps) {
+export default function AlbumCard({ album, actions, onClick, priority = false }: AlbumCardProps) {
   return (
     <div
       className="group relative overflow-hidden rounded-lg border border-[var(--background-lighter)] bg-[var(--background-light)] transition-all hover:border-[var(--primary)] hover:shadow-lg hover:shadow-[var(--primary)]/20"
@@ -21,6 +22,7 @@ export default function AlbumCard({ album, actions, onClick }: AlbumCardProps) {
           alt={`${album.title} par ${album.artist}`}
           fill
           sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+          priority={priority}
           className="h-full w-full object-cover transition-all duration-300 group-hover:scale-110"
         />
 
