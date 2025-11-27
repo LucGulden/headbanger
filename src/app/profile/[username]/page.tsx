@@ -9,7 +9,6 @@ import { subscribeToUserCollection, subscribeToUserWishlist } from '@/lib/user-a
 import { getFollowStats } from '@/lib/follows';
 import type { User, ProfileStats } from '@/types/user';
 import type { UserAlbumWithDetails } from '@/types/collection';
-import Image from 'next/image';
 
 export default function ProfilePage() {
   const params = useParams();
