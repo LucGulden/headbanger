@@ -97,8 +97,10 @@ service cloud.firestore {
       // Création : seulement si userId correspond à l'utilisateur authentifié
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
 
-      // Suppression : seulement le propriétaire du like
-      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      // Suppression : le propriétaire du like OU l'auteur du post associé
+      allow delete: if request.auth != null &&
+                       (resource.data.userId == request.auth.uid ||
+                        get(/databases/$(database)/documents/posts/$(resource.data.postId)).data.userId == request.auth.uid);
     }
 
     // Collection des commentaires (Phase 7 - Feed social)
@@ -109,8 +111,32 @@ service cloud.firestore {
       // Création : seulement si userId correspond à l'utilisateur authentifié
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
 
-      // Suppression : seulement le propriétaire du commentaire
-      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      // Suppression : le propriétaire du commentaire OU l'auteur du post associé
+      allow delete: if request.auth != null &&
+                       (resource.data.userId == request.auth.uid ||
+                        get(/databases/$(database)/documents/posts/$(resource.data.postId)).data.userId == request.auth.uid);
+    }
+
+    // Collection des feeds personnalisés (Phase 7 - Architecture fan-out)
+    // Structure: user_feeds/{userId}/posts/{postId}
+    match /user_feeds/{userId}/posts/{postId} {
+      // Lecture : seulement le propriétaire du feed
+      allow read: if request.auth != null && request.auth.uid == userId;
+
+      // Création : tout utilisateur authentifié peut ajouter au feed de quelqu'un
+      // (nécessaire pour le fan-out lors de la création de posts)
+      allow create: if request.auth != null;
+
+      // Suppression : le propriétaire du feed OU l'auteur du post
+      // Les deux conditions sont nécessaires :
+      // - userId == request.auth.uid : pour supprimer de son propre feed (unfollow)
+      // - resource.data.userId == request.auth.uid : pour supprimer tous ses posts (deletePost avec collectionGroup)
+      allow delete: if request.auth != null &&
+                       (request.auth.uid == userId ||
+                        resource.data.userId == request.auth.uid);
+
+      // Pas d'update : les pointeurs de feed sont immuables
+      allow update: if false;
     }
   }
 }

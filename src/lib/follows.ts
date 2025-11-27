@@ -76,6 +76,7 @@ export async function followUser(
 
 /**
  * Ne plus suivre un utilisateur
+ * Nettoie aussi les posts de cette personne dans le feed personnel
  */
 export async function unfollowUser(
   followerId: string,
@@ -88,10 +89,29 @@ export async function unfollowUser(
       return;
     }
 
+    // ÉTAPE 1: Supprimer la relation de follow
     const followRef = doc(db, FOLLOWS_COLLECTION, follow.id);
     await deleteDoc(followRef);
 
     console.log(`[Unfollow] ${followerId} X ${followingId}`);
+
+    // ÉTAPE 2: Nettoyer le feed - Supprimer tous les posts de la personne unfollowed
+    try {
+      const userFeedRef = collection(db, `user_feeds/${followerId}/posts`);
+      const q = query(userFeedRef, where('userId', '==', followingId));
+
+      const feedSnapshot = await getDocs(q);
+
+      if (feedSnapshot.size > 0) {
+        const deletions = feedSnapshot.docs.map((doc) => deleteDoc(doc.ref));
+        await Promise.all(deletions);
+
+        console.log(`[Feed Cleanup] Supprimé ${feedSnapshot.size} posts de ${followingId} du feed de ${followerId}`);
+      }
+    } catch (cleanupError) {
+      console.error('[Feed Cleanup] Erreur lors du nettoyage du feed:', cleanupError);
+      // Le unfollow a réussi même si le nettoyage a échoué
+    }
   } catch (error) {
     console.error('Erreur lors du unfollow:', error);
     throw new Error('Impossible de ne plus suivre cet utilisateur');

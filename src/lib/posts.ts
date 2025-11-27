@@ -15,17 +15,19 @@ import {
   Unsubscribe,
   Timestamp,
   QueryDocumentSnapshot,
+  collectionGroup,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { getAlbumById } from './albums';
 import { getUserByUid } from './user';
-import { getFollowing } from './follows';
+import { getFollowing, getFollowers } from './follows';
 import type { Post, PostWithDetails, PostType, CreatePostData } from '@/types/post';
 
 const POSTS_COLLECTION = 'posts';
 
 /**
- * Crée un post automatiquement
+ * Crée un post automatiquement et fait le fan-out vers les feeds des followers
+ * Architecture: 1 post principal + N pointeurs légers dans les feeds individuels
  */
 export async function createPost(
   userId: string,
@@ -33,6 +35,7 @@ export async function createPost(
   albumId: string
 ): Promise<Post> {
   try {
+    // ÉTAPE 1: Créer le post principal (source of truth)
     const newPostRef = doc(collection(db, POSTS_COLLECTION));
     const postData = {
       userId,
@@ -47,6 +50,45 @@ export async function createPost(
 
     console.log(`[Post] Created post ${newPostRef.id} by ${userId}: ${type} ${albumId}`);
 
+    // ÉTAPE 2: Fan-out - Ajouter des pointeurs dans les feeds des followers
+    try {
+      const followers = await getFollowers(userId);
+
+      // Limite de sécurité pour éviter les timeouts (max 5000 followers)
+      const fanoutLimit = Math.min(followers.length, 5000);
+
+      if (followers.length > 0) {
+        // Créer les pointeurs légers dans chaque feed
+        const feedPromises = followers.slice(0, fanoutLimit).map(async (follower) => {
+          const feedPostRef = doc(db, `user_feeds/${follower.uid}/posts`, newPostRef.id);
+          return setDoc(feedPostRef, {
+            postId: newPostRef.id,
+            createdAt: serverTimestamp(),
+            userId: userId, // Pour faciliter le nettoyage lors d'unfollow
+          });
+        });
+
+        await Promise.all(feedPromises);
+
+        console.log(`[Fan-out] Post distribué à ${fanoutLimit} followers`);
+        if (followers.length > fanoutLimit) {
+          console.warn(`[Fan-out] Limité à ${fanoutLimit}/${followers.length} followers`);
+        }
+      }
+
+      // ÉTAPE 3: Ajouter aussi dans son propre feed
+      const ownFeedRef = doc(db, `user_feeds/${userId}/posts`, newPostRef.id);
+      await setDoc(ownFeedRef, {
+        postId: newPostRef.id,
+        createdAt: serverTimestamp(),
+        userId: userId,
+      });
+
+    } catch (fanoutError) {
+      console.error('[Fan-out] Erreur lors du fan-out (post créé mais pas distribué):', fanoutError);
+      // Le post est créé, mais pas distribué - on peut continuer
+    }
+
     return {
       id: newPostRef.id,
       ...postData,
@@ -60,8 +102,8 @@ export async function createPost(
 
 /**
  * Récupère les posts du feed pour un utilisateur
- * Retourne les posts des personnes qu'il suit + ses propres posts
- * Limité à 10 utilisateurs suivis pour optimiser les performances
+ * Architecture fan-out: Lit directement depuis user_feeds/{userId}/posts
+ * Ultra-rapide: 1 seule requête peu importe le nombre d'utilisateurs suivis!
  */
 export async function getFeedPosts(
   userId: string,
@@ -69,82 +111,59 @@ export async function getFeedPosts(
   lastPost?: Post
 ): Promise<PostWithDetails[]> {
   try {
-    // Récupérer les IDs des utilisateurs suivis (status=accepted)
-    const following = await getFollowing(userId);
-    let followingIds = following.map((user) => user.uid);
+    // ÉTAPE 1: Lire les pointeurs depuis le feed personnel de l'utilisateur
+    const userFeedRef = collection(db, `user_feeds/${userId}/posts`);
 
-    // OPTIMISATION: Limiter à 10 utilisateurs suivis maximum
-    // Cela évite trop de requêtes Firestore et améliore les performances
-    if (followingIds.length > 10) {
-      // Prendre les 10 premiers (ou implémenter une logique plus sophistiquée)
-      followingIds = followingIds.slice(0, 10);
-      console.log(`[Feed] Limité à 10 utilisateurs suivis (sur ${following.length})`);
+    let q = query(
+      userFeedRef,
+      orderBy('createdAt', 'desc'),
+      limit(limitCount)
+    );
+
+    // Pagination: démarrer après le dernier post
+    if (lastPost) {
+      q = query(
+        userFeedRef,
+        orderBy('createdAt', 'desc'),
+        startAfter(lastPost.createdAt),
+        limit(limitCount)
+      );
     }
 
-    // Ajouter son propre ID
-    const userIds = [...followingIds, userId];
+    const feedSnapshot = await getDocs(q);
 
-    if (userIds.length === 0) {
+    console.log(`[Feed] Chargé ${feedSnapshot.size} pointeurs depuis user_feeds/${userId}/posts`);
+
+    if (feedSnapshot.empty) {
       return [];
     }
 
-    // Firestore limite les requêtes "in" à 30 éléments max
-    // Avec notre limite de 10, on ne devrait avoir qu'un seul batch
-    const batchSize = 30;
-    const batches: string[][] = [];
-
-    for (let i = 0; i < userIds.length; i += batchSize) {
-      batches.push(userIds.slice(i, i + batchSize));
-    }
-
-    // Récupérer les posts pour chaque batch
-    const allPosts: Post[] = [];
-
-    for (const batch of batches) {
-      const postsRef = collection(db, POSTS_COLLECTION);
-      let q = query(
-        postsRef,
-        where('userId', 'in', batch),
-        orderBy('createdAt', 'desc'),
-        limit(limitCount)
-      );
-
-      if (lastPost) {
-        q = query(
-          postsRef,
-          where('userId', 'in', batch),
-          orderBy('createdAt', 'desc'),
-          startAfter(lastPost.createdAt),
-          limit(limitCount)
-        );
-      }
-
-      const querySnapshot = await getDocs(q);
-      const batchPosts: Post[] = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Post[];
-
-      allPosts.push(...batchPosts);
-    }
-
-    // Trier tous les posts par date et limiter
-    allPosts.sort((a, b) => {
-      const aTime = (a.createdAt as Timestamp).toMillis();
-      const bTime = (b.createdAt as Timestamp).toMillis();
-      return bTime - aTime;
-    });
-
-    const limitedPosts = allPosts.slice(0, limitCount);
-
-    // Récupérer les détails de chaque post (album + user)
+    // ÉTAPE 2: "Hydrater" les pointeurs avec les vraies données des posts
     const postsWithDetails = await Promise.all(
-      limitedPosts.map(async (post) => {
+      feedSnapshot.docs.map(async (feedDoc) => {
+        const feedData = feedDoc.data();
+        const postId = feedData.postId;
+
+        // Récupérer le post principal (avec cache !)
+        const postRef = doc(db, POSTS_COLLECTION, postId);
+        const postDoc = await getDoc(postRef);
+
+        if (!postDoc.exists()) {
+          console.warn(`[Feed] Post ${postId} introuvable (pointeur orphelin)`);
+          return null;
+        }
+
+        const post = {
+          id: postDoc.id,
+          ...postDoc.data(),
+        } as Post;
+
+        // Récupérer les détails de l'album et de l'utilisateur (avec cache !)
         const album = await getAlbumById(post.albumId);
         const user = await getUserByUid(post.userId);
 
         if (!album || !user) {
-          console.warn(`Post ${post.id}: album ou user introuvable`);
+          console.warn(`[Feed] Post ${post.id}: album ou user introuvable`);
           return null;
         }
 
@@ -208,7 +227,8 @@ export async function getUserPosts(userId: string): Promise<PostWithDetails[]> {
 }
 
 /**
- * Supprime un post et tous les likes/commentaires associés (cascade)
+ * Supprime un post et tous les likes/commentaires/pointeurs de feed associés (cascade)
+ * Architecture fan-out: doit aussi supprimer tous les pointeurs dans les feeds
  */
 export async function deletePost(postId: string): Promise<void> {
   try {
@@ -221,7 +241,7 @@ export async function deletePost(postId: string): Promise<void> {
       deleteDoc(doc.ref)
     );
     await Promise.all(likesDeletions);
-    console.log(`[Post] Supprimé ${likesSnapshot.size} likes pour le post ${postId}`);
+    console.log(`[Post Delete] Supprimé ${likesSnapshot.size} likes`);
 
     // 2. Supprimer tous les commentaires associés au post
     const commentsRef = collection(db, 'comments');
@@ -232,13 +252,36 @@ export async function deletePost(postId: string): Promise<void> {
       deleteDoc(doc.ref)
     );
     await Promise.all(commentsDeletions);
-    console.log(`[Post] Supprimé ${commentsSnapshot.size} commentaires pour le post ${postId}`);
+    console.log(`[Post Delete] Supprimé ${commentsSnapshot.size} commentaires`);
 
-    // 3. Supprimer le post lui-même
+    // 3. Supprimer tous les pointeurs dans les feeds (utilise collectionGroup)
+    // IMPORTANT: Nécessite un index composite sur collectionGroup 'posts'
+    try {
+      const feedPostsQuery = query(
+        collectionGroup(db, 'posts'),
+        where('postId', '==', postId)
+      );
+
+      const feedPostsSnapshot = await getDocs(feedPostsQuery);
+
+      if (feedPostsSnapshot.size > 0) {
+        const feedDeletions = feedPostsSnapshot.docs.map((doc) =>
+          deleteDoc(doc.ref)
+        );
+        await Promise.all(feedDeletions);
+
+        console.log(`[Post Delete] Supprimé ${feedPostsSnapshot.size} pointeurs dans les feeds`);
+      }
+    } catch (feedError) {
+      console.error('[Post Delete] Erreur lors de la suppression des pointeurs (continuons):', feedError);
+      // On continue même si la suppression des pointeurs échoue
+    }
+
+    // 4. Supprimer le post principal lui-même
     const postRef = doc(db, POSTS_COLLECTION, postId);
     await deleteDoc(postRef);
 
-    console.log(`[Post] Post ${postId} supprimé avec succès (cascade complète)`);
+    console.log(`[Post Delete] Post ${postId} supprimé avec succès (cascade complète)`);
   } catch (error) {
     console.error('Erreur lors de la suppression du post:', error);
     throw new Error('Impossible de supprimer le post');
