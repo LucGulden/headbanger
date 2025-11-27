@@ -1,7 +1,6 @@
 import {
   collection,
   doc,
-  getDoc,
   getDocs,
   setDoc,
   deleteDoc,
@@ -19,7 +18,6 @@ import type {
   UserAlbum,
   UserAlbumWithDetails,
   CollectionType,
-  CreateUserAlbumData,
 } from '@/types/collection';
 
 const USER_ALBUMS_COLLECTION = 'user_albums';
@@ -63,7 +61,7 @@ export async function addToCollection(
     return {
       id: newDocRef.id,
       ...userAlbumData,
-      addedAt: userAlbumData.addedAt as any,
+      addedAt: userAlbumData.addedAt,
     } as UserAlbum;
   } catch (error) {
     console.error('Erreur lors de l\'ajout à la collection:', error);
@@ -109,7 +107,7 @@ export async function addToWishlist(
     return {
       id: newDocRef.id,
       ...userAlbumData,
-      addedAt: userAlbumData.addedAt as any,
+      addedAt: userAlbumData.addedAt,
     } as UserAlbum;
   } catch (error) {
     console.error('Erreur lors de l\'ajout à la wishlist:', error);

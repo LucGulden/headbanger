@@ -79,9 +79,9 @@ export async function uploadProfilePhoto(
     const downloadURL = await getDownloadURL(storageRef);
 
     return downloadURL;
-  } catch (error: any) {
+  } catch (error) {
     console.error('Erreur lors de l\'upload de la photo:', error);
-    throw new Error(error.message || 'Impossible d\'uploader la photo');
+    throw new Error(error instanceof Error ? error.message : 'Impossible d\'uploader la photo');
   }
 }
 
@@ -99,9 +99,9 @@ export async function deleteProfilePhoto(userId: string): Promise<void> {
         const storageRef = ref(storage, `profile-photos/${userId}/avatar.${ext}`);
         await deleteObject(storageRef);
         return; // Si la suppression réussit, on arrête
-      } catch (err: any) {
+      } catch (err) {
         // Ignorer l'erreur si le fichier n'existe pas
-        if (err.code !== 'storage/object-not-found') {
+        if ((err as { code?: string }).code !== 'storage/object-not-found') {
           console.error(`Erreur lors de la suppression de avatar.${ext}:`, err);
         }
       }

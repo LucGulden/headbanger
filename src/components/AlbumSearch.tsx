@@ -81,8 +81,8 @@ export default function AlbumSearch({ onAlbumSelect }: AlbumSearchProps) {
                   ...album,
                   firestoreId: firestoreAlbum.id,
                 };
-              } catch (err: any) {
-                console.error(`[Cache Client] ✗ Erreur pour "${album.title}":`, err.message);
+              } catch (err) {
+                console.error(`[Cache Client] ✗ Erreur pour "${album.title}":`, err instanceof Error ? err.message : err);
                 // En cas d'erreur, retourner l'album sans ID Firestore
                 return album;
               }
@@ -133,9 +133,9 @@ export default function AlbumSearch({ onAlbumSelect }: AlbumSearchProps) {
           setCaching(false);
         }
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Erreur de recherche:', err);
-      setError(err.message || 'Une erreur est survenue');
+      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
       setResults([]);
       setLoading(false);
     }
@@ -184,7 +184,7 @@ export default function AlbumSearch({ onAlbumSelect }: AlbumSearchProps) {
           )}
         </div>
         <p className="mt-2 text-sm text-[var(--foreground-muted)]">
-          Recherchez parmi des millions d'albums sur Spotify
+          {`Recherchez parmi des millions d'albums sur Spotify`}
         </p>
         {caching && (
           <div className="mt-2 flex items-center gap-2 text-xs text-[var(--primary)]">
@@ -299,7 +299,7 @@ export default function AlbumSearch({ onAlbumSelect }: AlbumSearchProps) {
             Aucun résultat
           </h3>
           <p className="text-[var(--foreground-muted)]">
-            Essayez avec un autre nom d'album ou d'artiste
+            {`Essayez avec un autre nom d'album ou d'artiste`}
           </p>
         </div>
       )}
@@ -312,7 +312,7 @@ export default function AlbumSearch({ onAlbumSelect }: AlbumSearchProps) {
             Recherchez votre premier album
           </h3>
           <p className="text-[var(--foreground-muted)]">
-            Tapez le nom d'un album ou d'un artiste pour commencer
+            {`Tapez le nom d'un album ou d'un artiste pour commencer`}
           </p>
         </div>
       )}

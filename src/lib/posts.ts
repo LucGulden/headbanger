@@ -13,15 +13,13 @@ import {
   serverTimestamp,
   onSnapshot,
   Unsubscribe,
-  Timestamp,
-  QueryDocumentSnapshot,
   collectionGroup,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { getAlbumById } from './albums';
 import { getUserByUid } from './user';
-import { getFollowing, getFollowers } from './follows';
-import type { Post, PostWithDetails, PostType, CreatePostData } from '@/types/post';
+import { getFollowers } from './follows';
+import type { Post, PostWithDetails, PostType } from '@/types/post';
 
 const POSTS_COLLECTION = 'posts';
 
@@ -92,7 +90,7 @@ export async function createPost(
     return {
       id: newPostRef.id,
       ...postData,
-      createdAt: postData.createdAt as any,
+      createdAt: postData.createdAt,
     } as Post;
   } catch (error) {
     console.error('Erreur lors de la création du post:', error);

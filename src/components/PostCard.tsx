@@ -10,6 +10,7 @@ import { addComment, subscribeToPostComments } from '@/lib/comments';
 import { deletePost } from '@/lib/posts';
 import type { PostWithDetails } from '@/types/post';
 import type { CommentWithUser } from '@/types/comment';
+import Image from 'next/image';
 
 interface PostCardProps {
   post: PostWithDetails;
@@ -231,7 +232,7 @@ export default function PostCard({ post, currentUserId, onDelete }: PostCardProp
           </div>
         )}
 
-        <img
+        <Image
           src={post.album.coverUrl}
           alt={`${post.album.title} - ${post.album.artist}`}
           className={`w-full max-w-md mx-auto rounded-xl shadow-md transition-opacity duration-300 ${

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import PostCard from './PostCard';
 import { getFeedPosts } from '@/lib/posts';
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
@@ -25,10 +25,26 @@ export default function Feed({ userId }: FeedProps) {
   const [pullCurrentY, setPullCurrentY] = useState(0);
   const [isPulling, setIsPulling] = useState(false);
 
+  const loadInitialPosts = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const initialPosts = await getFeedPosts(userId, 20);
+      setPosts(initialPosts);
+      setHasMore(initialPosts.length === 20);
+    } catch (err) {
+      console.error('Erreur lors du chargement du feed:', err);
+      setError('Impossible de charger le feed');
+    } finally {
+      setLoading(false);
+    }
+  }, [userId]);
+
   // Charger les posts initiaux
   useEffect(() => {
     loadInitialPosts();
-  }, [userId]);
+  }, [loadInitialPosts]);
 
   // Écouter les nouveaux posts en temps réel
   useEffect(() => {
@@ -59,22 +75,6 @@ export default function Feed({ userId }: FeedProps) {
 
     return () => unsubscribe();
   }, [posts]);
-
-  const loadInitialPosts = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const initialPosts = await getFeedPosts(userId, 20);
-      setPosts(initialPosts);
-      setHasMore(initialPosts.length === 20);
-    } catch (err) {
-      console.error('Erreur lors du chargement du feed:', err);
-      setError('Impossible de charger le feed');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const loadMorePosts = async () => {
     if (loadingMore || !hasMore || posts.length === 0) return;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -18,18 +18,7 @@ export default function RequestsPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/login');
-      return;
-    }
-
-    if (user) {
-      loadRequests();
-    }
-  }, [user, authLoading, router]);
-
-  const loadRequests = async () => {
+  const loadRequests = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -41,7 +30,18 @@ export default function RequestsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login');
+      return;
+    }
+
+    if (user) {
+      loadRequests();
+    }
+  }, [user, authLoading, router, loadRequests]);
 
   const handleAccept = async (request: Follow & { user: User }) => {
     if (!user) return;
@@ -93,7 +93,7 @@ export default function RequestsPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-[var(--foreground)]">
-            Demandes d'abonnement
+            {`Demandes d'abonnement`}
           </h1>
           <p className="mt-2 text-[var(--foreground-muted)]">
             {requests.length} {requests.length === 1 ? 'demande en attente' : 'demandes en attente'}
@@ -108,7 +108,7 @@ export default function RequestsPage() {
               Aucune demande en attente
             </h3>
             <p className="text-[var(--foreground-muted)]">
-              Vous n'avez pas de demandes d'abonnement pour le moment
+              {`Vous n'avez pas de demandes d'abonnement pour le moment`}
             </p>
           </div>
         ) : (

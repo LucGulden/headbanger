@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import React, { useState } from 'react';
 
 interface AvatarProps {
@@ -67,7 +68,7 @@ export default function Avatar({ src, username, size = 'md', className = '' }: A
           </div>
         )}
 
-        <img
+        <Image
           src={src}
           alt={username}
           className={`${sizeClasses[size]} rounded-full border-2 border-[var(--primary)] object-cover transition-opacity duration-300 ${

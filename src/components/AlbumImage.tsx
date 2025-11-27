@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import React, { useState } from 'react';
 
 interface AlbumImageProps {
@@ -20,7 +21,7 @@ export default function AlbumImage({ src, alt, className = '' }: AlbumImageProps
         </div>
       )}
 
-      <img
+      <Image
         src={src}
         alt={alt}
         className={`transition-opacity duration-300 ${

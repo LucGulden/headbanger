@@ -3,6 +3,9 @@
  * Utilisé pour mettre en cache les albums et users et éviter les requêtes répétées
  */
 
+import { Album } from "@/types/album";
+import { User } from "firebase/auth";
+
 interface CacheEntry<T> {
   data: T;
   timestamp: number;
@@ -86,8 +89,8 @@ class Cache<T> {
 
 // Instances de cache pour albums et users
 // TTL de 10 minutes pour les albums et users
-export const albumCache = new Cache<any>(10);
-export const userCache = new Cache<any>(10);
+export const albumCache = new Cache<Album>(10);
+export const userCache = new Cache<User>(10);
 
 // Nettoyer le cache toutes les 5 minutes
 if (typeof window !== 'undefined') {

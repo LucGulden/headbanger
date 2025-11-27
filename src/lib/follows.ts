@@ -66,7 +66,7 @@ export async function followUser(
     return {
       id: newFollowRef.id,
       ...followData,
-      createdAt: followData.createdAt as any,
+      createdAt: followData.createdAt,
     } as Follow;
   } catch (error) {
     console.error('Erreur lors du follow:', error);

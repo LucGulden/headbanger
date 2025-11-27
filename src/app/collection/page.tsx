@@ -19,7 +19,6 @@ export default function CollectionPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [removing, setRemoving] = useState<string | null>(null);
 
   // Redirection si non authentifié
   useEffect(() => {
@@ -62,14 +61,11 @@ export default function CollectionPage() {
     }
 
     try {
-      setRemoving(albumId);
       await removeFromCollection(user.uid, albumId);
       // Le state sera automatiquement mis à jour via onSnapshot
-    } catch (err: any) {
+    } catch (err) {
       console.error('Erreur lors de la suppression:', err);
-      alert(err.message || 'Erreur lors de la suppression');
-    } finally {
-      setRemoving(null);
+      alert(err instanceof Error ? err.message : 'Erreur lors de la suppression');
     }
   };
 

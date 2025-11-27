@@ -1,7 +1,6 @@
 import {
   collection,
   doc,
-  getDoc,
   getDocs,
   setDoc,
   deleteDoc,
@@ -12,7 +11,6 @@ import {
   orderBy,
   limit,
   serverTimestamp,
-  runTransaction,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { getUserByUid } from './user';
@@ -56,7 +54,7 @@ export async function likePost(userId: string, postId: string): Promise<Like> {
     return {
       id: newLikeRef.id,
       ...likeData,
-      createdAt: likeData.createdAt as any,
+      createdAt: likeData.createdAt,
     } as Like;
   } catch (error) {
     console.error('Erreur lors du like:', error);

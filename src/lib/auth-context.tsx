@@ -118,10 +118,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       // Le profil sera chargé automatiquement par onAuthStateChanged
-    } catch (err: any) {
+    } catch (err) {
+      const errorCode = (err as { code?: string }).code || 'unknown';
       const authError: AuthError = {
-        code: err.code || 'unknown',
-        message: err.message || translateFirebaseError(err.code),
+        code: errorCode,
+        message: err instanceof Error ? err.message : translateFirebaseError(errorCode),
       };
       setError(authError);
       throw authError;
@@ -141,10 +142,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await signInWithEmailAndPassword(auth, data.email, data.password);
 
       // Le profil sera chargé automatiquement par onAuthStateChanged
-    } catch (err: any) {
+    } catch (err) {
+      const errorCode = (err as { code?: string }).code || 'unknown';
       const authError: AuthError = {
-        code: err.code || 'unknown',
-        message: translateFirebaseError(err.code),
+        code: errorCode,
+        message: err instanceof Error ? err.message : translateFirebaseError(errorCode),
       };
       setError(authError);
       throw authError;
@@ -179,10 +181,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Le profil sera chargé automatiquement par onAuthStateChanged
-    } catch (err: any) {
+    } catch (err) {
+      const errorCode = (err as { code?: string }).code || 'unknown';
       const authError: AuthError = {
-        code: err.code || 'unknown',
-        message: translateFirebaseError(err.code),
+        code: errorCode,
+        message: err instanceof Error ? err.message : translateFirebaseError(errorCode),
       };
       setError(authError);
       throw authError;
@@ -202,9 +205,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await firebaseSignOut(auth);
       setUser(null);
       setFirebaseUser(null);
-    } catch (err: any) {
+    } catch (err) {
+      const errorCode = (err as { code?: string }).code || 'unknown';
       const authError: AuthError = {
-        code: err.code || 'unknown',
+        code: errorCode,
         message: 'Erreur lors de la déconnexion',
       };
       setError(authError);

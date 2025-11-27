@@ -53,7 +53,7 @@ export default function SignupPage() {
         if (!available) {
           newErrors.username = 'Ce nom d\'utilisateur est déjà pris';
         }
-      } catch (error) {
+      } catch {
         newErrors.username = 'Impossible de vérifier la disponibilité';
       } finally {
         setCheckingUsername(false);

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { AlbumSearchResult } from '@/types/album';
+import Image from 'next/image';
 
 interface AlbumCardProps {
   album: AlbumSearchResult;
@@ -23,7 +24,7 @@ export default function AlbumCard({ album, actions, onClick }: AlbumCardProps) {
           </div>
         )}
 
-        <img
+        <Image
           src={album.coverUrl}
           alt={`${album.title} par ${album.artist}`}
           className={`h-full w-full object-cover transition-all duration-300 group-hover:scale-110 ${

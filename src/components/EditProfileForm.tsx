@@ -7,7 +7,7 @@ import Input from './Input';
 import Button from './Button';
 import { uploadProfilePhoto, generateImagePreview } from '@/lib/storage';
 import { updateUserProfile, checkUsernameAvailability, validateUsername, validateBio } from '@/lib/user';
-import type { User, UpdateProfileData } from '@/types/user';
+import type { User, UpdateProfileData, UpdateUserProfileData } from '@/types/user';
 
 interface EditProfileFormProps {
   user: User;
@@ -82,7 +82,7 @@ export default function EditProfileForm({ user, onSuccess }: EditProfileFormProp
       setPhotoFile(file);
       setPhotoPreview(preview);
       setErrors({ ...errors, photo: '' });
-    } catch (error) {
+    } catch {
       setErrors({ ...errors, photo: 'Erreur lors de la lecture de l\'image' });
     }
   };
@@ -124,7 +124,7 @@ export default function EditProfileForm({ user, onSuccess }: EditProfileFormProp
       }
 
       // Préparer les données de mise à jour (sans valeurs undefined)
-      const updateData: any = {
+      const updateData: UpdateUserProfileData = {
         username: formData.username,
         isPrivate: formData.isPrivate,
       };
@@ -145,9 +145,9 @@ export default function EditProfileForm({ user, onSuccess }: EditProfileFormProp
         // Rediriger vers le profil
         router.push(`/profile/${formData.username}`);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Erreur lors de la mise à jour du profil:', error);
-      setErrors({ submit: error.message || 'Erreur lors de la mise à jour du profil' });
+      setErrors({ submit: error instanceof Error ? error.message : 'Erreur lors de la mise à jour du profil' });
     } finally {
       setLoading(false);
     }
@@ -239,7 +239,7 @@ export default function EditProfileForm({ user, onSuccess }: EditProfileFormProp
         <p className="text-xs text-[var(--foreground-muted)]">Vérification...</p>
       )}
       {!checkingUsername && formData.username !== user.username && usernameAvailable && (
-        <p className="text-xs text-green-500">✓ Nom d'utilisateur disponible</p>
+        <p className="text-xs text-green-500">{`✓ Nom d'utilisateur disponible`}</p>
       )}
 
       {/* First Name */}

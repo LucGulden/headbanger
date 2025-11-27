@@ -20,7 +20,6 @@ export default function WishlistPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [processing, setProcessing] = useState<string | null>(null);
 
   // Redirection si non authentifié
   useEffect(() => {
@@ -63,14 +62,11 @@ export default function WishlistPage() {
     }
 
     try {
-      setProcessing(albumId);
       await removeFromWishlist(user.uid, albumId);
       // Le state sera automatiquement mis à jour via onSnapshot
-    } catch (err: any) {
+    } catch (err) {
       console.error('Erreur lors de la suppression:', err);
-      alert(err.message || 'Erreur lors de la suppression');
-    } finally {
-      setProcessing(null);
+      alert(err instanceof Error ? err.message : 'Erreur lors de la suppression');
     }
   };
 
@@ -78,14 +74,11 @@ export default function WishlistPage() {
     if (!user) return;
 
     try {
-      setProcessing(albumId);
       await moveToCollection(user.uid, albumId);
       // Le state sera automatiquement mis à jour via onSnapshot
-    } catch (err: any) {
+    } catch (err) {
       console.error('Erreur lors du déplacement:', err);
-      alert(err.message || 'Erreur lors du déplacement');
-    } finally {
-      setProcessing(null);
+      alert(err instanceof Error ? err.message : 'Erreur lors du déplacement');
     }
   };
 

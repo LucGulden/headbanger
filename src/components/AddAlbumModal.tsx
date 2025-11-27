@@ -7,6 +7,7 @@ import { addToCollection, addToWishlist } from '@/lib/user-albums';
 import { useAuth } from './AuthProvider';
 import type { AlbumSearchResult } from '@/types/album';
 import type { CollectionType } from '@/types/collection';
+import Image from 'next/image';
 
 interface AddAlbumModalProps {
   isOpen: boolean;
@@ -60,9 +61,9 @@ export default function AddAlbumModal({
         onClose();
         setSuccess(false);
       }, 1500);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Erreur lors de l\'ajout:', err);
-      setError(err.message || 'Une erreur est survenue');
+      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
     } finally {
       setAdding(false);
     }
@@ -145,7 +146,7 @@ export default function AddAlbumModal({
           {selectedAlbum && (
             <div className="mb-6 rounded-lg border border-[var(--primary)]/30 bg-[var(--primary)]/5 p-4">
               <div className="flex items-center gap-4">
-                <img
+                <Image
                   src={selectedAlbum.coverUrl}
                   alt={selectedAlbum.title}
                   className="h-20 w-20 rounded-lg object-cover"

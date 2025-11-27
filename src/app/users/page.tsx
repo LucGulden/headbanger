@@ -126,7 +126,7 @@ export default function UsersPage() {
           )}
           {!showSuggestions && (
             <p className="mt-2 text-sm text-[var(--foreground-muted)]">
-              {results.length} {results.length === 1 ? 'résultat' : 'résultats'} pour "{searchQuery}"
+              {`${results.length} ${results.length === 1 ? 'résultat' : 'résultats'} pour "${searchQuery}"`}
             </p>
           )}
         </div>

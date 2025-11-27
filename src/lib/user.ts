@@ -11,7 +11,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { userCache } from './cache';
-import type { CreateUserProfileData, UpdateUserProfileData, User, ProfileStats } from '@/types/user';
+import type { CreateUserProfileData, UpdateUserProfileData, User } from '@/types/user';
 
 const USERS_COLLECTION = 'users';
 
@@ -133,7 +133,7 @@ export async function updateUserProfile(
 
     // Filtrer les valeurs undefined (Firestore ne les accepte pas)
     const cleanData = Object.fromEntries(
-      Object.entries(data).filter(([_, value]) => value !== undefined)
+      Object.entries(data).filter(([, value]) => value !== undefined)
     );
 
     await updateDoc(userRef, {
@@ -189,21 +189,6 @@ export async function checkUsernameAvailability(
     console.error('Erreur lors de la vérification du username:', error);
     throw new Error('Impossible de vérifier la disponibilité du username');
   }
-}
-
-/**
- * Récupère les statistiques du profil utilisateur
- * @param userId - ID de l'utilisateur
- * @returns Statistiques du profil (placeholder avec 0 pour l'instant)
- */
-export async function getProfileStats(userId: string): Promise<ProfileStats> {
-  // Pour l'instant, on retourne des valeurs par défaut
-  // Ces valeurs seront calculées plus tard avec les collections albums, followers, etc.
-  return {
-    albumsCount: 0,
-    followersCount: 0,
-    followingCount: 0,
-  };
 }
 
 /**

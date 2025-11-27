@@ -58,7 +58,7 @@ export async function getOrCreateAlbum(spotifyData: SpotifyAlbumData): Promise<A
     return {
       id: newAlbumRef.id,
       ...albumData,
-      createdAt: albumData.createdAt as any, // serverTimestamp() sera résolu par Firestore
+      createdAt: albumData.createdAt, // serverTimestamp() sera résolu par Firestore
     } as Album;
   } catch (error) {
     console.error('Erreur lors de la récupération/création de l\'album:', error);

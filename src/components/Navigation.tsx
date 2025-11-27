@@ -15,7 +15,7 @@ export default function Navigation() {
   // Subscribe aux demandes de follow en attente
   useEffect(() => {
     if (!user) {
-      setPendingRequestsCount(0);
+      queueMicrotask(() => setPendingRequestsCount(0));
       return;
     }
 

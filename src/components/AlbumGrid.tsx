@@ -93,7 +93,7 @@ export default function AlbumGrid({
                           clipRule="evenodd"
                         />
                       </svg>
-                      J'ai cet album
+                      {`J'ai cet album`}
                     </span>
                   )}
                 </Button>

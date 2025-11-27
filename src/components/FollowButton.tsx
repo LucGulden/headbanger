@@ -8,13 +8,11 @@ import type { FollowCheckResult } from '@/types/follows';
 
 interface FollowButtonProps {
   targetUserId: string;
-  targetUsername: string;
   onFollowChange?: () => void; // Callback pour rafraîchir les stats
 }
 
 export default function FollowButton({
   targetUserId,
-  targetUsername,
   onFollowChange,
 }: FollowButtonProps) {
   const { user } = useAuth();
@@ -65,9 +63,9 @@ export default function FollowButton({
       if (onFollowChange) {
         onFollowChange();
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Erreur lors du toggle follow:', error);
-      alert(error.message || 'Une erreur est survenue');
+      alert(error instanceof Error ? error.message : 'Une erreur est survenue');
     } finally {
       setActionLoading(false);
     }

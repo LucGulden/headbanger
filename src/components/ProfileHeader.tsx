@@ -114,7 +114,6 @@ export default function ProfileHeader({
             ) : (
               <FollowButton
                 targetUserId={user.uid}
-                targetUsername={user.username}
                 onFollowChange={onFollowChange}
               />
             )}

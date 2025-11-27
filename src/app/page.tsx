@@ -44,7 +44,7 @@ export default function Home() {
                 Collection
               </h3>
               <p className="text-[var(--foreground-muted)]">
-                Cataloguez vos vinyles, ajoutez des notes d'écoute et suivez l'évolution de votre collection au fil du temps.
+                {`Cataloguez vos vinyles, ajoutez des notes d'écoute et suivez l'évolution de votre collection au fil du temps.`}
               </p>
             </div>
 
@@ -55,7 +55,7 @@ export default function Home() {
                 Communauté
               </h3>
               <p className="text-[var(--foreground-muted)]">
-                Partagez vos dernières acquisitions, échangez des recommandations et connectez-vous avec d'autres collectionneurs.
+                {`Partagez vos dernières acquisitions, échangez des recommandations et connectez-vous avec d'autres collectionneurs.`}
               </p>
             </div>
 

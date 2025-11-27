@@ -14,23 +14,24 @@ import type { NextRequest } from 'next/server';
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Routes publiques
-  const publicRoutes = ['/', '/login', '/signup'];
-  const isPublicRoute = publicRoutes.includes(pathname);
-
-  // Routes d'authentification
-  const authRoutes = ['/login', '/signup'];
-  const isAuthRoute = authRoutes.includes(pathname);
-
-  // Routes protégées
   const protectedRoutes = ['/feed', '/collection', '/wishlist', '/profil'];
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
 
-  // Pour les routes protégées, la vérification se fait côté client
-  // Les pages protégées elles-mêmes redirigent si non authentifié
+  // Vérifie un cookie "token" simulant la session
+  const token = request.cookies.get('token')?.value;
 
-  // Note : Dans une implémentation plus avancée, vous pouvez utiliser
-  // des cookies de session pour vérifier l'authentification côté serveur
+  // Redirection vers login si route protégée et pas de token
+  const isProtected = protectedRoutes.some(route => pathname.startsWith(route));
+  if (isProtected && !token) {
+    const loginUrl = new URL('/login', request.url);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // Redirection vers /feed si utilisateur déjà connecté visite /, /login ou /signup
+  const isAuthRoute = ['/', '/login', '/signup'].includes(pathname);
+  if (isAuthRoute && token) {
+    const feedUrl = new URL('/feed', request.url);
+    return NextResponse.redirect(feedUrl);
+  }
 
   return NextResponse.next();
 }

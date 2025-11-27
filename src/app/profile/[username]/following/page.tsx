@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter, notFound } from 'next/navigation';
+import { useParams, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/components/AuthProvider';
 import UserCard from '@/components/UserCard';
@@ -11,7 +11,6 @@ import type { User } from '@/types/user';
 
 export default function FollowingPage() {
   const params = useParams();
-  const router = useRouter();
   const { user: currentUser, loading: authLoading } = useAuth();
 
   const username = params.username as string;

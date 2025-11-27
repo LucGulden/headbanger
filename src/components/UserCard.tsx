@@ -55,7 +55,6 @@ export default function UserCard({
         <div className="ml-3 flex-shrink-0">
           <FollowButton
             targetUserId={user.uid}
-            targetUsername={user.username}
             onFollowChange={onFollowChange}
           />
         </div>

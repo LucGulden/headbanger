@@ -54,7 +54,7 @@ export async function addComment(
     return {
       id: newCommentRef.id,
       ...commentData,
-      createdAt: commentData.createdAt as any,
+      createdAt: commentData.createdAt,
     } as Comment;
   } catch (error) {
     console.error('Erreur lors de l\'ajout du commentaire:', error);

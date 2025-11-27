@@ -1,19 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter, notFound } from 'next/navigation';
+import { useState, useEffect, useCallback } from 'react';
+import { useParams, notFound } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import ProfileHeader from '@/components/ProfileHeader';
-import AlbumGrid from '@/components/AlbumGrid';
 import { getUserByUsername } from '@/lib/user';
 import { subscribeToUserCollection, subscribeToUserWishlist } from '@/lib/user-albums';
 import { getFollowStats } from '@/lib/follows';
 import type { User, ProfileStats } from '@/types/user';
 import type { UserAlbumWithDetails } from '@/types/collection';
+import Image from 'next/image';
 
 export default function ProfilePage() {
   const params = useParams();
-  const router = useRouter();
   const { user: currentUser, loading: authLoading } = useAuth();
 
   const username = params.username as string;
@@ -105,8 +104,8 @@ export default function ProfilePage() {
     };
   }, [profileUser, currentUser]);
 
-  // Charger les stats de follow
-  const loadFollowStats = async () => {
+  // Charger les stats de follow avec useCallback
+  const loadFollowStats = useCallback(async () => {
     if (!profileUser) return;
 
     try {
@@ -126,12 +125,12 @@ export default function ProfilePage() {
         followingCount: 0,
       });
     }
-  };
+  }, [profileUser, collection.length, wishlist.length]);
 
   // Calculer les stats réelles basées sur les albums et follows
   useEffect(() => {
     loadFollowStats();
-  }, [collection, wishlist, profileUser]);
+  }, [loadFollowStats]);
 
   const handleFollowChange = () => {
     // Rafraîchir les stats après un follow/unfollow
@@ -244,7 +243,7 @@ export default function ProfilePage() {
                   <div key={userAlbum.id} className="group relative overflow-hidden rounded-lg border border-[var(--background-lighter)] bg-[var(--background-light)] transition-all hover:border-[var(--primary)] hover:shadow-lg hover:shadow-[var(--primary)]/20">
                     {/* Pochette */}
                     <div className="relative aspect-square w-full overflow-hidden bg-[var(--background)]">
-                      <img
+                      <Image
                         src={userAlbum.album.coverUrl}
                         alt={`${userAlbum.album.title} par ${userAlbum.album.artist}`}
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
@@ -300,7 +299,7 @@ export default function ProfilePage() {
                   <div key={userAlbum.id} className="group relative overflow-hidden rounded-lg border border-[var(--background-lighter)] bg-[var(--background-light)] transition-all hover:border-[var(--primary)] hover:shadow-lg hover:shadow-[var(--primary)]/20">
                     {/* Pochette */}
                     <div className="relative aspect-square w-full overflow-hidden bg-[var(--background)]">
-                      <img
+                      <Image
                         src={userAlbum.album.coverUrl}
                         alt={`${userAlbum.album.title} par ${userAlbum.album.artist}`}
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"

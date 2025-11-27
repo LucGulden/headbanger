@@ -198,7 +198,7 @@ export default function LoginPage() {
               href="/signup"
               className="font-semibold text-[var(--primary)] hover:underline"
             >
-              S'inscrire
+              {`S'inscrire`}
             </Link>
           </p>
         </div>
