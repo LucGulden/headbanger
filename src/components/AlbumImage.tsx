@@ -21,7 +21,7 @@ export default function AlbumImage({ src, alt, className = '' }: AlbumImageProps
         </div>
       )}
 
-      <Image
+      <img
         src={src}
         alt={alt}
         className={`transition-opacity duration-300 ${

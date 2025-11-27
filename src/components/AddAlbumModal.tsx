@@ -146,7 +146,7 @@ export default function AddAlbumModal({
           {selectedAlbum && (
             <div className="mb-6 rounded-lg border border-[var(--primary)]/30 bg-[var(--primary)]/5 p-4">
               <div className="flex items-center gap-4">
-                <Image
+                <img
                   src={selectedAlbum.coverUrl}
                   alt={selectedAlbum.title}
                   className="h-20 w-20 rounded-lg object-cover"

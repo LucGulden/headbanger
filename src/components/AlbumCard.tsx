@@ -24,7 +24,7 @@ export default function AlbumCard({ album, actions, onClick }: AlbumCardProps) {
           </div>
         )}
 
-        <Image
+        <img
           src={album.coverUrl}
           alt={`${album.title} par ${album.artist}`}
           className={`h-full w-full object-cover transition-all duration-300 group-hover:scale-110 ${

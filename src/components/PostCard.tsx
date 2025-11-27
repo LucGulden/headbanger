@@ -232,7 +232,7 @@ export default function PostCard({ post, currentUserId, onDelete }: PostCardProp
           </div>
         )}
 
-        <Image
+        <img
           src={post.album.coverUrl}
           alt={`${post.album.title} - ${post.album.artist}`}
           className={`w-full max-w-md mx-auto rounded-xl shadow-md transition-opacity duration-300 ${

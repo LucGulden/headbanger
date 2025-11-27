@@ -243,7 +243,7 @@ export default function ProfilePage() {
                   <div key={userAlbum.id} className="group relative overflow-hidden rounded-lg border border-[var(--background-lighter)] bg-[var(--background-light)] transition-all hover:border-[var(--primary)] hover:shadow-lg hover:shadow-[var(--primary)]/20">
                     {/* Pochette */}
                     <div className="relative aspect-square w-full overflow-hidden bg-[var(--background)]">
-                      <Image
+                      <img
                         src={userAlbum.album.coverUrl}
                         alt={`${userAlbum.album.title} par ${userAlbum.album.artist}`}
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
@@ -299,7 +299,7 @@ export default function ProfilePage() {
                   <div key={userAlbum.id} className="group relative overflow-hidden rounded-lg border border-[var(--background-lighter)] bg-[var(--background-light)] transition-all hover:border-[var(--primary)] hover:shadow-lg hover:shadow-[var(--primary)]/20">
                     {/* Pochette */}
                     <div className="relative aspect-square w-full overflow-hidden bg-[var(--background)]">
-                      <Image
+                      <img
                         src={userAlbum.album.coverUrl}
                         alt={`${userAlbum.album.title} par ${userAlbum.album.artist}`}
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
