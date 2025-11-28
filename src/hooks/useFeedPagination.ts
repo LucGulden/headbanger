@@ -53,7 +53,7 @@ export function useFeedPagination(userId: string, profileFeed: boolean): UseFeed
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [userId, profileFeed]);
 
   /**
    * Charge 10 posts supplémentaires
