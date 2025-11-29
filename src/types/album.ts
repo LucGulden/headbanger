@@ -10,7 +10,7 @@ export interface Album {
   artist: string;
   year: number;
   coverUrl: string; // URL de la pochette haute qualité
-  spotifyUrl?: string; // Lien vers l'album sur Spotify
+  spotifyUrl: string; // Lien vers l'album sur Spotify
   createdAt: Timestamp;
 }
 

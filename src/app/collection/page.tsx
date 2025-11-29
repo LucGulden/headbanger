@@ -1,14 +1,14 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/components/AuthProvider';
 import { useRouter } from 'next/navigation';
-import AlbumCard from '@/components/AlbumCard';
+import ReleaseCard from '@/components/ReleaseCard';
 import Button from '@/components/Button';
-import { AlbumGridSkeleton } from '@/components/ui/AlbumGridSkeleton';
+import { ReleaseGridSkeleton } from '@/components/ui/ReleaseGridSkeleton';
 import { useCollectionPagination } from '@/hooks/useCollectionPagination';
-import { removeFromCollection } from '@/lib/user-albums';
+import { removeFromCollection } from '@/lib/user-releases';
 
 // Dynamic import for AddAlbumModal (only loaded when modal is opened)
 const AddAlbumModal = dynamic(() => import('@/components/AddAlbumModal'), {
@@ -19,7 +19,7 @@ export default function CollectionPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [processingAlbum, setProcessingAlbum] = useState<string | null>(null);
+  const [processingRelease, setProcessingRelease] = useState<string | null>(null);
 
   // Intersection Observer pour infinite scroll
   const observerTarget = useRef<HTMLDivElement>(null);
@@ -33,7 +33,7 @@ export default function CollectionPage() {
 
   // Hook de pagination
   const {
-    albums,
+    releases,
     loading,
     loadingMore,
     hasMore,
@@ -41,7 +41,7 @@ export default function CollectionPage() {
     total,
     loadMore,
     refresh,
-    removeAlbumFromList,
+    removeReleaseFromList,
   } = useCollectionPagination({
     userId: user?.uid || '',
     type: 'collection',
@@ -65,23 +65,23 @@ export default function CollectionPage() {
     return () => observer.disconnect();
   }, [hasMore, loadingMore, loadMore]);
 
-  const handleRemove = async (albumId: string) => {
+  const handleRemove = async (releaseId: string) => {
     if (!user) return;
 
-    if (!confirm('Êtes-vous sûr de vouloir retirer cet album de votre collection ?')) {
+    if (!confirm('Êtes-vous sûr de vouloir retirer cet release de votre collection ?')) {
       return;
     }
 
-    setProcessingAlbum(albumId);
+    setProcessingRelease(releaseId);
 
     try {
-      await removeFromCollection(user.uid, albumId);
-      removeAlbumFromList(albumId);
+      await removeFromCollection(user.uid, releaseId);
+      removeReleaseFromList(releaseId);
     } catch (err) {
       console.error('Erreur lors de la suppression:', err);
       alert(err instanceof Error ? err.message : 'Erreur lors de la suppression');
     } finally {
-      setProcessingAlbum(null);
+      setProcessingRelease(null);
     }
   };
 
@@ -107,11 +107,10 @@ export default function CollectionPage() {
               {loading
                 ? 'Chargement...'
                 : total === 0
-                ? 'Aucun album pour le moment'
-                : `${total} album${total > 1 ? 's' : ''} dans votre collection`}
+                ? 'Aucun release pour le moment'
+                : `${total} release${total > 1 ? 's' : ''} dans votre collection`}
             </p>
           </div>
-
           <Button
             onClick={() => setIsModalOpen(true)}
             variant="primary"
@@ -126,7 +125,7 @@ export default function CollectionPage() {
                   d="M12 4v16m8-8H4"
                 />
               </svg>
-              Ajouter des albums
+              Ajouter des vinyles
             </span>
           </Button>
         </div>
@@ -154,10 +153,10 @@ export default function CollectionPage() {
         )}
 
         {/* Loading skeleton */}
-        {loading && <AlbumGridSkeleton count={20} />}
+        {loading && <ReleaseGridSkeleton count={20} />}
 
         {/* Empty state */}
-        {!loading && albums.length === 0 && (
+        {!loading && releases.length === 0 && (
           <div className="py-20 text-center">
             <div className="mb-6 text-8xl">💿</div>
             <h3 className="mb-3 text-2xl font-bold text-[var(--foreground)]">
@@ -170,29 +169,29 @@ export default function CollectionPage() {
           </div>
         )}
 
-        {/* Grid d'albums */}
-        {!loading && albums.length > 0 && (
+        {/* Grid d'releases */}
+        {!loading && releases.length > 0 && (
           <>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-              {albums.map((userAlbum, index) => (
-                <AlbumCard
-                  key={userAlbum.id}
-                  album={userAlbum.album}
-                  priority={index < 3} // Priority loading for first 3 albums only
+              {releases.map((userRelease, index) => (
+                <ReleaseCard
+                  key={userRelease.id}
+                  release={userRelease.release}
+                  priority={index < 3} // Priority loading for first 3 releases only
                   actions={
                     <div className="flex flex-col gap-2">
                       {/* Bouton supprimer */}
                       <Button
                         onClick={async (e) => {
                           e.stopPropagation();
-                          await handleRemove(userAlbum.albumId);
+                          await handleRemove(userRelease.releaseId);
                         }}
                         variant="outline"
                         className="w-full border-red-500/30 text-red-500 hover:border-red-500 hover:bg-red-500/10"
-                        loading={processingAlbum === userAlbum.albumId}
-                        disabled={processingAlbum === userAlbum.albumId}
+                        loading={processingRelease === userRelease.releaseId}
+                        disabled={processingRelease === userRelease.releaseId}
                       >
-                        {processingAlbum !== userAlbum.albumId && (
+                        {processingRelease !== userRelease.releaseId && (
                           <span className="flex items-center justify-center gap-2">
                             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path
@@ -244,7 +243,7 @@ export default function CollectionPage() {
             )}
 
             {/* End of collection message */}
-            {!hasMore && albums.length > 0 && (
+            {!hasMore && releases.length > 0 && (
               <div className="text-center py-8 mt-8">
                 <p className="text-[var(--foreground-muted)]">
                   Vous avez atteint la fin de votre collection
@@ -254,7 +253,6 @@ export default function CollectionPage() {
           </>
         )}
 
-        {/* Modal d'ajout */}
         <AddAlbumModal
           isOpen={isModalOpen}
           onClose={() => {

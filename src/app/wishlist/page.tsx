@@ -4,11 +4,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/components/AuthProvider';
 import { useRouter } from 'next/navigation';
-import AlbumCard from '@/components/AlbumCard';
+import ReleaseCard from '@/components/ReleaseCard';
 import Button from '@/components/Button';
-import { AlbumGridSkeleton } from '@/components/ui/AlbumGridSkeleton';
+import { ReleaseGridSkeleton } from '@/components/ui/ReleaseGridSkeleton';
 import { useCollectionPagination } from '@/hooks/useCollectionPagination';
-import { removeFromWishlist, moveToCollection } from '@/lib/user-albums';
+import { removeFromWishlist, moveToCollection } from '@/lib/user-releases';
 
 // Dynamic import for AddAlbumModal (only loaded when modal is opened)
 const AddAlbumModal = dynamic(() => import('@/components/AddAlbumModal'), {
@@ -19,7 +19,7 @@ export default function WishlistPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [processingAlbum, setProcessingAlbum] = useState<string | null>(null);
+  const [processingRelease, setProcessingRelease] = useState<string | null>(null);
   const [actionType, setActionType] = useState<'remove' | 'move' | null>(null);
 
   // Intersection Observer pour infinite scroll
@@ -34,7 +34,7 @@ export default function WishlistPage() {
 
   // Hook de pagination
   const {
-    albums,
+    releases,
     loading,
     loadingMore,
     hasMore,
@@ -42,7 +42,7 @@ export default function WishlistPage() {
     total,
     loadMore,
     refresh,
-    removeAlbumFromList,
+    removeReleaseFromList,
   } = useCollectionPagination({
     userId: user?.uid || '',
     type: 'wishlist',
@@ -66,42 +66,42 @@ export default function WishlistPage() {
     return () => observer.disconnect();
   }, [hasMore, loadingMore, loadMore]);
 
-  const handleRemove = async (albumId: string) => {
+  const handleRemove = async (releaseId: string) => {
     if (!user) return;
 
-    if (!confirm('Êtes-vous sûr de vouloir retirer cet album de votre wishlist ?')) {
+    if (!confirm('Êtes-vous sûr de vouloir retirer cet release de votre wishlist ?')) {
       return;
     }
 
-    setProcessingAlbum(albumId);
+    setProcessingRelease(releaseId);
     setActionType('remove');
 
     try {
-      await removeFromWishlist(user.uid, albumId);
-      removeAlbumFromList(albumId);
+      await removeFromWishlist(user.uid, releaseId);
+      removeReleaseFromList(releaseId);
     } catch (err) {
       console.error('Erreur lors de la suppression:', err);
       alert(err instanceof Error ? err.message : 'Erreur lors de la suppression');
     } finally {
-      setProcessingAlbum(null);
+      setProcessingRelease(null);
       setActionType(null);
     }
   };
 
-  const handleMoveToCollection = async (albumId: string) => {
+  const handleMoveToCollection = async (releaseId: string) => {
     if (!user) return;
 
-    setProcessingAlbum(albumId);
+    setProcessingRelease(releaseId);
     setActionType('move');
 
     try {
-      await moveToCollection(user.uid, albumId);
-      removeAlbumFromList(albumId);
+      await moveToCollection(user.uid, releaseId);
+      removeReleaseFromList(releaseId);
     } catch (err) {
       console.error('Erreur lors du déplacement:', err);
       alert(err instanceof Error ? err.message : 'Erreur lors du déplacement');
     } finally {
-      setProcessingAlbum(null);
+      setProcessingRelease(null);
       setActionType(null);
     }
   };
@@ -128,8 +128,8 @@ export default function WishlistPage() {
               {loading
                 ? 'Chargement...'
                 : total === 0
-                ? 'Aucun album pour le moment'
-                : `${total} album${total > 1 ? 's' : ''} dans votre wishlist`}
+                ? 'Aucun release pour le moment'
+                : `${total} release${total > 1 ? 's' : ''} dans votre wishlist`}
             </p>
           </div>
 
@@ -175,45 +175,45 @@ export default function WishlistPage() {
         )}
 
         {/* Loading skeleton */}
-        {loading && <AlbumGridSkeleton count={20} />}
+        {loading && <ReleaseGridSkeleton count={20} />}
 
         {/* Empty state */}
-        {!loading && albums.length === 0 && (
+        {!loading && releases.length === 0 && (
           <div className="py-20 text-center">
             <div className="mb-6 text-8xl">⭐</div>
             <h3 className="mb-3 text-2xl font-bold text-[var(--foreground)]">
               Votre wishlist est vide
             </h3>
             <p className="mb-6 text-[var(--foreground-muted)]">
-              Ajoutez les albums que vous souhaitez acquérir
+              Ajoutez les releases que vous souhaitez acquérir
             </p>
             <div className="text-6xl opacity-20">✨ 🎹 🎺</div>
           </div>
         )}
 
-        {/* Grid d'albums */}
-        {!loading && albums.length > 0 && (
+        {/* Grid d'releases */}
+        {!loading && releases.length > 0 && (
           <>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-              {albums.map((userAlbum, index) => (
-                <AlbumCard
-                  key={userAlbum.id}
-                  album={userAlbum.album}
-                  priority={index < 3} // Priority loading for first 3 albums only
+              {releases.map((userRelease, index) => (
+                <ReleaseCard
+                  key={userRelease.id}
+                  release={userRelease.release}
+                  priority={index < 3} // Priority loading for first 3 releases only
                   actions={
                     <div className="flex flex-col gap-2">
                       {/* Bouton déplacer vers collection */}
                       <Button
                         onClick={async (e) => {
                           e.stopPropagation();
-                          await handleMoveToCollection(userAlbum.albumId);
+                          await handleMoveToCollection(userRelease.releaseId);
                         }}
                         variant="primary"
                         className="w-full"
-                        loading={processingAlbum === userAlbum.albumId && actionType === 'move'}
-                        disabled={processingAlbum === userAlbum.albumId}
+                        loading={processingRelease === userRelease.releaseId && actionType === 'move'}
+                        disabled={processingRelease === userRelease.releaseId}
                       >
-                        {!(processingAlbum === userAlbum.albumId && actionType === 'move') && (
+                        {!(processingRelease === userRelease.releaseId && actionType === 'move') && (
                           <span className="flex items-center justify-center gap-2">
                             <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                               <path
@@ -222,7 +222,7 @@ export default function WishlistPage() {
                                 clipRule="evenodd"
                               />
                             </svg>
-                            {`J'ai cet album`}
+                            {`J'ai cet release`}
                           </span>
                         )}
                       </Button>
@@ -231,14 +231,14 @@ export default function WishlistPage() {
                       <Button
                         onClick={async (e) => {
                           e.stopPropagation();
-                          await handleRemove(userAlbum.albumId);
+                          await handleRemove(userRelease.releaseId);
                         }}
                         variant="outline"
                         className="w-full border-red-500/30 text-red-500 hover:border-red-500 hover:bg-red-500/10"
-                        loading={processingAlbum === userAlbum.albumId && actionType === 'remove'}
-                        disabled={processingAlbum === userAlbum.albumId}
+                        loading={processingRelease === userRelease.releaseId && actionType === 'remove'}
+                        disabled={processingRelease === userRelease.releaseId}
                       >
-                        {!(processingAlbum === userAlbum.albumId && actionType === 'remove') && (
+                        {!(processingRelease === userRelease.releaseId && actionType === 'remove') && (
                           <span className="flex items-center justify-center gap-2">
                             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path
@@ -290,7 +290,7 @@ export default function WishlistPage() {
             )}
 
             {/* End of wishlist message */}
-            {!hasMore && albums.length > 0 && (
+            {!hasMore && releases.length > 0 && (
               <div className="text-center py-8 mt-8">
                 <p className="text-[var(--foreground-muted)]">
                   Vous avez atteint la fin de votre wishlist

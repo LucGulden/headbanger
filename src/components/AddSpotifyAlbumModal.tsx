@@ -1,55 +1,41 @@
 'use client';
 
 import { useState } from 'react';
-import AlbumSearch from './AlbumSearch';
-import Button from './Button';
-import { useAuth } from './AuthProvider';
-import type { AlbumSearchResult } from '@/types/album';
+import AlbumSpotifySearch from './AlbumSpotifySearch';
+import type { SpotifyAlbumData } from '@/types/album';
 import type { CollectionType } from '@/types/collection';
 import dynamic from 'next/dynamic';
 
-interface AddAlbumModalProps {
+const CreateReleaseModal = dynamic(() => import('@/components/CreateReleaseModal'), {
+  ssr: false,
+});
+
+interface AddSpotifyAlbumModalProps {
   isOpen: boolean;
   onClose: () => void;
   targetType: CollectionType;
 }
 
-export default function AddAlbumModal({
+export default function AddSpotifyAlbumModal({
   isOpen,
   onClose,
   targetType,
-}: AddAlbumModalProps) {
-  const { user } = useAuth();
-  const [selectedAlbum, setSelectedAlbum] = useState<AlbumSearchResult | null>(null);
+}: AddSpotifyAlbumModalProps) {
+  const [selectedAlbum, setSelectedAlbum] = useState<SpotifyAlbumData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  const [isReleaseModalOpen, setIsReleaseModalOpen] = useState(false);
-  const [isSpotifyAlbumModalOpen, setIsSpotifyAlbumModalOpen] = useState(false);
-
-  // Dynamic import for AddReleaseModal (only loaded when modal is opened)
-  const AddReleaseModal = dynamic(() => import('@/components/AddReleaseModal'), {
-    ssr: false,
-  });
-
-  // Dynamic import for AddReleaseModal (only loaded when modal is opened)
-  const AddSpotifyAlbumModal = dynamic(() => import('@/components/AddSpotifyAlbumModal'), {
-    ssr: false,
-  });
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleSelectAlbum = (album: AlbumSearchResult) => {
+  const handleSelectAlbum = (album: SpotifyAlbumData) => {
     setSelectedAlbum(album);
-    setIsReleaseModalOpen(true)
+    setIsModalOpen(true)
     setError(null);
-    setSuccess(false);
   };
 
   const handleClose = () => {
-    setIsReleaseModalOpen(false);
     setSelectedAlbum(null);
     setError(null);
-    setSuccess(false);
     onClose();
   };
 
@@ -89,22 +75,6 @@ export default function AddAlbumModal({
 
         {/* Content */}
         <div className="max-h-[calc(90vh-180px)] overflow-y-auto p-6">
-          {/* Message de succès */}
-          {success && (
-            <div className="mb-6 flex items-center gap-3 rounded-lg border border-green-500/20 bg-green-500/10 p-4 text-green-500">
-              <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <span className="font-medium">
-                Album ajouté {targetType === 'collection' ? 'à votre collection' : 'à votre wishlist'} !
-              </span>
-            </div>
-          )}
-
           {/* Message d'erreur */}
           {error && (
             <div className="mb-6 flex items-center gap-3 rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-red-500">
@@ -120,31 +90,17 @@ export default function AddAlbumModal({
           )}
 
           {/* Composant de recherche */}
-          <AlbumSearch onAlbumSelect={handleSelectAlbum} />
-
-          <Button
-            onClick={() => setIsSpotifyAlbumModalOpen(true)}
-          >
-            {'Importer un album depuis Spotify'}
-          </Button>
+          <AlbumSpotifySearch onAlbumSelect={handleSelectAlbum} />
         </div>
-        <AddSpotifyAlbumModal
-          isOpen={isSpotifyAlbumModalOpen}
-          onClose={() => {
-            handleClose();
-          }}
-          targetType={targetType}
-        />
-        {/* Modal de selection de release */}
-        <AddReleaseModal
-          isOpen={isReleaseModalOpen}
-          albumId={selectedAlbum?.firestoreId}
-          targetType={targetType}
-          onClose={() => {
-            handleClose();
-          }}
-        />
       </div>
+      {/* Modal de création de release */}
+      <CreateReleaseModal
+        isOpen={isModalOpen}
+        spotifyAlbumData={selectedAlbum}
+        onClose={() => {
+          setIsModalOpen(false);
+        }}
+      />
     </div>
   );
 }

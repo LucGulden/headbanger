@@ -1,57 +1,32 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState } from 'react';
 import AlbumCard from './AlbumCard';
 import Button from './Button';
-import { searchAlbums } from '@/lib/albums';
+import { useSearchAlbums } from '@/hooks/useSpotifyQueries';
 import { useDebouncedValue } from '@/hooks/useDebounce';
-import type { AlbumSearchResult } from '@/types/album';
+import type { SpotifyAlbumData } from '@/types/album';
 
-interface AlbumSearchProps {
-  onAlbumSelect: (album: AlbumSearchResult) => void;
+interface AlbumSpotifySearchProps {
+  onAlbumSelect: (album: SpotifyAlbumData) => void;
 }
 
-export default function AlbumSearch({ onAlbumSelect }: AlbumSearchProps) {
+export default function AlbumSpotifySearch({ onAlbumSelect }: AlbumSpotifySearchProps) {
   const [query, setQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  const [searchResults, setSearchResults] = useState<AlbumSearchResult[]>([]);
 
   // Debounce la query pour éviter trop de requêtes
   const debouncedQuery = useDebouncedValue(query, 500);
 
+  // React Query hook pour la recherche Spotify
+  // Cache automatique 1h, pas de requêtes dupliquées
+  const {
+    data: spotifyResults = [],
+    isLoading,
+    error,
+    isFetching,
+  } = useSearchAlbums(debouncedQuery);
+
   const hasSearched = debouncedQuery.trim().length > 0;
-
-  // Recherche dans Firestore et vérification des statuts
-  const performSearch = useCallback(
-    async (searchQuery: string) => {
-      if (!searchQuery || searchQuery.trim().length === 0) {
-        setSearchResults([]);
-        return;
-      }
-
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        // Rechercher dans Firestore
-        const results = await searchAlbums(searchQuery);
-        setSearchResults(results);
-
-      } catch (err) {
-        console.error('[Search] Erreur lors de la recherche:', err);
-        setError(err instanceof Error ? err : new Error('Erreur lors de la recherche'));
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    []
-  );
-
-  // Déclencher la recherche quand la query debounced change
-  useEffect(() => {
-    performSearch(debouncedQuery);
-  }, [debouncedQuery, performSearch]);
 
   return (
     <div className="w-full">
@@ -80,14 +55,14 @@ export default function AlbumSearch({ onAlbumSelect }: AlbumSearchProps) {
             placeholder="Rechercher un album ou un artiste..."
             className="w-full rounded-lg border border-[var(--background-lighter)] bg-[var(--background-light)] py-4 pl-12 pr-4 text-lg text-[var(--foreground)] placeholder-[var(--foreground-muted)] focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20"
           />
-          {isLoading && (
+          {isFetching && (
             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
               <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--primary)] border-t-transparent"></div>
             </div>
           )}
         </div>
         <p className="mt-2 text-sm text-[var(--foreground-muted)]">
-          {`Recherchez dans votre bibliothèque d'albums`}
+          {`Recherchez parmi des millions d'albums sur Spotify`}
           {debouncedQuery !== query && ' (tape en cours...)'}
         </p>
       </div>
@@ -109,7 +84,7 @@ export default function AlbumSearch({ onAlbumSelect }: AlbumSearchProps) {
       )}
 
       {/* Loading skeletons */}
-      {isLoading && searchResults.length === 0 && (
+      {isLoading && spotifyResults.length === 0 && (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
           {[...Array(8)].map((_, i) => (
             <div key={i} className="animate-pulse">
@@ -122,14 +97,15 @@ export default function AlbumSearch({ onAlbumSelect }: AlbumSearchProps) {
       )}
 
       {/* Résultats */}
-      {!isLoading && searchResults.length > 0 && (
+      {!isLoading && spotifyResults.length > 0 && (
         <>
           <p className="mb-4 text-sm text-[var(--foreground-muted)]">
-            {searchResults.length} résultat{searchResults.length > 1 ? 's' : ''} trouvé
-            {searchResults.length > 1 ? 's' : ''}
+            {spotifyResults.length} résultat{spotifyResults.length > 1 ? 's' : ''} trouvé
+            {spotifyResults.length > 1 ? 's' : ''}
+            {isFetching && ' (mise à jour...)'}
           </p>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-            {searchResults.map((album) => {
+            {spotifyResults.map((album) => {
 
               return (
                 <div key={album.spotifyId} className="relative">
@@ -143,7 +119,7 @@ export default function AlbumSearch({ onAlbumSelect }: AlbumSearchProps) {
                         }}
                         variant={'primary'}
                       >
-                        {'Ajouter'}
+                        {'Créer à partir de cet album'}
                       </Button>
                     }
                   />
@@ -155,12 +131,12 @@ export default function AlbumSearch({ onAlbumSelect }: AlbumSearchProps) {
       )}
 
       {/* Empty state */}
-      {!isLoading && hasSearched && searchResults.length === 0 && !error && (
+      {!isLoading && hasSearched && spotifyResults.length === 0 && !error && (
         <div className="py-16 text-center">
           <div className="mb-4 text-6xl">🔍</div>
           <h3 className="mb-2 text-xl font-semibold text-[var(--foreground)]">Aucun résultat</h3>
           <p className="text-[var(--foreground-muted)]">
-            {`Aucun album trouvé dans votre bibliothèque. Essayez un autre nom d'album ou d'artiste.`}
+            {`Essayez avec un autre nom d'album ou d'artiste`}
           </p>
         </div>
       )}

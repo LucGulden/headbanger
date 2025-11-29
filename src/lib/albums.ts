@@ -3,44 +3,27 @@ import {
   doc,
   getDoc,
   getDocs,
-  setDoc,
   query,
-  where,
+  orderBy,
+  limit,
   serverTimestamp,
+  setDoc,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { albumCache } from './cache';
-import type { Album, SpotifyAlbumData } from '@/types/album';
+import type { Album, AlbumSearchResult, SpotifyAlbumData } from '@/types/album';
 
 const ALBUMS_COLLECTION = 'albums';
 
 /**
- * Récupère ou crée un album dans Firestore
- * Si l'album existe déjà (par spotifyId), le retourne
- * Sinon, le crée et retourne le nouvel album
+ * Crée un album dans Firestore et retourne le nouvel album
  * @param spotifyData - Données de l'album depuis Spotify
  * @returns L'album avec son ID Firestore
  */
-export async function getOrCreateAlbum(spotifyData: SpotifyAlbumData): Promise<Album> {
+export async function createAlbum(spotifyData: SpotifyAlbumData): Promise<Album> {
   try {
-    // Vérifier si l'album existe déjà par spotifyId
-    const albumsRef = collection(db, ALBUMS_COLLECTION);
-    const q = query(albumsRef, where('spotifyId', '==', spotifyData.spotifyId));
-    const querySnapshot = await getDocs(q);
-
-    if (!querySnapshot.empty) {
-      // L'album existe déjà, le retourner
-      const existingAlbum = querySnapshot.docs[0];
-      console.log(`📦 [CACHE HIT] "${spotifyData.title}" - Déjà dans Firestore (ID: ${existingAlbum.id})`);
-      return {
-        id: existingAlbum.id,
-        ...existingAlbum.data(),
-      } as Album;
-    }
-
     // L'album n'existe pas, le créer
     const newAlbumRef = doc(collection(db, ALBUMS_COLLECTION));
-    console.log(`✨ [CACHE MISS] "${spotifyData.title}" - Création dans Firestore (ID: ${newAlbumRef.id})`);
 
     const albumData = {
       spotifyId: spotifyData.spotifyId,
@@ -103,52 +86,60 @@ export async function getAlbumById(albumId: string): Promise<Album | null> {
 }
 
 /**
- * Récupère un album par son ID Spotify
- * @param spotifyId - ID Spotify de l'album
- * @returns L'album ou null s'il n'existe pas
+ * Recherche d'albums dans Firestore par titre ou artiste
+ * Note: Firestore ne supporte pas les recherches textuelles avancées.
+ * Cette fonction récupère tous les albums et filtre côté client.
+ * Pour une vraie app en production, il faudrait utiliser Algolia ou Elasticsearch.
+ * @param searchQuery - Texte de recherche
+ * @param maxResults - Nombre maximum de résultats (par défaut 50)
+ * @returns Tableau de résultats de recherche
  */
-export async function getAlbumBySpotifyId(spotifyId: string): Promise<Album | null> {
+export async function searchAlbums(searchQuery: string, maxResults: number = 50): Promise<AlbumSearchResult[]> {
   try {
+    if (!searchQuery || searchQuery.trim().length === 0) {
+      return [];
+    }
+
+    const normalizedQuery = searchQuery.toLowerCase().trim();
+
+    // Récupérer tous les albums (ou un grand nombre)
+    // Note: Pour une vraie production, il faudrait paginer ou utiliser un service de recherche
     const albumsRef = collection(db, ALBUMS_COLLECTION);
-    const q = query(albumsRef, where('spotifyId', '==', spotifyId));
+    const q = query(
+      albumsRef,
+      orderBy('createdAt', 'desc'),
+      limit(1000) // Limite pour ne pas charger toute la base
+    );
+
     const querySnapshot = await getDocs(q);
+    const allAlbums: Album[] = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as Album[];
 
-    if (querySnapshot.empty) {
-      return null;
-    }
+    // Filtrer côté client par titre ou artiste
+    const filteredAlbums = allAlbums.filter((album) => {
+      const titleMatch = album.title.toLowerCase().includes(normalizedQuery);
+      const artistMatch = album.artist.toLowerCase().includes(normalizedQuery);
+      return titleMatch || artistMatch;
+    });
 
-    const albumDoc = querySnapshot.docs[0];
-    return {
-      id: albumDoc.id,
-      ...albumDoc.data(),
-    } as Album;
+    // Convertir en format AlbumSearchResult
+    const results: AlbumSearchResult[] = filteredAlbums.slice(0, maxResults).map((album) => ({
+      spotifyId: album.spotifyId,
+      title: album.title,
+      artist: album.artist,
+      year: album.year,
+      coverUrl: album.coverUrl,
+      spotifyUrl: album.spotifyUrl,
+      firestoreId: album.id,
+    }));
+
+    console.log(`[Search] Trouvé ${results.length} albums pour "${searchQuery}"`);
+
+    return results;
   } catch (error) {
-    console.error('Erreur lors de la récupération de l\'album par Spotify ID:', error);
-    throw new Error('Impossible de récupérer l\'album');
-  }
-}
-
-/**
- * Récupère plusieurs albums par leurs IDs Firestore
- * @param albumIds - Tableau d'IDs Firestore
- * @returns Tableau d'albums
- */
-export async function getAlbumsByIds(albumIds: string[]): Promise<Album[]> {
-  try {
-    const albums: Album[] = [];
-
-    // Firestore limite les queries "in" à 10 éléments max
-    // On fait des batches de 10
-    for (let i = 0; i < albumIds.length; i += 10) {
-      const batch = albumIds.slice(i, i + 10);
-      const promises = batch.map((id) => getAlbumById(id));
-      const results = await Promise.all(promises);
-      albums.push(...results.filter((album): album is Album => album !== null));
-    }
-
-    return albums;
-  } catch (error) {
-    console.error('Erreur lors de la récupération des albums:', error);
-    throw new Error('Impossible de récupérer les albums');
+    console.error('Erreur lors de la recherche d\'albums:', error);
+    throw new Error('Impossible de rechercher des albums');
   }
 }

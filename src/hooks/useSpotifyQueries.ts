@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import type { AlbumSearchResult } from '@/types/album';
+import type { SpotifyAlbumData } from '@/types/album';
 
 /**
  * Hook React Query pour rechercher des albums sur Spotify
@@ -29,7 +29,7 @@ export function useSearchAlbums(query: string, enabled: boolean = true) {
       }
 
       const data = await response.json();
-      return (data.results || []) as AlbumSearchResult[];
+      return (data.results || []) as SpotifyAlbumData[];
     },
 
     // Query active uniquement si enabled=true ET query non vide
@@ -46,44 +46,5 @@ export function useSearchAlbums(query: string, enabled: boolean = true) {
 
     // Placeholder data pendant le loading
     placeholderData: (previousData) => previousData,
-  });
-}
-
-/**
- * Hook React Query pour obtenir les détails d'un album Spotify
- *
- * Features:
- * - Cache long (24 heures) car métadonnées changent rarement
- * - Optimisé pour réutilisation (album cliqué plusieurs fois)
- *
- * @param albumId - ID Spotify de l'album
- */
-export function useAlbumDetails(albumId: string) {
-  return useQuery({
-    queryKey: ['spotify', 'album', albumId],
-
-    queryFn: async () => {
-      const response = await fetch(`/api/spotify/album/${albumId}`);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erreur lors de la récupération de l\'album');
-      }
-
-      const data = await response.json();
-      return data as AlbumSearchResult;
-    },
-
-    // Query active uniquement si albumId fourni
-    enabled: !!albumId && albumId.length > 0,
-
-    // Cache valide pendant 24 heures (métadonnées rarement modifiées)
-    staleTime: 24 * 60 * 60 * 1000,
-
-    // Garbage collection après 7 jours
-    gcTime: 7 * 24 * 60 * 60 * 1000,
-
-    // 1 retry en cas d'erreur réseau
-    retry: 1,
   });
 }

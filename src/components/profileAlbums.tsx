@@ -1,12 +1,12 @@
 import ImageOptimized from './ImageOptimized';
-import type { UserAlbumWithDetails } from '@/types/collection';
+import type { CollectionType, UserAlbumWithDetails } from '@/types/collection';
 
 interface ProfileAlbumsProps {
   loadingAlbums: boolean;
   isOwnProfile: boolean;
   albums: UserAlbumWithDetails[];
   username: string;
-  tab: 'collection' | 'wishlist'
+  tab: CollectionType
 }
 
 export default function ProfileAlbums({ loadingAlbums, isOwnProfile, albums, username, tab }: ProfileAlbumsProps) {

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { DocumentSnapshot } from 'firebase/firestore';
-import { getUserAlbumsPaginated, countUserAlbums } from '@/lib/user-albums';
-import type { UserAlbumWithDetails, CollectionType } from '@/types/collection';
+import { getUserReleasesPaginated, countUserReleases } from '@/lib/user-releases';
+import type { UserReleaseWithDetails, CollectionType } from '@/types/collection';
 
 const INITIAL_LOAD_COUNT = 20;
 const LOAD_MORE_COUNT = 15;
@@ -14,7 +14,7 @@ export interface UseCollectionPaginationProps {
 }
 
 export interface UseCollectionPaginationReturn {
-  albums: UserAlbumWithDetails[];
+  releases: UserReleaseWithDetails[];
   loading: boolean;
   loadingMore: boolean;
   hasMore: boolean;
@@ -22,13 +22,13 @@ export interface UseCollectionPaginationReturn {
   total: number;
   loadMore: () => Promise<void>;
   refresh: () => Promise<void>;
-  removeAlbumFromList: (albumId: string) => void;
+  removeReleaseFromList: (releaseId: string) => void;
 }
 
 /**
  * Hook personnalisé pour gérer la pagination des collections/wishlists
- * - Chargement initial : 20 albums
- * - Load more : 15 albums à la fois
+ * - Chargement initial : 20 releases
+ * - Load more : 15 releases à la fois
  * - Curseur Firestore (lastVisible document)
  */
 export function useCollectionPagination({
@@ -37,7 +37,7 @@ export function useCollectionPagination({
   initialLimit = INITIAL_LOAD_COUNT,
   loadMoreLimit = LOAD_MORE_COUNT,
 }: UseCollectionPaginationProps): UseCollectionPaginationReturn {
-  const [albums, setAlbums] = useState<UserAlbumWithDetails[]>([]);
+  const [releases, setReleases] = useState<UserReleaseWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -46,11 +46,11 @@ export function useCollectionPagination({
   const [lastDoc, setLastDoc] = useState<DocumentSnapshot | null>(null);
 
   /**
-   * Charge le nombre total d'albums
+   * Charge le nombre total d'releases
    */
   const fetchTotal = useCallback(async () => {
     try {
-      const count = await countUserAlbums(userId, type);
+      const count = await countUserReleases(userId, type);
       setTotal(count);
     } catch (err) {
       console.error('Erreur lors du comptage:', err);
@@ -58,22 +58,22 @@ export function useCollectionPagination({
   }, [userId, type]);
 
   /**
-   * Charge les premiers albums (20 albums)
+   * Charge les premiers releases (20 releases)
    */
-  const fetchInitialAlbums = useCallback(async () => {
+  const fetchInitialReleases = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const { albums: initialAlbums, lastDoc: newLastDoc } = await getUserAlbumsPaginated(
+      const { releases: initialReleases, lastDoc: newLastDoc } = await getUserReleasesPaginated(
         userId,
         type,
         initialLimit
       );
 
-      setAlbums(initialAlbums);
+      setReleases(initialReleases);
       setLastDoc(newLastDoc);
-      setHasMore(initialAlbums.length === initialLimit);
+      setHasMore(initialReleases.length === initialLimit);
 
       // Charger le total en parallèle
       await fetchTotal();
@@ -86,30 +86,30 @@ export function useCollectionPagination({
   }, [userId, type, initialLimit, fetchTotal]);
 
   /**
-   * Charge 15 albums supplémentaires
+   * Charge 15 releases supplémentaires
    */
-  const loadMoreAlbums = async () => {
+  const loadMoreReleases = async () => {
     if (loadingMore || !hasMore || !lastDoc) return;
 
     setLoadingMore(true);
 
     try {
-      const { albums: moreAlbums, lastDoc: newLastDoc } = await getUserAlbumsPaginated(
+      const { releases: moreReleases, lastDoc: newLastDoc } = await getUserReleasesPaginated(
         userId,
         type,
         loadMoreLimit,
         lastDoc
       );
 
-      if (moreAlbums.length === 0) {
+      if (moreReleases.length === 0) {
         setHasMore(false);
       } else {
-        setAlbums((prev) => [...prev, ...moreAlbums]);
+        setReleases((prev) => [...prev, ...moreReleases]);
         setLastDoc(newLastDoc);
-        setHasMore(moreAlbums.length === loadMoreLimit);
+        setHasMore(moreReleases.length === loadMoreLimit);
       }
     } catch (err) {
-      console.error('Erreur lors du chargement de plus d\'albums:', err);
+      console.error('Erreur lors du chargement de plus d\'releases:', err);
       setError(err as Error);
     } finally {
       setLoadingMore(false);
@@ -119,20 +119,20 @@ export function useCollectionPagination({
   /**
    * Rafraîchit la liste complète
    */
-  const refreshAlbums = async () => {
+  const refreshReleases = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const { albums: initialAlbums, lastDoc: newLastDoc } = await getUserAlbumsPaginated(
+      const { releases: initialReleases, lastDoc: newLastDoc } = await getUserReleasesPaginated(
         userId,
         type,
         initialLimit
       );
 
-      setAlbums(initialAlbums);
+      setReleases(initialReleases);
       setLastDoc(newLastDoc);
-      setHasMore(initialAlbums.length === initialLimit);
+      setHasMore(initialReleases.length === initialLimit);
 
       // Rafraîchir le total
       await fetchTotal();
@@ -145,27 +145,27 @@ export function useCollectionPagination({
   };
 
   /**
-   * Supprime un album de la liste locale (après suppression Firestore)
+   * Supprime un release de la liste locale (après suppression Firestore)
    */
-  const removeAlbumFromList = useCallback((albumId: string) => {
-    setAlbums((prev) => prev.filter((album) => album.albumId !== albumId));
+  const removeReleaseFromList = useCallback((releaseId: string) => {
+    setReleases((prev) => prev.filter((release) => release.releaseId !== releaseId));
     setTotal((prev) => Math.max(0, prev - 1));
   }, []);
 
   // Chargement initial
   useEffect(() => {
-    fetchInitialAlbums();
-  }, [fetchInitialAlbums]);
+    fetchInitialReleases();
+  }, [fetchInitialReleases]);
 
   return {
-    albums,
+    releases,
     loading,
     loadingMore,
     hasMore,
     error,
     total,
-    loadMore: loadMoreAlbums,
-    refresh: refreshAlbums,
-    removeAlbumFromList,
+    loadMore: loadMoreReleases,
+    refresh: refreshReleases,
+    removeReleaseFromList,
   };
 }

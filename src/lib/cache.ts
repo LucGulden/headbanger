@@ -4,6 +4,7 @@
  */
 
 import { Album } from "@/types/album";
+import { Release } from "@/types/release";
 import { User } from "@/types/user";
 
 interface CacheEntry<T> {
@@ -90,6 +91,7 @@ class Cache<T> {
 // Instances de cache pour albums et users
 // TTL de 10 minutes pour les albums et users
 export const albumCache = new Cache<Album>(10);
+export const releaseCache = new Cache<Release>(10);
 export const userCache = new Cache<User>(10);
 
 // Nettoyer le cache toutes les 5 minutes
