@@ -1,4 +1,3 @@
-import React from 'react';
 import Link from 'next/link';
 import Avatar from './Avatar';
 import FollowButton from './FollowButton';
@@ -69,7 +68,7 @@ export default function ProfileHeader({
             <div className="flex gap-6">
               <div>
                 <span className="text-xl font-bold text-[var(--foreground)]">
-                  {stats.albumsCount}
+                  {stats.releasesCount}
                 </span>
                 <span className="ml-1 text-sm text-[var(--foreground-muted)]">albums</span>
               </div>

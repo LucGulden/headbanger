@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import PostCard from './PostCard';
 import { useFeedPagination } from '@/hooks/useFeedPagination';
 
@@ -44,9 +44,9 @@ export default function Feed({ userId, profileFeed }: FeedProps) {
   }, [hasMore, loadingMore, loadMore]);
 
   // Pull-to-refresh state
-  const [pullStartY, setPullStartY] = React.useState(0);
-  const [pullCurrentY, setPullCurrentY] = React.useState(0);
-  const [isPulling, setIsPulling] = React.useState(false);
+  const [pullStartY, setPullStartY] = useState(0);
+  const [pullCurrentY, setPullCurrentY] = useState(0);
+  const [isPulling, setIsPulling] = useState(false);
 
   // Handle touch events for pull-to-refresh
   const handleTouchStart = (e: React.TouchEvent) => {

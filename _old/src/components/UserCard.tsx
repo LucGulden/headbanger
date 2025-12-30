@@ -1,10 +1,9 @@
 'use client';
 
-import React from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import type { User } from '@/types/user';
 import FollowButton from './FollowButton';
+import ImageOptimized from './ImageOptimized';
 
 interface UserCardProps {
   user: User;
@@ -26,7 +25,7 @@ export default function UserCard({
         {/* Avatar */}
         <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-full bg-[var(--background-lighter)]">
           {user.photoURL ? (
-            <Image
+            <ImageOptimized
               src={user.photoURL}
               alt={user.username}
               fill

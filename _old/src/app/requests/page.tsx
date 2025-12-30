@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/components/AuthProvider';
 import Button from '@/components/Button';
 import { getPendingRequests, acceptFollowRequest, rejectFollowRequest } from '@/lib/follows';
 import type { Follow } from '@/types/follows';
 import type { User } from '@/types/user';
+import ImageOptimized from '@/components/ImageOptimized';
 
 export default function RequestsPage() {
   const router = useRouter();
@@ -125,7 +125,7 @@ export default function RequestsPage() {
                   {/* Avatar */}
                   <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-full bg-[var(--background-lighter)]">
                     {request.user.photoURL ? (
-                      <Image
+                      <ImageOptimized
                         src={request.user.photoURL}
                         alt={request.user.username}
                         fill

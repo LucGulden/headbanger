@@ -11,7 +11,7 @@ import ReleaseDetails from './ReleaseDetails';
 import { addToCollection, addToWishlist } from '@/lib/user-releases';
 import { useAuth } from './AuthProvider';
 
-interface AddAlbumModalProps {
+interface AddReleaseModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
@@ -20,12 +20,12 @@ interface AddAlbumModalProps {
 
 type ModalStep = 'albumSearch' | 'releaseSearch' | 'releaseDetails';
 
-export default function AddAlbumModal({
+export default function AddReleaseModal({
   isOpen,
   onClose,
   onSuccess,
   targetType,
-}: AddAlbumModalProps) {
+}: AddReleaseModalProps) {
   const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState<ModalStep>('albumSearch');
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
@@ -233,6 +233,7 @@ export default function AddAlbumModal({
               >
                 <ReleaseDetails
                   release={selectedRelease}
+                  targetType={targetType}
                   onConfirm={handleAddRelease}
                 />
               </motion.div>

@@ -1,5 +1,4 @@
 import { Timestamp } from 'firebase/firestore';
-import type { Album } from './album';
 import type { Release } from './release';
 
 /**

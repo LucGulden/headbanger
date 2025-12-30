@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import ReleaseCard from './ReleaseCard';
-import Button from './Button';
 import { isInCollection, isInWishlist } from '@/lib/user-releases';
 import { useAuth } from './AuthProvider';
 import { useDebouncedValue } from '@/hooks/useDebounce';
@@ -26,7 +25,6 @@ export default function ReleaseSearch({ albumId, onReleaseSelect }: ReleaseSearc
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [searchResults, setSearchResults] = useState<Release[]>([]);
-  const [saving, setSaving] = useState(false);
 
   // Debounce la query pour éviter trop de requêtes
   const debouncedQuery = useDebouncedValue(query, 500);
@@ -34,7 +32,6 @@ export default function ReleaseSearch({ albumId, onReleaseSelect }: ReleaseSearc
   const isFetching = false;
   
   const selectRelease = (release: Release) => {
-    setSaving(true);
     onReleaseSelect(release);
   }
 
@@ -94,7 +91,6 @@ export default function ReleaseSearch({ albumId, onReleaseSelect }: ReleaseSearc
 
   // Déclencher la recherche quand la query debounced change
   useEffect(() => {
-    console.log('ALLO')
     performSearch(debouncedQuery);
   }, [debouncedQuery, performSearch]);
     
@@ -135,12 +131,6 @@ export default function ReleaseSearch({ albumId, onReleaseSelect }: ReleaseSearc
           {`Recherchez parmi notre librairie de vinyles`}
           {debouncedQuery !== query && ' (tape en cours...)'}
         </p>
-        {saving && (
-          <div className="mt-2 flex items-center gap-2 text-xs text-[var(--primary)]">
-            <div className="h-3 w-3 animate-spin rounded-full border-2 border-[var(--primary)] border-t-transparent"></div>
-            <span>Sauvegarde des vinyles dans votre bibliothèque...</span>
-          </div>
-        )}
       </div>
 
       {/* Erreur */}
@@ -185,7 +175,6 @@ export default function ReleaseSearch({ albumId, onReleaseSelect }: ReleaseSearc
               const status = release.id ? releaseStatuses.get(release.id) : null;
               const inCollection = status?.inCollection || false;
               const inWishlist = status?.inWishlist || false;
-              const isAdded = inCollection || inWishlist;
 
               return (
                 <div key={release.id} className="relative">
@@ -204,7 +193,7 @@ export default function ReleaseSearch({ albumId, onReleaseSelect }: ReleaseSearc
                       </div>
                     )}
                     {inWishlist && (
-                      <div className="flex items-center gap-1 rounded-full bg-[var(--primary)] px-2 py-1 text-xs font-medium text-white shadow-lg">
+                      <div className="flex items-center gap-1 rounded-full bg-blue-500 px-2 py-1 text-xs font-medium text-white shadow-lg">
                         <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
                           <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                         </svg>
@@ -215,25 +204,7 @@ export default function ReleaseSearch({ albumId, onReleaseSelect }: ReleaseSearc
 
                   <ReleaseCard
                     release={release}
-                    actions={
-                      <Button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (!isAdded) {
-                            selectRelease(release);
-                          }
-                        }}
-                        variant={isAdded ? 'outline' : 'primary'}
-                        disabled={isAdded}
-                        className={isAdded ? 'cursor-not-allowed opacity-60' : ''}
-                      >
-                        {inCollection
-                          ? 'Déjà en collection'
-                          : inWishlist
-                          ? 'Déjà en wishlist'
-                          : 'Ajouter'}
-                      </Button>
-                    }
+                    onClick={() => selectRelease(release)}
                   />
                 </div>
               );

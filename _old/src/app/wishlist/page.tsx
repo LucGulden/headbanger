@@ -8,18 +8,19 @@ import ReleaseCard from '@/components/ReleaseCard';
 import Button from '@/components/Button';
 import { ReleaseGridSkeleton } from '@/components/ui/ReleaseGridSkeleton';
 import { useCollectionPagination } from '@/hooks/useCollectionPagination';
-import { removeFromCollection } from '@/lib/user-releases';
+import { removeFromWishlist, moveToCollection } from '@/lib/user-releases';
 
 // Dynamic import for AddAlbumModal (only loaded when modal is opened)
-const AddAlbumModal = dynamic(() => import('@/components/AddAlbumModal'), {
+const AddAlbumModal = dynamic(() => import('@/components/AddReleaseModal'), {
   ssr: false,
 });
 
-export default function CollectionPage() {
+export default function WishlistPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [processingRelease, setProcessingRelease] = useState<string | null>(null);
+  const [actionType, setActionType] = useState<'remove' | 'move' | null>(null);
 
   // Intersection Observer pour infinite scroll
   const observerTarget = useRef<HTMLDivElement>(null);
@@ -44,7 +45,7 @@ export default function CollectionPage() {
     removeReleaseFromList,
   } = useCollectionPagination({
     userId: user?.uid || '',
-    type: 'collection',
+    type: 'wishlist',
   });
 
   // Intersection Observer pour auto-load
@@ -68,24 +69,43 @@ export default function CollectionPage() {
   const handleRemove = async (releaseId: string) => {
     if (!user) return;
 
-    if (!confirm('Êtes-vous sûr de vouloir retirer cet release de votre collection ?')) {
+    if (!confirm('Êtes-vous sûr de vouloir retirer cet release de votre wishlist ?')) {
       return;
     }
 
     setProcessingRelease(releaseId);
+    setActionType('remove');
 
     try {
-      await removeFromCollection(user.uid, releaseId);
+      await removeFromWishlist(user.uid, releaseId);
       removeReleaseFromList(releaseId);
     } catch (err) {
       console.error('Erreur lors de la suppression:', err);
       alert(err instanceof Error ? err.message : 'Erreur lors de la suppression');
     } finally {
       setProcessingRelease(null);
+      setActionType(null);
     }
   };
 
-  
+  const handleMoveToCollection = async (releaseId: string) => {
+    if (!user) return;
+
+    setProcessingRelease(releaseId);
+    setActionType('move');
+
+    try {
+      await moveToCollection(user.uid, releaseId);
+      removeReleaseFromList(releaseId);
+    } catch (err) {
+      console.error('Erreur lors du déplacement:', err);
+      alert(err instanceof Error ? err.message : 'Erreur lors du déplacement');
+    } finally {
+      setProcessingRelease(null);
+      setActionType(null);
+    }
+  };
+
   const handleModalSuccess = () => {
     setIsModalOpen(false);
     refresh();
@@ -111,16 +131,17 @@ export default function CollectionPage() {
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="mb-2 text-4xl font-bold text-[var(--foreground)]">
-              Ma Collection
+              Ma Wishlist
             </h1>
             <p className="text-[var(--foreground-muted)]">
               {loading
                 ? 'Chargement...'
                 : total === 0
                 ? 'Aucun release pour le moment'
-                : `${total} release${total > 1 ? 's' : ''} dans votre collection`}
+                : `${total} release${total > 1 ? 's' : ''} dans votre wishlist`}
             </p>
           </div>
+
           <Button
             onClick={() => setIsModalOpen(true)}
             variant="primary"
@@ -135,7 +156,7 @@ export default function CollectionPage() {
                   d="M12 4v16m8-8H4"
                 />
               </svg>
-              Ajouter des vinyles
+              Ajouter à la wishlist
             </span>
           </Button>
         </div>
@@ -168,14 +189,14 @@ export default function CollectionPage() {
         {/* Empty state */}
         {!loading && releases.length === 0 && (
           <div className="py-20 text-center">
-            <div className="mb-6 text-8xl">💿</div>
+            <div className="mb-6 text-8xl">⭐</div>
             <h3 className="mb-3 text-2xl font-bold text-[var(--foreground)]">
-              Votre collection est vide
+              Votre wishlist est vide
             </h3>
             <p className="mb-6 text-[var(--foreground-muted)]">
-              Commencez à ajouter vos vinyles préférés à votre collection
+              Ajoutez les releases que vous souhaitez acquérir
             </p>
-            <div className="text-6xl opacity-20">🎵 🎶 🎸</div>
+            <div className="text-6xl opacity-20">✨ 🎹 🎺</div>
           </div>
         )}
 
@@ -190,6 +211,31 @@ export default function CollectionPage() {
                   priority={index < 3} // Priority loading for first 3 releases only
                   actions={
                     <div className="flex flex-col gap-2">
+                      {/* Bouton déplacer vers collection */}
+                      <Button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          await handleMoveToCollection(userRelease.releaseId);
+                        }}
+                        variant="primary"
+                        className="w-full"
+                        loading={processingRelease === userRelease.releaseId && actionType === 'move'}
+                        disabled={processingRelease === userRelease.releaseId}
+                      >
+                        {!(processingRelease === userRelease.releaseId && actionType === 'move') && (
+                          <span className="flex items-center justify-center gap-2">
+                            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path
+                                fillRule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                            {`J'ai cet release`}
+                          </span>
+                        )}
+                      </Button>
+
                       {/* Bouton supprimer */}
                       <Button
                         onClick={async (e) => {
@@ -198,10 +244,10 @@ export default function CollectionPage() {
                         }}
                         variant="outline"
                         className="w-full border-red-500/30 text-red-500 hover:border-red-500 hover:bg-red-500/10"
-                        loading={processingRelease === userRelease.releaseId}
+                        loading={processingRelease === userRelease.releaseId && actionType === 'remove'}
                         disabled={processingRelease === userRelease.releaseId}
                       >
-                        {processingRelease !== userRelease.releaseId && (
+                        {!(processingRelease === userRelease.releaseId && actionType === 'remove') && (
                           <span className="flex items-center justify-center gap-2">
                             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path
@@ -252,22 +298,23 @@ export default function CollectionPage() {
               </div>
             )}
 
-            {/* End of collection message */}
+            {/* End of wishlist message */}
             {!hasMore && releases.length > 0 && (
               <div className="text-center py-8 mt-8">
                 <p className="text-[var(--foreground-muted)]">
-                  Vous avez atteint la fin de votre collection
+                  Vous avez atteint la fin de votre wishlist
                 </p>
               </div>
             )}
           </>
         )}
 
+        {/* Modal d'ajout */}
         <AddAlbumModal
           isOpen={isModalOpen}
           onClose={handleModalClose}
           onSuccess={handleModalSuccess}
-          targetType="collection"
+          targetType="wishlist"
         />
       </div>
     </div>

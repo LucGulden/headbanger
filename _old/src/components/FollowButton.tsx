@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from './AuthProvider';
 import { followUser, unfollowUser, isFollowing } from '@/lib/follows';
 import Button from './Button';

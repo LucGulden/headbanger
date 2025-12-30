@@ -135,17 +135,7 @@ export default function AlbumSearch({ onAlbumSelect }: AlbumSearchProps) {
                 <div key={album.spotifyId} className="relative">
                   <AlbumCard
                     album={album}
-                    actions={
-                      <Button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onAlbumSelect(album);
-                        }}
-                        variant={'primary'}
-                      >
-                        {'Ajouter'}
-                      </Button>
-                    }
+                    onClick={() => onAlbumSelect(album)}
                   />
                 </div>
               );
