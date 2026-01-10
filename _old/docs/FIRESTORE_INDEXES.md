@@ -79,8 +79,6 @@ The query requires an index. You can create it here: [link]
 - **Purpose**: Get followers of a user (accepted only), sorted by follow date
 - **Used in**:
   - `getFollowers()` in [src/lib/follows.ts](../src/lib/follows.ts:175-179)
-  - `getPendingRequests()` in [src/lib/follows.ts](../src/lib/follows.ts:244-248)
-  - `subscribeToPendingRequests()` in [src/lib/follows.ts](../src/lib/follows.ts:348-352)
 - **Query**:
   ```typescript
   where('followingId', '==', userId)

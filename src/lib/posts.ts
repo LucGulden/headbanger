@@ -1,0 +1,221 @@
+import { supabase } from '../supabaseClient'
+import type { PostWithDetails } from '../types/post'
+
+/**
+ * Ajouter un like à un post
+ */
+export async function likePost(userId: string, postId: string): Promise<void> {
+  const { error } = await supabase
+    .from('post_likes')
+    .insert({
+      user_id: userId,
+      post_id: postId,
+    })
+
+  if (error) {
+    console.error('Erreur lors du like:', error)
+    throw error
+  }
+}
+
+/**
+ * Retirer un like d'un post
+ */
+export async function unlikePost(userId: string, postId: string): Promise<void> {
+  const { error } = await supabase
+    .from('post_likes')
+    .delete()
+    .eq('user_id', userId)
+    .eq('post_id', postId)
+
+  if (error) {
+    console.error('Erreur lors du unlike:', error)
+    throw error
+  }
+}
+
+/**
+ * Vérifier si un utilisateur a liké un post
+ */
+export async function hasLikedPost(userId: string, postId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('post_likes')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('post_id', postId)
+
+  if (error) {
+    console.error('Erreur lors de la vérification du like:', error)
+    return false
+  }
+
+  return data && data.length > 0
+}
+
+/**
+ * Supprimer un post (et ses likes/commentaires en cascade via DB)
+ */
+export async function deletePost(postId: string): Promise<void> {
+  const { error } = await supabase
+    .from('posts')
+    .delete()
+    .eq('id', postId)
+
+  if (error) {
+    console.error('Erreur lors de la suppression du post:', error)
+    throw error
+  }
+}
+
+/**
+ * Récupérer les posts du feed avec pagination
+ * @param userId - ID de l'utilisateur connecté
+ * @param profileFeed - true = posts d'un utilisateur spécifique, false = feed global
+ * @param limit - Nombre de posts à récupérer
+ * @param lastPost - Dernier post récupéré (pour pagination)
+ * @returns Liste des posts avec détails
+ */
+export async function getFeedPosts(
+  userId: string,
+  profileFeed: boolean,
+  limit: number,
+  lastPost?: PostWithDetails
+): Promise<PostWithDetails[]> {
+  try {
+    let query = supabase
+      .from('posts')
+      .select(`
+        id,
+        user_id,
+        vinyl_id,
+        type,
+        content,
+        created_at,
+        user:users!user_id (
+          uid,
+          username,
+          photo_url
+        ),
+        vinyl:vinyls!vinyl_id (
+          id,
+          title,
+          artist,
+          cover_url,
+          album:albums!album_id (
+            title,
+            artist,
+            cover_url
+          )
+        )
+      `)
+      .order('created_at', { ascending: false })
+      .limit(limit)
+
+    // Filtre selon le type de feed
+    if (profileFeed) {
+      // Feed d'un utilisateur spécifique
+      query = query.eq('user_id', userId)
+    } else {
+      // Feed global : posts des utilisateurs suivis + les siens
+      // On va d'abord récupérer la liste des utilisateurs suivis
+      const { data: followsData, error: followsError } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', userId)
+        .eq('status', 'active')
+
+      if (followsError) {
+        console.error('Erreur lors de la récupération des follows:', followsError)
+        throw followsError
+      }
+
+      // Créer un tableau d'IDs (utilisateurs suivis + soi-même)
+      const followedUserIds = followsData.map((f) => f.following_id)
+      followedUserIds.push(userId) // Ajouter ses propres posts
+
+      if (followedUserIds.length === 0) {
+        // Aucun utilisateur suivi, retourner tableau vide
+        return []
+      }
+
+      // Filtrer par la liste des utilisateurs
+      query = query.in('user_id', followedUserIds)
+    }
+
+    // Pagination : si lastPost est fourni, récupérer les posts après celui-ci
+    if (lastPost) {
+      query = query.lt('created_at', lastPost.createdAt)
+    }
+
+    const { data, error } = await query
+
+    if (error) {
+      console.error('Erreur lors de la récupération des posts:', error)
+      throw error
+    }
+
+    if (!data || data.length === 0) {
+      return []
+    }
+
+    // Récupérer les stats (likes et commentaires) pour chaque post
+    const postIds = data.map((post) => post.id)
+
+    // Compter les likes pour tous les posts en une seule requête
+    const { data: likesData } = await supabase
+      .from('post_likes')
+      .select('post_id')
+      .in('post_id', postIds)
+
+    // Compter les commentaires pour tous les posts
+    const { data: commentsData } = await supabase
+      .from('comments')
+      .select('post_id')
+      .in('post_id', postIds)
+
+    // Créer des maps pour un accès rapide
+    const likesCountMap = new Map<string, number>()
+    const commentsCountMap = new Map<string, number>()
+
+    likesData?.forEach((like) => {
+      likesCountMap.set(like.post_id, (likesCountMap.get(like.post_id) || 0) + 1)
+    })
+
+    commentsData?.forEach((comment) => {
+      commentsCountMap.set(comment.post_id, (commentsCountMap.get(comment.post_id) || 0) + 1)
+    })
+
+    // Transformer les données en PostWithDetails
+    const posts: PostWithDetails[] = data.map((post: any) => {
+      // Récupérer les infos de l'album (depuis le vinyle ou l'album lié)
+      const albumInfo = post.vinyl?.album || {
+        title: post.vinyl?.title || 'Album inconnu',
+        artist: post.vinyl?.artist || 'Artiste inconnu',
+        cover_url: post.vinyl?.cover_url,
+      }
+
+      return {
+        id: post.id,
+        userId: post.user_id,
+        type: post.type,
+        createdAt: post.created_at,
+        likesCount: likesCountMap.get(post.id) || 0,
+        commentsCount: commentsCountMap.get(post.id) || 0,
+        user: {
+          username: post.user.username,
+          photoURL: post.user.photo_url,
+        },
+        album: {
+          title: albumInfo.title,
+          artist: albumInfo.artist,
+          coverUrl: albumInfo.cover_url,
+        },
+      }
+    })
+
+    return posts
+  } catch (error) {
+    console.error('Erreur dans getFeedPosts:', error)
+    throw error
+  }
+}

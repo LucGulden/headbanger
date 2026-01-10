@@ -1,0 +1,229 @@
+import { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { addVinylToUser } from '../lib/vinyls';
+import type { Album, Vinyl } from '../types/vinyl';
+import AlbumSearch from './AlbumSearch.tsx';
+import VinylSelection from './VinylSelection.tsx';
+import VinylDetails from './VinylDetails.tsx';
+
+interface AddVinylModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+  userId: string;
+  targetType: 'collection' | 'wishlist';
+  initialAlbum?: Album;
+}
+
+type ModalStep = 'albumSearch' | 'vinylSelection' | 'vinylDetails';
+
+export default function AddVinylModal({
+  isOpen,
+  onClose,
+  onSuccess,
+  userId,
+  targetType,
+  initialAlbum,
+}: AddVinylModalProps) {
+
+  const [currentStep, setCurrentStep] = useState<ModalStep>(
+    initialAlbum ? 'vinylSelection' : 'albumSearch'
+  );
+  const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(initialAlbum || null);
+  const [selectedVinyl, setSelectedVinyl] = useState<Vinyl | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (!isOpen) return null;
+
+  const handleSelectAlbum = (album: Album) => {
+    setSelectedAlbum(album);
+    setCurrentStep('vinylSelection');
+  };
+
+  const handleSelectVinyl = (vinyl: Vinyl) => {
+    setSelectedVinyl(vinyl);
+    setCurrentStep('vinylDetails');
+  };
+
+  const handleBack = () => {
+    if (currentStep === 'vinylSelection') {
+      setCurrentStep('albumSearch');
+      setSelectedAlbum(null);
+    } else if (currentStep === 'vinylDetails') {
+      setCurrentStep('vinylSelection');
+      setSelectedVinyl(null);
+    }
+  };
+
+  const handleAddVinyl = async () => {
+    if (!selectedVinyl) return;
+
+    try {
+      setError(null);
+      await addVinylToUser(userId, selectedVinyl.id, targetType);
+      setSuccess(true);
+
+      // Fermer après un délai
+      setTimeout(() => {
+        handleSuccessClose();
+      }, 1500);
+    } catch (err) {
+      console.error('Erreur lors de l\'ajout:', err);
+      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+    }
+  };
+
+  const handleSuccessClose = () => {
+    setCurrentStep('albumSearch');
+    setSelectedAlbum(null);
+    setSelectedVinyl(null);
+    setError(null);
+    setSuccess(false);
+    onSuccess();
+  };
+
+  const handleClose = () => {
+    setCurrentStep('albumSearch');
+    setSelectedAlbum(null);
+    setSelectedVinyl(null);
+    setError(null);
+    setSuccess(false);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Overlay */}
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={handleClose}
+      />
+
+      {/* Modal */}
+      <div className="relative z-10 max-h-[90vh] w-full max-w-5xl overflow-hidden rounded-2xl border border-[var(--background-lighter)] bg-[var(--background)] shadow-2xl">
+        {/* Header */}
+        <div className="sticky top-0 z-10 border-b border-[var(--background-lighter)] bg-[var(--background)] px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {/* Bouton retour */}
+              {currentStep !== 'albumSearch' && (
+                <button
+                  onClick={handleBack}
+                  className="rounded-full p-2 text-[var(--foreground-muted)] hover:bg-[var(--background-lighter)] hover:text-[var(--foreground)] transition-colors"
+                  aria-label="Retour"
+                >
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+              )}
+
+              {/* Titre dynamique */}
+              <h2 className="text-2xl font-bold text-[var(--foreground)]">
+                {currentStep === 'albumSearch' && (
+                  targetType === 'collection'
+                    ? 'Ajouter à ma collection'
+                    : 'Ajouter à ma wishlist'
+                )}
+                {currentStep === 'vinylSelection' && 'Choisir un pressage'}
+                {currentStep === 'vinylDetails' && 'Confirmer l\'ajout'}
+              </h2>
+            </div>
+
+            <button
+              onClick={handleClose}
+              className="rounded-full p-2 text-[var(--foreground-muted)] hover:bg-[var(--background-lighter)] hover:text-[var(--foreground)] transition-colors"
+              aria-label="Fermer"
+            >
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="max-h-[calc(90vh-180px)] overflow-y-auto p-6">
+          {/* Message de succès */}
+          {success && (
+            <div className="mb-6 flex items-center gap-3 rounded-lg border border-green-500/20 bg-green-500/10 p-4 text-green-500">
+              <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <span className="font-medium">
+                Vinyle ajouté {targetType === 'collection' ? 'à votre collection' : 'à votre wishlist'} !
+              </span>
+            </div>
+          )}
+
+          {/* Message d'erreur */}
+          {error && (
+            <div className="mb-6 flex items-center gap-3 rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-red-500">
+              <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Contenu animé */}
+          <AnimatePresence mode="wait">
+            {currentStep === 'albumSearch' && (
+              <motion.div
+                key="albumSearch"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <AlbumSearch onAlbumSelect={handleSelectAlbum} />
+              </motion.div>
+            )}
+
+            {currentStep === 'vinylSelection' && selectedAlbum && (
+              <motion.div
+                key="vinylSelection"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <VinylSelection
+                  album={selectedAlbum}
+                  userId={userId}
+                  onVinylSelect={handleSelectVinyl}
+                />
+              </motion.div>
+            )}
+
+            {currentStep === 'vinylDetails' && selectedVinyl && (
+              <motion.div
+                key="vinylDetails"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <VinylDetails
+                  vinyl={selectedVinyl}
+                  userId={userId}
+                  targetType={targetType}
+                  onConfirm={handleAddVinyl}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    </div>
+  );
+}
