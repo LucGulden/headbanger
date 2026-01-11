@@ -16,7 +16,7 @@ export default function AlbumCard({ album, onClick }: AlbumCardProps) {
         <VinylImage
           src={album.cover_url || ''}
           alt={`${album.title} par ${album.artist}`}
-          className="h-full w-full object-cover transition-transform group-hover:scale-110"
+          className="h-full w-full object-cover transition-transform"
         />
       </div>
       <h3 className="mt-3 truncate font-semibold text-[var(--foreground)]">

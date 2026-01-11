@@ -18,7 +18,7 @@ export default function VinylCard({ vinyl, actions, onClick }: VinylCardProps) {
         <VinylImage
           src={vinyl.cover_url ?? ''}
           alt={`${vinyl.title} par ${vinyl.artist}`}
-          className="h-full w-full object-cover transition-all duration-300 group-hover:scale-110"
+          className="h-full w-full object-cover transition-all duration-300"
         />
 
         {/* Overlay au hover */}
