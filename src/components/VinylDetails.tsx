@@ -9,11 +9,10 @@ import Button from './Button';
 interface VinylDetailsProps {
   vinyl: Vinyl;
   userId: string;
-  targetType: 'collection' | 'wishlist';
   onConfirm: () => void;
 }
 
-export default function VinylDetails({ vinyl, userId, targetType, onConfirm }: VinylDetailsProps) {
+export default function VinylDetails({ vinyl, userId, onConfirm }: VinylDetailsProps) {
   const [inCollection, setInCollection] = useState(false);
   const [inWishlist, setInWishlist] = useState(false);
   const [displayButton, setDisplayButton] = useState(false);
@@ -105,7 +104,7 @@ export default function VinylDetails({ vinyl, userId, targetType, onConfirm }: V
             )}
 
             {isReissue && (
-              <div className="inline-flex items-center gap-2 rounded-full bg-[var(--primary)]/10 px-3 py-1 text-xs font-medium text-[var(--primary)]">
+              <div className="inline-flex items-center gap-2 rounded-full bg-[var(--primary-10)] px-3 py-1 text-xs font-medium text-[var(--primary)]">
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
                     strokeLinecap="round"

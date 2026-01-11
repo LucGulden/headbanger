@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom';
 import VinylGrid from './VinylGrid';
 import { useVinylsPagination } from '../hooks/useVinylsPagination';
+import type { UserVinylType } from '../types/vinyl';
 
 interface ProfileReleasesProps {
   userId: string;
-  type: 'collection' | 'wishlist';
+  type: UserVinylType;
   isOwnProfile: boolean;
   username: string;
 }

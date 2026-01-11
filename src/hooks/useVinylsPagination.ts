@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getUserVinyls, getUserVinylsCount } from '../lib/vinyls';
-import type { UserVinylWithDetails } from '../types/vinyl';
+import type { UserVinylType, UserVinylWithDetails } from '../types/vinyl';
 
 interface UseVinylsPaginationParams {
   userId: string;
-  type: 'collection' | 'wishlist';
+  type: UserVinylType;
   pageSize?: number;
 }
 

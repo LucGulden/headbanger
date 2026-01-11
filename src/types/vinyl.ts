@@ -28,9 +28,11 @@ export interface UserVinyl {
   id: string;
   user_id: string;
   release_id: string;
-  type: 'collection' | 'wishlist';
+  type: UserVinylType;
   added_at: string;
 }
+
+export type UserVinylType = 'collection' | 'wishlist';
 
 // Type enrichi pour l'affichage
 export interface UserVinylWithDetails extends UserVinyl {

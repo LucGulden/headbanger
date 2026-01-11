@@ -1,7 +1,7 @@
 import { useRef, useEffect } from 'react';
 import VinylCard from './VinylCard';
 import Button from './Button';
-import type { UserVinylWithDetails } from '../types/vinyl';
+import type { UserVinylType, UserVinylWithDetails } from '../types/vinyl';
 
 interface VinylGridProps {
   vinyls: UserVinylWithDetails[];
@@ -16,7 +16,7 @@ interface VinylGridProps {
   onMoveToCollection?: (vinylId: string) => Promise<void>;
   emptyMessage?: string;
   emptyIcon?: string;
-  type: 'collection' | 'wishlist';
+  type: UserVinylType;
 }
 
 export default function VinylGrid({

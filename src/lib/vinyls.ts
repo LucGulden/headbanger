@@ -1,5 +1,5 @@
 import { supabase } from '../supabaseClient';
-import type { Album, Vinyl, UserVinyl, UserVinylWithDetails } from '../types/vinyl';
+import type { Album, Vinyl, UserVinyl, UserVinylWithDetails, UserVinylType } from '../types/vinyl';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -8,7 +8,7 @@ const ITEMS_PER_PAGE = 20;
  */
 export async function getUserVinyls(
   userId: string,
-  type: 'collection' | 'wishlist',
+  type: UserVinylType,
   limit: number = ITEMS_PER_PAGE,
   lastAddedAt?: string
 ): Promise<UserVinylWithDetails[]> {
@@ -42,7 +42,7 @@ export async function getUserVinyls(
  */
 export async function getUserVinylsCount(
   userId: string,
-  type: 'collection' | 'wishlist'
+  type: UserVinylType
 ): Promise<number> {
   const { count, error } = await supabase
     .from('user_vinyls')
@@ -63,7 +63,7 @@ export async function getUserVinylsCount(
 export async function hasVinyl(
   userId: string,
   vinylId: string,
-  type: 'collection' | 'wishlist'
+  type: UserVinylType
 ): Promise<boolean> {
   const { data, error } = await supabase
     .from('user_vinyls')
@@ -86,7 +86,7 @@ export async function hasVinyl(
 export async function addVinylToUser(
   userId: string,
   vinylId: string,
-  type: 'collection' | 'wishlist'
+  type: UserVinylType
 ): Promise<UserVinyl> {
   // Vérifier si déjà présent
   const exists = await hasVinyl(userId, vinylId, type);
@@ -117,7 +117,7 @@ export async function addVinylToUser(
 export async function removeVinylFromUser(
   userId: string,
   vinylId: string,
-  type: 'collection' | 'wishlist'
+  type: UserVinylType
 ): Promise<void> {
   const { error } = await supabase
     .from('user_vinyls')

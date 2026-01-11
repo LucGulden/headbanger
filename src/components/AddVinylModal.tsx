@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { addVinylToUser } from '../lib/vinyls';
-import type { Album, Vinyl } from '../types/vinyl';
+import type { Album, UserVinylType, Vinyl } from '../types/vinyl';
 import AlbumSearch from './AlbumSearch.tsx';
 import VinylSelection from './VinylSelection.tsx';
 import VinylDetails from './VinylDetails.tsx';
@@ -11,7 +11,7 @@ interface AddVinylModalProps {
   onClose: () => void;
   onSuccess: () => void;
   userId: string;
-  targetType: 'collection' | 'wishlist';
+  targetType: UserVinylType;
   initialAlbum?: Album;
 }
 
@@ -107,7 +107,7 @@ export default function AddVinylModal({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {/* Bouton retour */}
-              {currentStep !== 'albumSearch' && (
+              {currentStep !== 'albumSearch' && (currentStep !== 'vinylSelection' || initialAlbum === undefined) && (
                 <button
                   onClick={handleBack}
                   className="rounded-full p-2 text-[var(--foreground-muted)] hover:bg-[var(--background-lighter)] hover:text-[var(--foreground)] transition-colors"
@@ -216,7 +216,6 @@ export default function AddVinylModal({
                 <VinylDetails
                   vinyl={selectedVinyl}
                   userId={userId}
-                  targetType={targetType}
                   onConfirm={handleAddVinyl}
                 />
               </motion.div>
