@@ -218,3 +218,129 @@ export async function getVinylsByAlbum(albumId: string): Promise<Vinyl[]> {
 
   return data as Vinyl[];
 }
+
+
+/**
+ * Crée un nouvel album
+ */
+export interface CreateAlbumInput {
+  title: string;
+  artist: string;
+  year: number | null;
+  coverUrl: string | null;
+  spotifyId?: string | null;
+  spotifyUrl?: string | null;
+  createdBy: string;
+}
+
+export async function createAlbum(input: CreateAlbumInput): Promise<Album> {
+  const { data, error } = await supabase
+    .from('albums')
+    .insert({
+      title: input.title,
+      artist: input.artist,
+      year: input.year,
+      cover_url: input.coverUrl,
+      spotify_id: input.spotifyId || null,
+      spotify_url: input.spotifyUrl || null,
+      created_by: input.createdBy,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Erreur lors de la création de l'album: ${error.message}`);
+  }
+
+  return data as Album;
+}
+
+/**
+ * Vérifie si un album existe déjà par son spotify_id
+ */
+export async function getAlbumBySpotifyId(spotifyId: string): Promise<Album | null> {
+  const { data, error } = await supabase
+    .from('albums')
+    .select('*')
+    .eq('spotify_id', spotifyId)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') {
+      // Pas de résultat trouvé
+      return null;
+    }
+    throw new Error(`Erreur lors de la recherche: ${error.message}`);
+  }
+
+  return data as Album;
+}
+
+/**
+ * Crée un nouveau pressage vinyle
+ */
+export interface CreateVinylInput {
+  albumId: string;
+  title: string;
+  artist: string;
+  year: number;
+  label: string;
+  catalogNumber: string;
+  country: string;
+  format: string;
+  coverUrl: string;
+  createdBy: string;
+}
+
+export async function createVinyl(input: CreateVinylInput): Promise<Vinyl> {
+  const { data, error } = await supabase
+    .from('vinyls')
+    .insert({
+      album_id: input.albumId,
+      title: input.title,
+      artist: input.artist,
+      year: input.year,
+      label: input.label,
+      catalog_number: input.catalogNumber,
+      country: input.country,
+      format: input.format,
+      cover_url: input.coverUrl,
+      created_by: input.createdBy,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Erreur lors de la création du vinyle: ${error.message}`);
+  }
+
+  return data as Vinyl;
+}
+
+/**
+ * Met à jour la cover d'un album
+ */
+export async function updateAlbumCover(albumId: string, coverUrl: string): Promise<void> {
+  const { error } = await supabase
+    .from('albums')
+    .update({ cover_url: coverUrl })
+    .eq('id', albumId);
+
+  if (error) {
+    throw new Error(`Erreur lors de la mise à jour de la cover: ${error.message}`);
+  }
+}
+
+/**
+ * Met à jour la cover d'un vinyle
+ */
+export async function updateVinylCover(vinylId: string, coverUrl: string): Promise<void> {
+  const { error } = await supabase
+    .from('vinyls')
+    .update({ cover_url: coverUrl })
+    .eq('id', vinylId);
+
+  if (error) {
+    throw new Error(`Erreur lors de la mise à jour de la cover: ${error.message}`);
+  }
+}

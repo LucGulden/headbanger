@@ -2,22 +2,23 @@
 
 import { useState, useEffect } from 'react';
 import { hasVinyl } from '../lib/vinyls';
-import type { Vinyl } from '../types/vinyl';
+import type { Album, Vinyl } from '../types/vinyl';
 import VinylImage from './VinylImage';
 import Button from './Button';
 
 interface VinylDetailsProps {
   vinyl: Vinyl;
+  album: Album;
   userId: string;
   onConfirm: () => void;
 }
 
-export default function VinylDetails({ vinyl, userId, onConfirm }: VinylDetailsProps) {
+export default function VinylDetails({ vinyl, album, userId, onConfirm }: VinylDetailsProps) {
   const [inCollection, setInCollection] = useState(false);
   const [inWishlist, setInWishlist] = useState(false);
   const [displayButton, setDisplayButton] = useState(false);
 
-  const isReissue = vinyl.release_year !== vinyl.year;
+  const isReissue = album.year !== vinyl.year;
 
   useEffect(() => {
     let isMounted = true;
@@ -71,10 +72,10 @@ export default function VinylDetails({ vinyl, userId, onConfirm }: VinylDetailsP
             <p className="mt-1 text-sm text-[var(--foreground-muted)]">
               {isReissue ? (
                 <>
-                  Album original : {vinyl.release_year} • Réédition : {vinyl.year}
+                  Album original : {album.year} • Réédition : {vinyl.year}
                 </>
               ) : (
-                vinyl.year || vinyl.release_year
+                vinyl.year
               )}
             </p>
           </div>

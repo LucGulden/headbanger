@@ -51,9 +51,9 @@ export default function VinylCard({ vinyl, actions, onClick }: VinylCardProps) {
         </p>
 
         {/* Année */}
-        {(vinyl.year || vinyl.release_year) && (
+        {(vinyl.year) && (
           <p className="text-xs text-[var(--foreground-muted)]">
-            {vinyl.year || vinyl.release_year}
+            {vinyl.year}
           </p>
         )}
       </div>

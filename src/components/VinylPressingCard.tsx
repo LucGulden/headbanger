@@ -56,23 +56,23 @@ export default function VinylPressingCard({
 
       {/* Info */}
       <div className="mt-3">
-        <div className="mb-1 flex flex-wrap gap-1">
-          {vinyl.year && (
-            <span className="inline-block rounded bg-[var(--primary)]/20 px-2 py-0.5 text-xs font-medium text-[var(--primary)]">
-              {vinyl.year}
-            </span>
-          )}
-          {vinyl.country && (
-            <span className="inline-block rounded bg-[var(--background-lighter)] px-2 py-0.5 text-xs text-[var(--foreground-muted)]">
-              {vinyl.country}
-            </span>
-          )}
-        </div>
-        {vinyl.format && (
-          <p className="truncate text-xs text-[var(--foreground-muted)]">
+        <h4 className="truncate font-medium text-[var(--foreground)]">
+          {vinyl.title}
+        </h4>
+        <div className="mt-1 flex flex-wrap items-center gap-1">
+          <span className="inline-block rounded bg-[var(--primary-20)] px-2 py-0.5 text-xs font-medium text-[var(--primary)]">
+            {vinyl.year}
+          </span>
+          <span className="inline-block rounded bg-[var(--background-lighter)] px-2 py-0.5 text-xs text-[var(--foreground-muted)]">
+            {vinyl.country}
+          </span>
+          <span className="inline-block rounded bg-[var(--background-lighter)] px-2 py-0.5 text-xs text-[var(--foreground-muted)]">
             {vinyl.format}
-          </p>
-        )}
+          </span>
+        </div>
+        <p className="mt-1 truncate text-xs text-[var(--foreground-muted)]">
+          {vinyl.label} – {vinyl.catalog_number}
+        </p>
       </div>
     </button>
   );

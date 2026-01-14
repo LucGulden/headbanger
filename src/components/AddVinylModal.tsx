@@ -5,6 +5,8 @@ import type { Album, UserVinylType, Vinyl } from '../types/vinyl';
 import AlbumSearch from './AlbumSearch.tsx';
 import VinylSelection from './VinylSelection.tsx';
 import VinylDetails from './VinylDetails.tsx';
+import CreateAlbumForm from './CreateAlbumForm';
+import CreateVinylForm from './CreateVinylForm';
 
 interface AddVinylModalProps {
   isOpen: boolean;
@@ -15,7 +17,7 @@ interface AddVinylModalProps {
   initialAlbum?: Album;
 }
 
-type ModalStep = 'albumSearch' | 'vinylSelection' | 'vinylDetails';
+type ModalStep = 'albumSearch' | 'createAlbum' | 'vinylSelection' | 'createVinyl' | 'vinylDetails';
 
 export default function AddVinylModal({
   isOpen,
@@ -46,13 +48,36 @@ export default function AddVinylModal({
     setCurrentStep('vinylDetails');
   };
 
+  const handleCreateAlbum = () => {
+    setCurrentStep('createAlbum');
+  };
+
+  const handleAlbumCreated = (album: Album) => {
+    setSelectedAlbum(album);
+    setCurrentStep('vinylSelection');
+  };
+
+  const handleCreateVinyl = () => {
+    setCurrentStep('createVinyl');
+  };
+
+  const handleVinylCreated = (vinyl: Vinyl) => {
+    setSelectedVinyl(vinyl);
+    setCurrentStep('vinylDetails');
+  };
+
   const handleBack = () => {
     if (currentStep === 'vinylSelection') {
+      if (initialAlbum) return; // Pas de retour si initialAlbum
       setCurrentStep('albumSearch');
       setSelectedAlbum(null);
+    } else if (currentStep === 'createAlbum') {
+      setCurrentStep('albumSearch');
     } else if (currentStep === 'vinylDetails') {
       setCurrentStep('vinylSelection');
       setSelectedVinyl(null);
+    } else if (currentStep === 'createVinyl') {
+      setCurrentStep('vinylSelection');
     }
   };
 
@@ -126,7 +151,9 @@ export default function AddVinylModal({
                     ? 'Ajouter à ma collection'
                     : 'Ajouter à ma wishlist'
                 )}
+                {currentStep === 'createAlbum' && 'Créer un album'}
                 {currentStep === 'vinylSelection' && 'Choisir un pressage'}
+                {currentStep === 'createVinyl' && 'Créer un pressage'}
                 {currentStep === 'vinylDetails' && 'Confirmer l\'ajout'}
               </h2>
             </div>
@@ -185,7 +212,10 @@ export default function AddVinylModal({
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
               >
-                <AlbumSearch onAlbumSelect={handleSelectAlbum} />
+                <AlbumSearch 
+                  onAlbumSelect={handleSelectAlbum}
+                  onCreateAlbum={handleCreateAlbum}
+                 />
               </motion.div>
             )}
 
@@ -201,11 +231,12 @@ export default function AddVinylModal({
                   album={selectedAlbum}
                   userId={userId}
                   onVinylSelect={handleSelectVinyl}
+                  onCreateVinyl={handleCreateVinyl}
                 />
               </motion.div>
             )}
 
-            {currentStep === 'vinylDetails' && selectedVinyl && (
+            {currentStep === 'vinylDetails' && selectedAlbum && selectedVinyl && (
               <motion.div
                 key="vinylDetails"
                 initial={{ opacity: 0, x: 20 }}
@@ -215,8 +246,42 @@ export default function AddVinylModal({
               >
                 <VinylDetails
                   vinyl={selectedVinyl}
+                  album={selectedAlbum}
                   userId={userId}
                   onConfirm={handleAddVinyl}
+                />
+              </motion.div>
+            )}
+
+            {currentStep === 'createAlbum' && (
+              <motion.div
+                key="createAlbum"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <CreateAlbumForm
+                  onAlbumCreated={handleAlbumCreated}
+                  onCancel={() => setCurrentStep('albumSearch')}
+                  userId={userId}
+                />
+              </motion.div>
+            )}
+
+            {currentStep === 'createVinyl' && selectedAlbum && (
+              <motion.div
+                key="createVinyl"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <CreateVinylForm
+                  album={selectedAlbum}
+                  onVinylCreated={handleVinylCreated}
+                  onCancel={() => setCurrentStep('vinylSelection')}
+                  userId={userId}
                 />
               </motion.div>
             )}

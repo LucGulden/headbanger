@@ -1,26 +1,27 @@
-export interface Album {
+export interface Vinyl {
   id: string;
-  spotify_id: string;
-  spotify_url: string | null;
+  album_id: string;
   title: string;
   artist: string;
-  cover_url: string | null;
-  year: number | null;
+  cover_url: string;
+  year: number;
+  label: string;
+  catalog_number: string;
+  country: string;
+  format: string;
+  created_by: string | null;
   created_at: string;
 }
 
-export interface Vinyl {
+export interface Album {
   id: string;
-  album_id: string | null;
+  spotify_id: string | null;
+  spotify_url: string | null;
   title: string;
   artist: string;
-  cover_url: string | null;
-  release_year: number | null;
-  year: number | null;
-  label: string | null;
-  catalog_number: string | null;
-  country: string | null;
-  format: string | null;
+  cover_url: string;
+  year: number;
+  created_by: string | null;
   created_at: string;
 }
 
@@ -32,9 +33,8 @@ export interface UserVinyl {
   added_at: string;
 }
 
-export type UserVinylType = 'collection' | 'wishlist';
-
-// Type enrichi pour l'affichage
 export interface UserVinylWithDetails extends UserVinyl {
   vinyl: Vinyl;
 }
+
+export type UserVinylType = 'collection' | 'wishlist';

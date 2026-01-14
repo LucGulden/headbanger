@@ -18,6 +18,7 @@
   --primary: #E67E22;
   --secondary: #8B4513;
   --primary-10: color-mix(in srgb, var(--primary) 10%, transparent);
+  --primary-20: color-mix(in srgb, var(--primary) 20%, transparent);
 
   /* Fonts */
   --font-geist-sans: system-ui, -apple-system, sans-serif;

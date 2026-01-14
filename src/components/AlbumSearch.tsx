@@ -5,9 +5,10 @@ import AlbumCard from './AlbumCard';
 
 interface AlbumSearchProps {
   onAlbumSelect: (album: Album) => void;
+  onCreateAlbum: () => void;
 }
 
-export default function AlbumSearch({ onAlbumSelect }: AlbumSearchProps) {
+export default function AlbumSearch({ onAlbumSelect, onCreateAlbum }: AlbumSearchProps) {
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -78,6 +79,17 @@ export default function AlbumSearch({ onAlbumSelect }: AlbumSearchProps) {
           Recherchez dans votre bibliothèque d'albums
         </p>
       </div>
+      
+      {/* Bouton créer un album */}
+      <button
+        onClick={onCreateAlbum}
+        className="mb-6 flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--background-lighter)] py-3 text-[var(--foreground-muted)] transition-colors hover:border-[var(--primary)] hover:text-[var(--primary)]"
+      >
+        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+        </svg>
+        Vous ne trouvez pas ? Créer un album
+      </button>
 
       {/* Erreur */}
       {error && (
