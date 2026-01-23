@@ -33,8 +33,8 @@ src/
 ### Tables principales
 
 - **users** : uid, email, username, first_name, last_name, photo_url, bio
-- **albums** : id, spotify_id?, title, artist, cover_url, year, created_by?
-- **vinyls** : id, album_id (FK), title, artist, cover_url, year, label, catalog_number, country, format, created_by?
+- **albums** : id, spotify_id?, musicbrainz_release_group_id?, title, artist, cover_url, year, created_by?
+- **vinyls** : id, album_id (FK), musicbrainz_release_id?, title, artist, cover_url, year, label, catalog_number, country, format, created_by?
 - **user_vinyls** : user_id, release_id, type ('collection'|'wishlist') — **un vinyle ne peut JAMAIS être dans les deux**
 - **posts** : user_id, vinyl_id, type ('collection_add'|'wishlist_add'), content?
 - **post_likes**, **comments**, **follows**, **notifications**
