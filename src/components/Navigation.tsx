@@ -118,18 +118,6 @@ export default function Navigation() {
               Rechercher
             </Link>
             <Link
-              to="/collection"
-              className="text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
-            >
-              Collection
-            </Link>
-            <Link
-              to="/wishlist"
-              className="text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
-            >
-              Wishlist
-            </Link>
-            <Link
               to="/notifications"
               className="relative text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
             >

@@ -1,13 +1,14 @@
-import { Link } from 'react-router-dom';
 import VinylGrid from './VinylGrid';
 import { useVinylsPagination } from '../hooks/useVinylsPagination';
 import type { UserVinylType } from '../types/vinyl';
+import { useEffect } from 'react';
 
 interface ProfileReleasesProps {
   userId: string;
   type: UserVinylType;
   isOwnProfile: boolean;
   username: string;
+  onOpenAddVinyl?: () => void;
 }
 
 export default function ProfileReleases({
@@ -15,6 +16,7 @@ export default function ProfileReleases({
   type,
   isOwnProfile,
   username,
+  onOpenAddVinyl
 }: ProfileReleasesProps) {
   const {
     vinyls,
@@ -25,7 +27,17 @@ export default function ProfileReleases({
     total,
     loadMore,
     removeVinylFromList,
+    refresh
   } = useVinylsPagination({ userId, type });
+
+  useEffect(() => {
+    const handleVinylAdded = () => {
+      refresh();
+    };
+
+    window.addEventListener('vinyl-added', handleVinylAdded);
+    return () => window.removeEventListener('vinyl-added', handleVinylAdded);
+  }, [refresh]);
 
   // Empty state
   if (!loading && vinyls.length === 0) {
@@ -51,12 +63,12 @@ export default function ProfileReleases({
             : `${username} n'a pas encore ajouté de vinyles`}
         </p>
         {isOwnProfile && (
-          <Link
-            to={isCollection ? '/collection' : '/wishlist'}
+          <button
+            onClick={onOpenAddVinyl}
             className="rounded-full bg-[var(--primary)] px-6 py-3 font-semibold text-white transition-all hover:bg-[var(--primary)]/90"
           >
             {isCollection ? 'Ajouter à ma collection' : 'Ajouter à ma wishlist'}
-          </Link>
+          </button>
         )}
       </div>
     );
@@ -105,11 +117,6 @@ export default function ProfileReleases({
                 removeVinylFromList(vinylId);
               }
             : undefined
-        }
-        emptyMessage={
-          type === 'collection'
-            ? `${isOwnProfile ? 'Vous n\'avez' : `${username} n'a`} pas encore de vinyles en collection`
-            : `${isOwnProfile ? 'Vous n\'avez' : `${username} n'a`} pas encore de vinyles en wishlist`
         }
       />
     </div>

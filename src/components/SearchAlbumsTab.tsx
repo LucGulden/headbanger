@@ -131,7 +131,6 @@ export default function SearchAlbumsTab({ query }: SearchAlbumsTabProps) {
             setIsModalOpen(false);
           }}
           userId={user.id}
-          targetType="collection"
           initialAlbum={selectedAlbum}
         />
       )}

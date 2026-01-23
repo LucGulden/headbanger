@@ -10,7 +10,9 @@ FillCrate est un réseau social pour passionnés de vinyles permettant de :
 - Liker et commenter les posts
 - Consulter les profils avec abonnés/abonnements
 - Recevoir et consulter des notifications
-- **Rechercher des albums et des utilisateurs** ✅
+- Rechercher des albums et des utilisateurs
+- **Créer des albums (import Spotify ou manuel)** ✅
+- **Créer des pressages vinyles** ✅
 
 **Migration complétée** : De Firebase/Next.js vers Supabase/React+Vite
 
@@ -18,10 +20,12 @@ FillCrate est un réseau social pour passionnés de vinyles permettant de :
 
 - React 18 + TypeScript + Vite 7
 - React Router v6 pour le routing
-- Supabase (Auth + Database PostgreSQL + Realtime)
+- Supabase (Auth + Database PostgreSQL + Realtime + Storage)
 - Tailwind CSS v3 avec variables CSS custom
 - Framer Motion pour les animations
 - Fonts : Inter
+- browser-image-compression pour avatars et covers
+- **Spotify Web API** pour l'import d'albums
 
 ## Structure du projet
 ```
@@ -40,30 +44,36 @@ fillcrate-web/
 │   │   ├── PostCard.tsx            ✅ Créé - Carte de post avec likes/commentaires
 │   │   ├── VinylImage.tsx          ✅ Créé - Image avec placeholder SVG (opacity fix)
 │   │   ├── VinylCard.tsx           ✅ Créé - Carte d'affichage d'un vinyle
+│   │   ├── VinylPressingCard.tsx   ✅ Créé - Carte pressage avec titre + badges
 │   │   ├── AlbumCard.tsx           ✅ Créé - Carte d'affichage d'un album (réutilisable)
 │   │   ├── VinylGrid.tsx           ✅ Créé - Grille avec infinite scroll réutilisable
-│   │   ├── AddVinylModal.tsx       ✅ Créé - Modal en 3 étapes + support initialAlbum
+│   │   ├── AddVinylModal.tsx       ✅ Créé - Modal en 5 étapes avec targetType optionnel
 │   │   ├── AlbumSearch.tsx         ✅ Créé - Recherche d'albums (utilise AlbumCard)
 │   │   ├── VinylSelection.tsx      ✅ Créé - Sélection pressages (étape 2)
-│   │   ├── VinylDetails.tsx        ✅ Créé - Détails pressage (étape 3)
+│   │   ├── VinylDetails.tsx        ✅ Créé - Détails pressage avec logique contextuelle
+│   │   ├── CreateAlbumForm.tsx     ✅ Créé - Orchestrateur création album
+│   │   ├── ModeChoice.tsx          ✅ Créé - Choix Spotify ou manuel
+│   │   ├── SpotifyAlbumImport.tsx  ✅ Créé - Import album depuis Spotify
+│   │   ├── ManualAlbumForm.tsx     ✅ Créé - Création album manuelle
+│   │   ├── CreateVinylForm.tsx     ✅ Créé - Création pressage vinyle
 │   │   ├── ProfileHeader.tsx       ✅ Créé - Header de profil avec stats et Follow
-│   │   ├── ProfileReleases.tsx     ✅ Créé - Grille de vinyles (wrapper VinylGrid)
+│   │   ├── ProfileReleases.tsx     ✅ Créé - Grille avec callback pour ouvrir modal
 │   │   ├── UserListItem.tsx        ✅ Créé - Carte utilisateur avec bouton Follow
-│   │   ├── SearchAlbumsTab.tsx     ✅ Créé - Onglet recherche albums
-│   │   └── SearchUsersTab.tsx      ✅ Créé - Onglet recherche utilisateurs
+│   │   ├── SearchAlbumsTab.tsx     ✅ Créé - Onglet recherche albums (sans targetType)
+│   │   ├── SearchUsersTab.tsx      ✅ Créé - Onglet recherche utilisateurs
+│   │   └── EditProfileForm.tsx     ✅ Créé - Formulaire modification profil
 │   │
 │   ├── pages/
 │   │   ├── Home.tsx                ✅ Adapté - Landing page
 │   │   ├── Signup.tsx              ✅ Adapté - Inscription
 │   │   ├── Login.tsx               ✅ Adapté - Connexion
 │   │   ├── Feed.tsx                ✅ Créé - Page feed
-│   │   ├── Profile.tsx             ✅ Créé - Page profil complète (3 onglets)
-│   │   ├── Collection.tsx          ✅ Créé - Page collection complète
-│   │   ├── Wishlist.tsx            ✅ Créé - Page wishlist complète
+│   │   ├── Profile.tsx             ✅ Créé - Page profil avec modal intégré (3 onglets)
 │   │   ├── Followers.tsx           ✅ Créé - Liste des abonnés
 │   │   ├── Following.tsx           ✅ Créé - Liste des abonnements
 │   │   ├── Notifications.tsx       ✅ Créé - Page notifications avec auto-mark-as-read
 │   │   ├── Search.tsx              ✅ Créé - Page recherche avec tabs Albums/Users
+│   │   ├── Settings.tsx            ✅ Créé - Page modification profil
 │   │   └── NotFound.tsx            ✅ Créé
 │   │
 │   ├── hooks/
@@ -77,10 +87,13 @@ fillcrate-web/
 │   │   ├── posts.ts                ✅ Créé - CRUD posts, likes, getFeedPosts
 │   │   ├── comments.ts             ✅ Créé - CRUD commentaires + realtime
 │   │   ├── follows.ts              ✅ Créé - Système de follow + getFollowers/getFollowing
-│   │   ├── vinyls.ts               ✅ Créé - Gestion complète des vinyles
+│   │   ├── vinyls.ts               ✅ Créé - Gestion vinyles + moveToCollection
 │   │   ├── notifications.ts        ✅ Créé - CRUD notifications + realtime
 │   │   ├── search.ts               ✅ Créé - Recherche d'utilisateurs
-│   │   └── date-utils.ts           ✅ Créé - Formatage dates relatives
+│   │   ├── date-utils.ts           ✅ Créé - Formatage dates relatives
+│   │   ├── storage.ts              ✅ Créé - Upload avatars vers Storage
+│   │   ├── spotify.ts              ✅ Créé - Intégration Spotify API
+│   │   └── covers.ts               ✅ Créé - Upload covers albums/vinyls
 │   │
 │   ├── types/
 │   │   ├── post.ts                 ✅ Créé - Types posts, PostWithDetails
@@ -91,25 +104,14 @@ fillcrate-web/
 │   │
 │   ├── database/
 │   │   ├── README.md               ✅ Documentation SQL
-│   │   ├── migrations/
-│   │   │   ├── 001_initial_schema.sql              ✅ Tables principales
-│   │   │   ├── 002_add_username.sql                ✅ Ajout username
-│   │   │   ├── 003_add_posts_system.sql            ✅ Posts, likes, commentaires
-│   │   │   ├── 003_fix_user_insert_policy.sql      ✅ Fix policy INSERT users
-│   │   │   ├── 006_rename_user_releases.sql        ✅ Renommage user_releases → user_vinyls
-│   │   │   ├── 007_test_data.sql                   ✅ Données de test (8 albums iconiques)
-│   │   │   ├── 008_remove_is_private.sql           ✅ Suppression profils privés
-│   │   │   ├── 009_create_notifications.sql        ✅ Table notifications + RLS
-│   │   │   └── 010_notifications_triggers.sql      ✅ Triggers automatiques notifications
-│   │   ├── policies.sql            ✅ Sécurité RLS
-│   │   └── seed.sql                ✅ Données de test
+│   │   └── migrations/             ✅ Migrations SQL organisées
 │   │
 │   ├── App.tsx                     ✅ Configuré - Routes React Router (ordre correct)
 │   ├── main.tsx                    ✅ Point d'entrée
 │   ├── index.css                   ✅ Styles Tailwind + variables CSS
 │   └── supabaseClient.ts           ✅ Connexion Supabase
 │
-├── .env                            ✅ Variables d'environnement (à remplir)
+├── .env                            ✅ Variables d'environnement
 ├── .env.example                    ✅ Template pour .env
 ├── index.html                      ✅ Mis à jour avec fonts
 ├── tailwind.config.js              ✅ Configuration Tailwind
@@ -131,24 +133,30 @@ fillcrate-web/
 
 **albums**
 - id (UUID, PK)
-- spotify_id (unique), spotify_url
-- title, artist, cover_url, year
+- spotify_id (unique partiel, nullable pour albums manuels)
+- spotify_url (nullable)
+- title (NOT NULL), artist (NOT NULL)
+- cover_url (NOT NULL), year (NOT NULL)
+- **created_by** (UUID, FK auth.users, nullable)
 - created_at
 
 **vinyls**
 - id (UUID, PK)
-- album_id (FK albums)
-- title, artist, cover_url
-- label, catalog_number
-- country, format, year, release_year
+- album_id (FK albums, **NOT NULL**)
+- title (NOT NULL), artist (NOT NULL)
+- cover_url (NOT NULL)
+- label (NOT NULL), catalog_number (NOT NULL)
+- country (NOT NULL), format (NOT NULL), year (NOT NULL)
+- **created_by** (UUID, FK auth.users, nullable)
 - created_at
 
-**user_vinyls** (renommé depuis user_releases)
+**user_vinyls**
 - id (UUID, PK)
 - user_id (FK users), release_id (FK vinyls)
 - type ('collection' | 'wishlist')
 - added_at
 - UNIQUE(user_id, release_id, type)
+- **RÈGLE MÉTIER** : Un vinyle ne peut jamais être dans collection ET wishlist simultanément
 
 **follows**
 - id (UUID, PK)
@@ -186,52 +194,89 @@ fillcrate-web/
 - created_at (TIMESTAMPTZ)
 - UNIQUE(user_id, type, actor_id, post_id, comment_id) - Évite les doublons
 
+### Buckets Storage
+
+**avatars**
+- Structure : `{userId}/avatar.webp`
+- Public : oui
+- Policies : SELECT public, INSERT/UPDATE/DELETE pour owner
+
+**covers**
+- Structure : `albums/{albumId}.webp` et `vinyls/{vinylId}.webp`
+- Public : oui
+- Policies : SELECT public, INSERT/UPDATE/DELETE pour authenticated
+
+### Types TypeScript correspondants
+```typescript
+export interface Album {
+  id: string;
+  spotify_id: string | null;
+  spotify_url: string | null;
+  title: string;
+  artist: string;
+  cover_url: string;
+  year: number;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface Vinyl {
+  id: string;
+  album_id: string;
+  title: string;
+  artist: string;
+  cover_url: string;
+  year: number;
+  label: string;
+  catalog_number: string;
+  country: string;
+  format: string;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface UserVinyl {
+  id: string;
+  user_id: string;
+  release_id: string;
+  type: UserVinylType;
+  added_at: string;
+}
+
+export interface UserVinylWithDetails extends UserVinyl {
+  vinyl: Vinyl;
+}
+
+export type UserVinylType = 'collection' | 'wishlist';
+```
+
 ### Architecture de données - Système de vinyles
 
 **Album** (table `albums`) = L'œuvre musicale abstraite
-- Contient infos Spotify : title, artist, cover_url, year, spotify_id
+- Contient infos Spotify (optionnel) : title, artist, cover_url, year, spotify_id
 - Un album peut avoir plusieurs pressages vinyles
+- Peut être créé via import Spotify ou manuellement
 
 **Vinyl** (table `vinyls`) = Un pressage physique spécifique
-- Lié à un album via `album_id` (FK)
+- Lié à un album via `album_id` (FK, NOT NULL)
 - Contient détails physiques : year, country, label, catalog_number, format
+- Titre personnalisable (éditions spéciales, anniversaires)
+- Cover personnalisable (par défaut = cover album)
 - Exemple : "Dark Side of the Moon" peut avoir un pressage UK 1973, US 1973, réédition 2016, etc.
 
 **UserVinyl** (table `user_vinyls`) = Relation user ↔ vinyle
 - `type` : 'collection' ou 'wishlist'
-- Un user peut avoir le même vinyle dans sa collection ET sa wishlist (contrainte UNIQUE)
+- **RÈGLE IMPORTANTE** : Un vinyle ne peut JAMAIS être dans collection ET wishlist en même temps
+- Contrainte UNIQUE(user_id, release_id, type)
 - Trigger automatique de création de post lors de l'ajout en collection
-
-### Architecture de données - Système de notifications
-
-**Notification** (table `notifications`) = Notification pour un utilisateur
-- `type` : 'new_follower', 'post_like', 'post_comment'
-- `actor_id` : Qui a effectué l'action
-- `post_id` / `comment_id` : Références selon le type
-- `read` : État de lecture
-- **Triggers automatiques** :
-  - Follow → Crée notification `new_follower`
-  - Like → Crée notification `post_like`
-  - Comment → Crée notification `post_comment`
-- **Cleanup automatique** : Supprime notifications > 30 jours
-
-### Données de test disponibles
-
-8 albums iconiques avec plusieurs pressages chacun :
-- Frank Ocean - Blonde (2 pressages)
-- Pink Floyd - The Dark Side of the Moon (3 pressages)
-- Daft Punk - Random Access Memories (2 pressages)
-- Kendrick Lamar - good kid, m.A.A.d city (2 pressages)
-- Miles Davis - Kind of Blue (2 pressages)
-- The Beatles - Abbey Road (2 pressages)
-- Nirvana - Nevermind (2 pressages)
-- Amy Winehouse - Back to Black (2 pressages)
 
 ### Sécurité et fonctionnalités
 
 - ✅ RLS activé sur toutes les tables
 - ✅ Policies configurées (tous les profils sont publics)
 - ✅ Policy INSERT sur users (fix erreur inscription)
+- ✅ **Policy UPDATE sur albums** (pour updateAlbumCover)
+- ✅ **Policy UPDATE sur vinyls** (pour updateVinylCover)
 - ✅ **Triggers notifications** :
   - `notify_new_follower` - Crée notification lors d'un follow
   - `notify_post_like` - Crée notification lors d'un like
@@ -242,12 +287,9 @@ fillcrate-web/
 - ✅ Trigger `on_auth_user_created` : crée automatiquement le profil user
 - ✅ Trigger `on_vinyl_added_create_post` : crée automatiquement un post quand un vinyle est ajouté à la collection
 - ✅ Vue `posts_with_stats` : facilite les requêtes avec likes/comments count
-- ✅ Realtime activé sur `notifications` avec :
-```sql
-  ALTER TABLE notifications REPLICA IDENTITY FULL;
-  ALTER PUBLICATION supabase_realtime ADD TABLE notifications;
-```
+- ✅ Realtime activé sur `notifications`
 - ✅ Index optimisés pour les performances
+- ✅ **Confirmation email désactivée** (connexion directe après inscription)
 
 ## 🎯 Routes configurées
 ```
@@ -255,13 +297,12 @@ fillcrate-web/
 /signup → Inscription
 /login → Connexion
 /feed → Feed social
-/collection → Collection perso
-/wishlist → Wishlist perso
-/profile/:username → Profil utilisateur
+/profile/:username → Profil utilisateur (3 onglets : feed/collection/wishlist)
 /profile/:username/followers → Liste des abonnés
 /profile/:username/following → Liste des abonnements
 /notifications → Page notifications
-/search → Recherche albums et utilisateurs ✅ NOUVEAU
+/search → Recherche albums et utilisateurs
+/settings → Modification du profil
 /* → 404 Not Found
 ```
 
@@ -273,123 +314,224 @@ fillcrate-web/
 <Route path="/profile/:username" element={<Profile />} />
 ```
 
-Toutes les routes utilisent le Layout (Header + Footer).
+**Pages supprimées** : `/collection` et `/wishlist` (remplacées par les onglets du profil)
 
-## 🔧 Hooks personnalisés
+## 🎨 Système de création d'albums et pressages
 
-### useAuth (`src/hooks/useAuth.ts`)
+### Flux utilisateur
+
+Le modal `AddVinylModal` guide l'utilisateur à travers **5 étapes** avec des animations fluides (Framer Motion) :
+
+**Étape 1 - albumSearch** : Recherche d'albums dans BDD locale
+- Barre de recherche avec debounce (300ms)
+- Affichage en grille des albums trouvés (utilise `AlbumCard`)
+- Bouton "Vous ne trouvez pas ? Créer un album"
+
+**Étape 2 - createAlbum** : Création d'un nouvel album
+- `ModeChoice` : Choix entre Spotify ou Manuel
+- `SpotifyAlbumImport` : Recherche Spotify + import automatique
+- `ManualAlbumForm` : Saisie manuelle avec upload cover
+
+**Étape 3 - vinylSelection** : Sélection d'un pressage
+- Header avec l'album sélectionné
+- Liste des pressages existants (utilise `VinylPressingCard`)
+- Bouton "Ajouter un pressage"
+- Badges de statut ("En collection", "En wishlist")
+
+**Étape 4 - createVinyl** : Création d'un nouveau pressage
+- Titre personnalisable (prérempli avec titre album)
+- Année du pressage (prérempli avec année album)
+- Label, numéro de catalogue (obligatoires)
+- Pays, format (select avec options)
+- Cover alternative optionnelle
+
+**Étape 5 - vinylDetails** : Confirmation et détails
+- Cover grand format
+- Détails complets : label, numéro de catalogue, pays, format
+- Badges de statut et de réédition
+- **Boutons contextuels intelligents** (voir section suivante)
+
+### Logique contextuelle du modal AddVinylModal
+
+**Props du modal :**
 ```typescript
-{
-  user: User | null
-  loading: boolean
-  error: AuthError | null
-  signUp: ({ email, username, password }) => Promise
-  signInWithPassword: (email, password) => Promise
-  signInWithGoogle: () => Promise
-  signOut: () => Promise
+interface AddVinylModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+  userId: string;
+  targetType?: UserVinylType; // Optionnel - définit le contexte
+  initialAlbum?: Album;
 }
 ```
 
-### useFeedPagination (`src/hooks/useFeedPagination.ts`)
+**Comportement selon le contexte :**
+
+1. **Depuis Profil > Onglet Collection** (`targetType='collection'`)
+   - Vinyle non possédé → Bouton "Ajouter à ma collection"
+   - En wishlist → Bouton "Déplacer vers la collection" (retire automatiquement de wishlist)
+   - En collection → Message "déjà possédé"
+
+2. **Depuis Profil > Onglet Wishlist** (`targetType='wishlist'`)
+   - Vinyle non possédé → Bouton "Ajouter à ma wishlist"
+   - En collection OU wishlist → Message "déjà possédé"
+
+3. **Depuis Page Search** (`targetType=undefined`)
+   - Vinyle non possédé → **Deux boutons** : "Ajouter à ma collection" ET "Ajouter à ma wishlist"
+   - En wishlist → Bouton "Déplacer vers la collection"
+   - En collection → Message "déjà possédé"
+
+### Architecture des composants
+```
+AddVinylModal (targetType?: UserVinylType)
+├── AlbumSearch (recherche BDD locale)
+│   └── Bouton "Créer un album" → createAlbum
+├── CreateAlbumForm (orchestrateur)
+│   ├── ModeChoice (Spotify ou Manuel)
+│   ├── SpotifyAlbumImport
+│   │   └── Recherche Spotify → createAlbum en BDD
+│   └── ManualAlbumForm
+│       └── Upload cover → createAlbum en BDD
+├── VinylSelection (liste pressages)
+│   └── Bouton "Ajouter un pressage" → createVinyl
+├── CreateVinylForm
+│   └── Upload cover optionnelle → createVinyl en BDD
+└── VinylDetails (confirmation, logique contextuelle)
+    ├── Props: album, vinyl, userId, onConfirm, targetType?
+    ├── onConfirm: (type: UserVinylType) => void
+    └── Boutons selon contexte (1 ou 2 boutons)
+```
+
+### Composants de création
+
+**VinylDetails** - Étape finale avec logique contextuelle
 ```typescript
-{
-  posts: PostWithDetails[]
-  loading: boolean
-  loadingMore: boolean
-  hasMore: boolean
-  error: Error | null
-  refreshing: boolean
-  newPostsAvailable: number
-  loadMore: () => Promise<void>
-  refresh: () => Promise<void>
-  handleDeletePost: (postId: string) => void
+interface VinylDetailsProps {
+  vinyl: Vinyl;
+  album: Album;
+  userId: string;
+  onConfirm: (type: UserVinylType) => void; // Type passé au callback
+  targetType?: UserVinylType; // Optionnel - définit le contexte
+}
+```
+- Vérifie automatiquement si vinyle en collection/wishlist
+- Affiche 1 ou 2 boutons selon `targetType` et statut possédé
+- Gère le déplacement wishlist → collection via `moveToCollection()`
+
+**CreateAlbumForm** - Orchestrateur
+```typescript
+interface CreateAlbumFormProps {
+  onAlbumCreated: (album: Album) => void;
+  onCancel: () => void;
+  userId: string;
 }
 ```
 
-**Fonctionnalités :**
-- Pagination cursor-based avec Supabase
-- Infinite scroll
-- Pull-to-refresh
-- Écoute temps réel des nouveaux posts (badge de notification)
-
-### useVinylsPagination (`src/hooks/useVinylsPagination.ts`)
+**ModeChoice** - Choix du mode
 ```typescript
-{
-  vinyls: UserVinylWithDetails[]
-  loading: boolean
-  loadingMore: boolean
-  hasMore: boolean
-  error: Error | null
-  total: number
-  loadMore: () => Promise<void>
-  refresh: () => Promise<void>
-  removeVinylFromList: (vinylId: string) => void
+interface ModeChoiceProps {
+  onSelectSpotify: () => void;
+  onSelectManual: () => void;
+  onCancel: () => void;
 }
 ```
 
-**Fonctionnalités :**
-- Pagination cursor-based pour collection/wishlist
-- Infinite scroll avec Intersection Observer
-- Comptage total
-- Optimistic UI pour suppression
-
-### useNotifications (`src/hooks/useNotifications.ts`)
+**SpotifyAlbumImport** - Import Spotify
 ```typescript
-{
-  notifications: NotificationWithDetails[]
-  loading: boolean
-  loadingMore: boolean
-  hasMore: boolean
-  error: Error | null
-  unreadCount: number
-  loadMore: () => Promise<void>
-  refresh: () => Promise<void>
-  handleMarkAsRead: (notificationId: string) => void
-  handleMarkAllAsRead: () => Promise<void>
-  handleDelete: (notificationId: string) => void
+interface SpotifyAlbumImportProps {
+  onAlbumCreated: (album: Album) => void;
+  onBack: () => void;
+  userId: string;
 }
 ```
+- Recherche dans Spotify API
+- Vérifie si album existe déjà (par spotify_id)
+- Crée album avec URL Spotify comme cover_url
+- Stocke created_by
 
-**Fonctionnalités :**
-- Pagination cursor-based (LIMIT 20)
-- Infinite scroll
-- Compteur de notifications non lues
-- Optimistic UI pour marquer comme lu/supprimer
-- Écoute temps réel des nouvelles notifications
+**ManualAlbumForm** - Saisie manuelle
+```typescript
+interface ManualAlbumFormProps {
+  onAlbumCreated: (album: Album) => void;
+  onBack: () => void;
+  userId: string;
+}
+```
+- Champs : titre, artiste, année, cover (obligatoire)
+- Upload cover vers Storage bucket `covers`
+- Stocke created_by
+
+**CreateVinylForm** - Création pressage
+```typescript
+interface CreateVinylFormProps {
+  album: Album;
+  onVinylCreated: (vinyl: Vinyl) => void;
+  onCancel: () => void;
+  userId: string;
+}
+```
+- Titre personnalisable (prérempli)
+- Année préremplie avec album.year
+- Champs obligatoires : year, label, catalog_number, country, format
+- Cover alternative optionnelle (défaut = album.cover_url)
+- Stocke created_by
+
+**VinylPressingCard** - Carte pressage
+```typescript
+interface VinylPressingCardProps {
+  vinyl: Vinyl;
+  albumCoverUrl?: string;
+  inCollection?: boolean;
+  inWishlist?: boolean;
+  onClick: () => void;
+}
+```
+- Affiche : titre, cover, badges statut, année, pays, format
+- Affiche label et catalog_number
+
+**ProfileReleases** - Affichage collection/wishlist dans profil
+```typescript
+interface ProfileReleasesProps {
+  userId: string;
+  type: UserVinylType;
+  isOwnProfile: boolean;
+  username: string;
+  onOpenAddVinyl?: () => void; // Callback pour ouvrir le modal
+}
+```
+- Bouton dans empty state qui ouvre le modal (au lieu de rediriger)
+- Écoute l'event `vinyl-added` pour rafraîchir automatiquement
+
+### Variables d'environnement requises
+```env
+VITE_SUPABASE_URL=xxx
+VITE_SUPABASE_ANON_KEY=xxx
+VITE_SPOTIFY_CLIENT_ID=xxx
+VITE_SPOTIFY_CLIENT_SECRET=xxx
+```
 
 ## 📚 Bibliothèques utilitaires
 
-### posts.ts (`src/lib/posts.ts`)
+### spotify.ts (`src/lib/spotify.ts`)
 
-- `likePost(userId, postId)` - Ajouter un like
-- `unlikePost(userId, postId)` - Retirer un like
-- `hasLikedPost(userId, postId)` - Vérifier si liké
-- `deletePost(postId)` - Supprimer un post
-- `getFeedPosts(userId, profileFeed, limit, lastPost?)` - Récupérer posts avec pagination
+- `searchSpotifyAlbums(query, limit)` - Recherche albums sur Spotify
+- `getSpotifyAlbum(spotifyId)` - Récupère détails d'un album
 
-### comments.ts (`src/lib/comments.ts`)
+**Fonctionnement :**
+- Client Credentials Flow (pas besoin de login utilisateur)
+- Token en cache avec expiration automatique
+- Retourne `SpotifyAlbumResult` avec coverUrl, title, artist, year
 
-- `addComment(postId, userId, content)` - Ajouter un commentaire
-- `deleteComment(commentId)` - Supprimer un commentaire
-- `subscribeToPostComments(postId, onData, onError)` - Écoute temps réel des commentaires
+### covers.ts (`src/lib/covers.ts`)
 
-### follows.ts (`src/lib/follows.ts`)
+- `uploadAlbumCover(albumId, file)` - Upload cover album vers Storage
+- `uploadVinylCover(vinylId, file)` - Upload cover vinyl vers Storage
+- `generateImagePreview(file)` - Preview locale avant upload
 
-- `getFollowStats(userId)` - Récupérer followers/following count
-- `followUser(followerId, followingId)` - Suivre quelqu'un (toujours status='active')
-- `unfollowUser(followerId, followingId)` - Ne plus suivre
-- `isFollowing(followerId, followingId)` - Vérifier si on suit
-- `getFollowers(userId)` - Récupérer la liste des abonnés
-- `getFollowing(userId)` - Récupérer la liste des abonnements
-
-### notifications.ts (`src/lib/notifications.ts`)
-
-- `getNotifications(userId, limit, lastCreatedAt?)` - Récupérer notifications avec pagination
-- `getUnreadCount(userId)` - Compter les notifications non lues
-- `markAsRead(notificationId)` - Marquer une notification comme lue
-- `markAllAsRead(userId)` - Marquer toutes comme lues
-- `deleteNotification(notificationId)` - Supprimer une notification
-- `subscribeToNotifications(userId, onNotification, onError)` - Écoute temps réel
+**Fonctionnement :**
+- Compression automatique (600px max, WebP, 0.5MB)
+- Structure : `covers/albums/{id}.webp` et `covers/vinyls/{id}.webp`
+- Cache 1 an
 
 ### vinyls.ts (`src/lib/vinyls.ts`)
 
@@ -399,29 +541,49 @@ Toutes les routes utilisent le Layout (Header + Footer).
 - `hasVinyl(userId, vinylId, type)` - Vérifier si un vinyle est possédé
 - `addVinylToUser(userId, vinylId, type)` - Ajouter à collection/wishlist
 - `removeVinylFromUser(userId, vinylId, type)` - Retirer de collection/wishlist
-- `moveToCollection(userId, vinylId)` - Déplacer wishlist → collection
+- `moveToCollection(userId, vinylId)` - **Déplacer wishlist → collection** (retire de wishlist, ajoute à collection)
 - `getVinylStats(userId)` - Stats collection/wishlist
 
 **Recherche et exploration :**
 - `searchAlbums(query, limit)` - Rechercher des albums (titre/artiste)
 - `getVinylsByAlbum(albumId)` - Récupérer tous les pressages d'un album
+- `getAlbumBySpotifyId(spotifyId)` - Vérifier si album existe déjà
 
-### search.ts (`src/lib/search.ts`) ✅ NOUVEAU
+**Création :**
+- `createAlbum(input: CreateAlbumInput)` - Créer un album
+- `createVinyl(input: CreateVinylInput)` - Créer un pressage
+- `updateAlbumCover(albumId, coverUrl)` - Mettre à jour cover album
+- `updateVinylCover(vinylId, coverUrl)` - Mettre à jour cover vinyl
+```typescript
+interface CreateAlbumInput {
+  title: string;
+  artist: string;
+  year: number | null;
+  coverUrl: string | null;
+  spotifyId?: string | null;
+  spotifyUrl?: string | null;
+  createdBy: string;
+}
 
-- `searchUsers(query, limit)` - Rechercher des utilisateurs par username, first_name, last_name
+interface CreateVinylInput {
+  albumId: string;
+  title: string;
+  artist: string;
+  year: number;
+  label: string;
+  catalogNumber: string;
+  country: string;
+  format: string;
+  coverUrl: string;
+  createdBy: string;
+}
+```
 
-### user.ts (`src/lib/user.ts`)
+### storage.ts (`src/lib/storage.ts`)
 
-- `validateUsername(username)` - Validation regex
-- `isUsernameAvailable(username)` - Vérifier disponibilité en BDD
-
-### date-utils.ts (`src/lib/date-utils.ts`)
-
-- `getRelativeTimeString(date)` - "il y a 2h", "il y a 3j"
-- `formatDate(date)` - "31 décembre 2024"
-- `formatDateTime(date)` - "31 décembre 2024 à 14:30"
-- `isToday(date)` - Vérifier si aujourd'hui
-- `isYesterday(date)` - Vérifier si hier
+- `uploadProfilePhoto(userId, file)` - Upload avatar vers Storage
+- `deleteProfilePhoto(userId)` - Supprimer avatar
+- `generateImagePreview(file)` - Preview locale
 
 ## 🔔 Système de notifications
 
@@ -434,241 +596,26 @@ Toutes les routes utilisent le Layout (Header + Footer).
 5. **Page notifications** : Affiche toutes les notifications
 6. **Auto-mark-as-read** : Toutes marquées comme lues dès l'ouverture de la page
 
-### Composants
-
-**NotificationItem**
-- Avatar de l'acteur
-- Message dynamique selon le type :
-  - `new_follower` : "X a commencé à vous suivre"
-  - `post_like` : "X a aimé votre post"
-  - `post_comment` : "X a commenté votre post" + extrait
-- Aperçu vinyle (12x12) pour post_like/post_comment
-- Date relative
-- Badge "non lu" (point orange)
-- Animations Framer Motion
-
-**Page Notifications**
-- Header : "Notifications" + compteur non lues
-- Liste avec infinite scroll
-- Empty state : 🔔 "Aucune notification"
-- Auto-mark-as-read au chargement
-- Event `notifications-read` pour synchroniser le badge
-
-**Navigation Badge**
-- Icône cloche avec badge rouge
-- Count en temps réel (écoute Realtime)
-- Affiche "9+" si > 9
-- Passe à 0 dès l'ouverture de `/notifications`
-- Synchronisation via event custom `window.dispatchEvent('notifications-read')`
-
-### Fonctionnalités
-
-- ✅ Création automatique par triggers SQL
-- ✅ Temps réel avec Supabase Realtime
-- ✅ Badge dans Navigation (+1 instantané)
-- ✅ Pagination cursor-based (20 par page)
-- ✅ Auto-mark-as-read au chargement de la page
-- ✅ Compteur de non lues
-- ✅ Animations fluides
-- ✅ Empty states
-- ✅ Cleanup automatique (> 30 jours)
-
 ### Triggers SQL automatiques
 
 **Follow** → `notify_new_follower()`
-- Déclenché sur INSERT dans `follows` avec `status='active'`
-- Crée notification si on ne se suit pas soi-même
-
 **Like** → `notify_post_like()`
-- Déclenché sur INSERT dans `post_likes`
-- Récupère `post_author_id` depuis `posts`
-- Crée notification si on ne like pas son propre post
-
 **Comment** → `notify_post_comment()`
-- Déclenché sur INSERT dans `comments`
-- Récupère `post_author_id` depuis `posts`
-- Crée notification si on ne commente pas son propre post
+**Cleanup** → Triggers de suppression (unfollow, unlike, delete comment)
 
-**Cleanup** → Triggers de suppression
-- Unfollow → Supprime notification `new_follower`
-- Unlike → Supprime notification `post_like`
-- Delete comment → Supprime notification `post_comment`
+## 🔍 Système de recherche
 
-## 🔍 Système de recherche ✅ NOUVEAU
-
-### Flux utilisateur
-
-**Page Search** (`/search`)
-1. Input de recherche partagé entre les onglets
-2. Deux onglets : Albums et Utilisateurs
-3. Recherche instantanée avec debounce (300ms)
-4. Placeholder dynamique selon l'onglet actif
-
-### Onglet Albums
+### Page Search (`/search`)
 
 **SearchAlbumsTab** :
 - Recherche dans la BDD locale (table `albums`)
 - Affichage en grille avec `AlbumCard`
-- Clic sur album → ouvre `AddVinylModal` à l'étape 2
-
-**AlbumCard** :
-- Composant réutilisable extrait de `AlbumSearch`
-- Props : `album` et `onClick` callback
-- Affiche cover, titre, artiste, année
-- Hover effect avec scale
-
-**Modal** :
-- Disponible pour users connectés ET non-connectés
-- Utilisateurs connectés : peuvent ajouter le vinyle
-- Utilisateurs non-connectés : peuvent voir les pressages (découverte)
-
-### Onglet Utilisateurs
+- Clic sur album → ouvre `AddVinylModal` **sans targetType** (2 boutons si non possédé)
 
 **SearchUsersTab** :
 - Recherche par username, first_name, last_name (ILIKE)
 - Affichage en liste avec `UserListItem`
 - Bouton "Suivre" intégré
-- Lien vers profil cliquable
-
-**UserListItem** (réutilisé) :
-- Avatar + username + nom complet + bio
-- Link vers `/profile/:username`
-- Bouton Follow/Unfollow optionnel
-
-### Composants
-```
-Search.tsx (Page principale)
-  ├── Input de recherche (partagé)
-  ├── Tabs (Albums / Utilisateurs)
-  │
-  ├── SearchAlbumsTab
-  │     ├── Recherche avec debounce
-  │     ├── Loading skeletons
-  │     ├── AlbumCard (map sur résultats)
-  │     └── AddVinylModal (avec initialAlbum)
-  │
-  └── SearchUsersTab
-        ├── Recherche avec debounce
-        ├── Loading skeletons
-        └── UserListItem (map sur résultats)
-```
-
-### Fonctionnalités
-
-- ✅ Recherche instantanée (debounce 300ms)
-- ✅ Tabs avec indicateur visuel
-- ✅ Placeholder dynamique
-- ✅ Loading skeletons personnalisés
-- ✅ Empty states par onglet
-- ✅ Compteur de résultats
-- ✅ Gestion d'erreurs
-- ✅ Modal disponible pour tous (connectés et non-connectés)
-
-## 🎨 Système de vinyles - Modal en 3 étapes
-
-### Flux utilisateur
-
-Le modal `AddVinylModal` guide l'utilisateur à travers 3 étapes avec des animations fluides (Framer Motion) :
-
-**Étape 1 - AlbumSearch** : Recherche d'albums
-- Barre de recherche avec debounce (300ms)
-- Affichage en grille des albums trouvés (utilise `AlbumCard`)
-- Recherche par titre ou artiste dans la BDD locale
-
-**Étape 2 - VinylSelection** : Sélection d'un pressage
-- Header avec l'album sélectionné
-- Liste de tous les pressages vinyles disponibles
-- Badges de statut ("En collection", "En wishlist") en temps réel
-- Affichage des infos : année, pays, format
-
-**Étape 3 - VinylDetails** : Confirmation et détails
-- Cover grand format
-- Détails complets : label, numéro de catalogue, pays, format
-- Badges de statut et de réédition
-- Bouton de confirmation (masqué si déjà possédé)
-
-### Props AddVinylModal
-```typescript
-interface AddVinylModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onSuccess: () => void
-  userId: string
-  targetType: 'collection' | 'wishlist'
-  initialAlbum?: Album // ✅ NOUVEAU : permet de sauter l'étape 1
-}
-```
-
-**Comportement avec `initialAlbum`** :
-- Si `undefined` : démarre à l'étape 1 (AlbumSearch)
-- Si fourni : démarre à l'étape 2 (VinylSelection)
-
-**IMPORTANT** : Utiliser une `key` dans le parent pour forcer le remount du modal :
-```typescript
-<AddVinylModal
-  key={isModalOpen ? 'modal-open' : 'modal-closed'} // Force reset
-  isOpen={isModalOpen}
-  onClose={() => setIsModalOpen(false)}
-  onSuccess={handleSuccess}
-  userId={user.id}
-  targetType="collection"
-  initialAlbum={selectedAlbum} // undefined ou Album
-/>
-```
-
-### Fonctionnalités
-
-- ✅ Animations fluides entre les étapes
-- ✅ Bouton retour pour naviguer entre les étapes
-- ✅ Vérification temps réel du statut des vinyles
-- ✅ Messages de succès/erreur
-- ✅ Loading states et skeletons
-- ✅ Empty states avec emojis
-- ✅ Fermeture automatique après succès (1.5s)
-- ✅ Support `initialAlbum` pour sauter l'étape 1
-
-## 👤 Système de profils et follows
-
-### Pages de profil
-
-**Profile** (`/profile/:username`)
-- Header avec avatar, stats, et bouton Follow/Unfollow
-- 3 onglets : Feed, Collection, Wishlist
-- Stats cliquables menant vers Followers/Following
-- **Note** : Tous les profils sont publics (plus de profils privés)
-
-**Followers** (`/profile/:username/followers`)
-- Liste des abonnés avec boutons Follow/Unfollow
-- Empty state si aucun abonné
-- Lien retour vers le profil
-
-**Following** (`/profile/:username/following`)
-- Liste des abonnements avec boutons Follow/Unfollow
-- Empty state si aucun abonnement
-- Lien retour vers le profil
-
-### Composants de profil
-
-**ProfileHeader**
-- Avatar avec gradient de cover (orange → marron)
-- Infos utilisateur : username, nom complet, bio
-- Stats : vinyles, wishlist, abonnés, abonnements (cliquables)
-- Bouton "Modifier le profil" (si c'est son propre profil)
-- Bouton "Suivre" / "Abonné" (si profil d'un autre utilisateur)
-- Logique de follow/unfollow intégrée (pas de composant séparé)
-
-**ProfileReleases**
-- Wrapper autour de `VinylGrid`
-- Props : `userId`, `type` (collection/wishlist), `isOwnProfile`, `username`
-- Gère les empty states personnalisés
-- Affiche le compteur total de vinyles
-- Bouton de suppression si `isOwnProfile = true`
-
-**UserListItem**
-- Avatar + username + nom complet + bio
-- Lien cliquable vers `/profile/:username`
-- Bouton Follow/Unfollow optionnel (`showFollowButton`)
-- Logique de follow/unfollow intégrée
 
 ## 🎨 Variables CSS
 ```css
@@ -681,327 +628,147 @@ interface AddVinylModalProps {
 --secondary: #8B4513 (marron)
 ```
 
-## ⚙️ Configuration Supabase
-
-**Client** (`src/supabaseClient.ts`):
-```typescript
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
-```
-
-**Variables d'environnement** (`.env`):
-```
-VITE_SUPABASE_URL=your_url
-VITE_SUPABASE_ANON_KEY=your_key
-```
-
 ## 🔑 Bonnes pratiques du projet
 
-### Imports React Router
+### Séparation des composants
+- Un composant = un fichier
+- Extraire les sous-composants réutilisables (AlbumCard, VinylPressingCard, ModeChoice...)
+
+### Synchronisation entre composants
+Pattern utilisé : **Custom Events** (pas de Redux/Context)
 ```typescript
-import { Link, useNavigate } from 'react-router-dom'
-// Link avec "to" (pas "href")
-// useNavigate() (pas useRouter de Next.js)
-```
+// Émettre un event
+window.dispatchEvent(new Event('profile-updated'))
 
-### Accès aux données utilisateur
-```typescript
-const username = user?.user_metadata?.username || user?.email?.split('@')[0]
-const avatar_url = user?.user_metadata?.avatar_url
-const userId = user?.id // (pas user?.uid comme Firebase)
-```
-
-### Queries Supabase
-```typescript
-// ✅ Bon - Vérifier l'existence
-const { data } = await supabase.from('users').select('*').eq('username', username)
-return !data || data.length === 0
-
-// ❌ Éviter .single() pour vérifier l'existence (erreur PGRST116)
-const { data } = await supabase.from('users').select('*').single()
-```
-
-### Supabase Realtime
-```typescript
-// Pattern standard pour les subscriptions
-const channel = supabase
-  .channel('channel-name')
-  .on('postgres_changes', {
-    event: '*',
-    schema: 'public',
-    table: 'table_name',
-    filter: 'column=eq.value'
-  }, callback)
-  .subscribe()
-
-return () => channel.unsubscribe()
-```
-
-### Activer Realtime sur une table
-```sql
--- Via SQL Editor dans Supabase
-ALTER TABLE table_name REPLICA IDENTITY FULL;
-ALTER PUBLICATION supabase_realtime ADD TABLE table_name;
-```
-
-### Debounce pour recherche
-```typescript
-// Pattern avec useEffect et setTimeout
+// Écouter un event
 useEffect(() => {
-  if (!query || query.length < 2) return;
-  
-  const timer = setTimeout(async () => {
-    // Recherche ici
-  }, 300);
-  
-  return () => clearTimeout(timer);
-}, [query]);
+  const handler = () => { /* ... */ }
+  window.addEventListener('profile-updated', handler)
+  return () => window.removeEventListener('profile-updated', handler)
+}, [])
+```
+
+Events actifs :
+- `profile-updated` : synchronise Navigation après modification profil
+- `notifications-read` : reset le badge notifications
+- `vinyl-added` : rafraîchit les listes collection/wishlist dans ProfileReleases
+
+### Upload d'images
+```typescript
+// Avatars
+import { uploadProfilePhoto } from '../lib/storage'
+const photoUrl = await uploadProfilePhoto(userId, file)
+
+// Covers albums
+import { uploadAlbumCover } from '../lib/covers'
+const coverUrl = await uploadAlbumCover(albumId, file)
+// Puis : await updateAlbumCover(albumId, coverUrl)
+
+// Covers vinyls
+import { uploadVinylCover } from '../lib/covers'
+const coverUrl = await uploadVinylCover(vinylId, file)
+// Puis : await updateVinylCover(vinylId, coverUrl)
+```
+
+### Deux types de User
+- `User` de Supabase Auth (`useAuth`) : authentification, `user.id`, `user.email`
+- `User` de `types/user.ts` : données profil depuis `public.users`
+
+### Modal avec état initial
+```typescript
+// Pattern pour modal avec état de départ différent
+<AddVinylModal
+  key={isOpen ? 'open' : 'closed'} // Force remount pour reset
+  isOpen={isOpen}
+  initialAlbum={selectedAlbum}
+  targetType={activeTab} // Ou undefined depuis Search
+  ...
+/>
 ```
 
 ### VinylImage - Fix loading lazy
 ```typescript
 // ✅ BON : Utiliser opacity au lieu de hidden
-<div className="relative">
-  <div className={`absolute inset-0 ${imageLoaded ? 'opacity-0' : 'opacity-100'}`}>
-    <Placeholder />
-  </div>
-  <img className={imageLoaded ? 'opacity-100' : 'opacity-0'} loading="lazy" />
-</div>
+<img className={imageLoaded ? 'opacity-100' : 'opacity-0'} loading="lazy" />
 
 // ❌ MAUVAIS : hidden empêche le chargement avec loading="lazy"
 <img className={imageLoaded ? '' : 'hidden'} loading="lazy" />
 ```
 
-### Event custom pour synchronisation
-```typescript
-// Émettre l'event
-window.dispatchEvent(new Event('event-name'))
-
-// Écouter l'event
-const handler = () => { /* action */ }
-window.addEventListener('event-name', handler)
-return () => window.removeEventListener('event-name', handler)
-```
-
-### HTML - Règles de nesting
-```typescript
-// ❌ MAUVAIS : <p> ne peut pas contenir <div>
-<p className="text">
-  <div>Content</div>
-</p>
-
-// ✅ BON : Utiliser div partout
-<div className="text">
-  <div>Content</div>
-</div>
-```
-
-### Modal avec état initial ✅ NOUVEAU
-```typescript
-// Pattern pour modal avec état de départ différent
-const [isOpen, setIsOpen] = useState(false)
-const [initialData, setInitialData] = useState<Data | undefined>()
-
-<Modal
-  key={isOpen ? 'open' : 'closed'} // Force remount pour reset
-  isOpen={isOpen}
-  initialData={initialData}
-  ...
-/>
-```
-
-### Réutilisation de composants ✅ NOUVEAU
-```typescript
-// Extraire la logique d'affichage dans un composant dédié
-// Exemple : AlbumCard utilisé dans AlbumSearch ET SearchAlbumsTab
-
-interface AlbumCardProps {
-  album: Album
-  onClick: (album: Album) => void
-}
-
-// Dans le parent
-<AlbumCard album={album} onClick={handleClick} />
-```
-
 ## ⚠️ Points d'attention
 
-1. **Ordre des routes** : Les routes spécifiques (`/profile/:username/followers`) doivent être AVANT les routes génériques (`/profile/:username`)
-
-2. **Policy INSERT** : La table `users` nécessite une policy INSERT pour permettre au trigger de créer des profils
-
-3. **Trigger automatique de posts** : Un post est créé automatiquement quand un vinyle est ajouté à la collection
-
-4. **Triggers notifications** : Les notifications sont créées automatiquement (follow, like, comment)
-
-5. **URLs de profil** : On utilise `username` et non `userId` (UUID) dans les URLs
-
-6. **OAuth** : Le code est prêt pour Google/Facebook OAuth, mais il faut activer les providers dans le dashboard Supabase
-
-7. **Images vinyles** : Utiliser `opacity` au lieu de `hidden` pour éviter les problèmes avec `loading="lazy"`
-
-8. **Realtime** : Penser à activer Realtime sur les nouvelles tables avec `ALTER TABLE ... REPLICA IDENTITY FULL`
-
-9. **Profils privés** : Le système a été simplifié - tous les profils sont publics
-
-10. **Follows** : Tous les follows sont actifs immédiatement (`status='active'`), pas de système de validation
-
-11. **Modal reset** : Utiliser `key` pour forcer le remount au lieu de `useEffect` avec setState
-
-12. **Composants réutilisables** : Extraire la logique d'affichage (ex: AlbumCard, VinylCard) pour éviter la duplication
+1. **Ordre des routes** : Les routes spécifiques doivent être AVANT les routes génériques
+2. **Policy INSERT** : La table `users` nécessite une policy INSERT
+3. **Policy UPDATE** : Les tables `albums` et `vinyls` nécessitent une policy UPDATE
+4. **Trigger automatique de posts** : Un post est créé automatiquement quand un vinyle est ajouté à la collection
+5. **URLs de profil** : On utilise `username` et non `userId` dans les URLs
+6. **Images vinyles** : Utiliser `opacity` au lieu de `hidden` avec `loading="lazy"`
+7. **Realtime** : Penser à activer Realtime sur les nouvelles tables
+8. **Modal reset** : Utiliser `key` pour forcer le remount
+9. **Covers Spotify** : On stocke l'URL Spotify directement (pas de copie)
+10. **VinylDetails** : Reçoit `album` en prop pour calculer `isReissue` et `targetType?` pour la logique contextuelle
+11. **Règle collection/wishlist** : Un vinyle ne peut JAMAIS être dans les deux en même temps
+12. **targetType optionnel** : Ne PAS passer `targetType` depuis Search pour activer les 2 boutons
 
 ## ✅ Ce qui fonctionne
 
 1. ✅ Navigation avec Header/Footer sur toutes les pages
-2. ✅ Page d'accueil (Home)
-3. ✅ Formulaire d'inscription avec validation username
-4. ✅ Formulaire de connexion
-5. ✅ Page Feed avec infinite scroll et pull-to-refresh
-6. ✅ PostCard avec likes et commentaires
-7. ✅ Système de likes optimiste (UI instantanée)
-8. ✅ Système de commentaires temps réel
-9. ✅ Hook useAuth pour l'authentification
-10. ✅ Base de données complète avec RLS
-11. ✅ Page Collection avec infinite scroll
-12. ✅ Page Wishlist avec infinite scroll
-13. ✅ Modal d'ajout en 3 étapes avec animations
-14. ✅ Recherche d'albums dans la BDD
-15. ✅ Sélection de pressages avec badges de statut
-16. ✅ Détails complets avant ajout
-17. ✅ Suppression de vinyles
-18. ✅ Déplacement wishlist → collection
-19. ✅ Page Profile complète avec 3 onglets
-20. ✅ ProfileHeader avec bouton Follow/Unfollow
-21. ✅ ProfileReleases réutilisant VinylGrid
-22. ✅ Page Followers avec liste d'abonnés
-23. ✅ Page Following avec liste d'abonnements
-24. ✅ UserListItem avec bouton Follow
-25. ✅ Images de vinyles affichées correctement
-26. ✅ Système de notifications complet
-27. ✅ Badge notifications temps réel dans Navigation
-28. ✅ Page notifications avec auto-mark-as-read
-29. ✅ Triggers automatiques pour notifications
-30. ✅ Event custom pour synchronisation badge
-31. ✅ **Page Search avec tabs Albums/Utilisateurs**
-32. ✅ **AlbumCard composant réutilisable**
-33. ✅ **SearchAlbumsTab avec recherche instantanée**
-34. ✅ **SearchUsersTab avec recherche instantanée**
-35. ✅ **AddVinylModal avec support initialAlbum**
+2. ✅ Formulaires inscription/connexion
+3. ✅ Page Feed avec infinite scroll et pull-to-refresh
+4. ✅ PostCard avec likes et commentaires temps réel
+5. ✅ **Page Profile avec 3 onglets (feed/collection/wishlist)**
+6. ✅ **Modal AddVinylModal intégré dans le profil**
+7. ✅ **Logique contextuelle intelligente (1 ou 2 boutons selon contexte)**
+8. ✅ **Déplacement wishlist → collection avec fonction dédiée**
+9. ✅ Modal d'ajout en 5 étapes avec animations
+10. ✅ **Création d'albums via Spotify**
+11. ✅ **Création d'albums manuelle avec upload cover**
+12. ✅ **Création de pressages avec tous champs obligatoires**
+13. ✅ **Titre personnalisable pour éditions spéciales**
+14. ✅ **Cover personnalisable pour pressages**
+15. ✅ Pages Followers/Following
+16. ✅ Système de notifications complet temps réel
+17. ✅ Page Search avec tabs Albums/Utilisateurs
+18. ✅ Page Settings modification profil
 
 ## 🐛 Bugs corrigés
 
-1. ✅ **Images vinyles ne s'affichaient pas** (problème `loading="lazy"` + `hidden`)
-   - Solution : Utiliser `opacity` et `absolute positioning`
+1. ✅ **Images vinyles ne s'affichaient pas** → opacity au lieu de hidden
+2. ✅ **Erreur inscription** → policy INSERT sur users
+3. ✅ **Page 404 sur followers/following** → ordre des routes
+4. ✅ **Cover albums non sauvegardée** → ajout updateAlbumCover + policy UPDATE
+5. ✅ **Cover vinyls non sauvegardée** → ajout updateVinylCover + policy UPDATE
+6. ✅ **isReissue cassé** → passage de album en prop à VinylDetails
+7. ✅ **Pages Collection/Wishlist redondantes** → supprimées, remplacées par onglets profil
+8. ✅ **Boutons d'ajout non contextuels** → logique intelligente avec targetType optionnel
 
-2. ✅ **Erreur "Database error saving new user"** lors de l'inscription
-   - Solution : Ajout de la policy INSERT sur la table `users`
+## ⏳ Ce qu'il reste à faire
 
-3. ✅ **Page 404 sur `/profile/:username/followers` et `/profile/:username/following`**
-   - Solution : Ordre correct des routes (spécifiques avant génériques)
+### V2 (reporté)
+- ⏳ Filtres/tri dans Collection/Wishlist
+- ⏳ Statistiques de collection
+- ⏳ Notifications push natives
+- ⏳ Import/Export collection
+- ⏳ OAuth Google/Facebook
+- ⏳ Modération/gestion des doublons
 
-4. ✅ **Erreur UUID vide dans useNotifications**
-   - Solution : Protection avec early return si `userId` vide
+## 📝 Style d'interaction préféré avec Claude
 
-5. ✅ **Erreur HTML `<p>` ne peut pas contenir `<div>`**
-   - Solution : Utiliser `<div>` au lieu de `<p>` pour le message de notification
+**Ce qui fonctionne bien :**
+- 🎯 Poser des questions de clarification AVANT de coder
+- 🎯 Procéder étape par étape avec validation
+- 🎯 Privilégier la réutilisation de l'existant
+- 🎯 **Donner des modifications ciblées plutôt que des fichiers complets**
+- 🎯 **Séparer les composants (un composant = un fichier)**
+- 🎯 Anticiper les besoins futurs
 
-6. ✅ **Realtime notifications ne fonctionnait pas**
-   - Solution : Activer Realtime sur la table `notifications` avec SQL
-
-7. ✅ **Warning "setState synchronously within an effect"**
-   - Solution : Retirer le useEffect de reset du count (inutile car badge caché si pas de user)
-
-8. ✅ **Warning "Calling setState synchronously within an effect"** (AddVinylModal)
-   - Solution : Utiliser `key` pour forcer le remount au lieu de `useEffect`
-
-## ⏳ Tâches prioritaires
-
-### Court terme
-1. ⏳ Page de settings/modification profil
-2. ⏳ Filtres/tri dans Collection/Wishlist
-3. ⏳ **Refactoriser VinylSelection pour utiliser VinylCard** (comme AlbumSearch utilise AlbumCard)
-
-### Moyen terme
-4. ⏳ Configurer OAuth (Google, Facebook) dans Supabase
-5. ⏳ Créer système d'ajout de nouveaux albums/vinyles dans la BDD (admin)
-6. ⏳ Implémenter les settings utilisateur
-7. ⏳ Statistiques de collection (par genre, année, label)
-8. ⏳ Notifications push pour nouvelles notifications
-9. ⏳ Import/Export de collection
-
-## 📝 Notes techniques importantes
-
-### Triggers automatiques
-- `on_auth_user_created` : Crée automatiquement une entrée dans `users` quand un utilisateur s'inscrit
-- `on_vinyl_added_create_post` : Crée automatiquement un post dans le feed quand un vinyle est ajouté en collection
-- `notify_new_follower` : Crée notification lors d'un follow
-- `notify_post_like` : Crée notification lors d'un like
-- `notify_post_comment` : Crée notification lors d'un commentaire
-
-### Vite 7 et Tailwind
-- Vite 7 nécessite Tailwind v3 (pas v4 qui demande Vite 5/6)
-- PostCSS configuré pour Tailwind
-- Variables CSS custom dans `index.css`
-
-### TypeScript
-- Mode strict activé
-- Types organisés dans `src/types/`
-- Interfaces bien définies pour tous les composants
-
-### Performance
-- Infinite scroll avec Intersection Observer
-- Pagination cursor-based (pas d'offset)
-- Optimistic UI pour likes/comments/suppressions/notifications
-- Batch queries pour les stats (likes/comments)
-- Index DB optimisés
-- Debounce sur recherche (300ms)
-
-### Animations
-- Framer Motion pour les transitions du modal
-- Transitions fluides entre les étapes (slide left/right)
-- AnimatePresence pour les changements de composants
-- Animations dans NotificationItem (fade in, slide out)
-
-## 🚀 Commandes utiles
-```bash
-# Développement
-npm run dev
-
-# Build production
-npm run build
-
-# Preview production
-npm run preview
-
-# Linter
-npm run lint
-```
-
-## 🎯 Prochaines fonctionnalités à implémenter
-
-1. **Modification de profil** (bio, photo, username)
-2. **Filtres et tri** dans Collection/Wishlist (par année, artiste, date d'ajout)
-3. **Refactoriser VinylSelection** pour utiliser VinylCard
-4. **Notifications push** pour nouvelles notifications
-5. **Partage de profil/vinyles** (liens publics)
-6. **Statistiques de collection** (par genre, année, label)
-7. **Import/Export** de collection
-8. **Mode sombre/clair** (actuellement dark only)
-9. **Système d'ajout de nouveaux albums/vinyles** dans la BDD (admin/modération)
-10. **Pagination côté serveur** pour très grandes collections (>1000 vinyles)
-
-## 📚 Ressources
-
-- [Documentation Supabase](https://supabase.com/docs)
-- [React Router v6](https://reactrouter.com/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [Vite](https://vitejs.dev/)
-- [Framer Motion](https://www.framer.com/motion/)
+**Approche de travail :**
+1. Analyser le besoin et poser les bonnes questions
+2. Proposer un plan d'implémentation clair
+3. Valider le plan avant de commencer
+4. Implémenter étape par étape
+5. Tester et ajuster si nécessaire
 
 ---
 
-**Dernière mise à jour** : 10 janvier 2026
+**Dernière mise à jour** : 23 janvier 2026

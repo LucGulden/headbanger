@@ -1,8 +1,8 @@
 // src/components/VinylDetails.tsx
 
 import { useState, useEffect } from 'react';
-import { hasVinyl } from '../lib/vinyls';
-import type { Album, Vinyl } from '../types/vinyl';
+import { hasVinyl, moveToCollection } from '../lib/vinyls';
+import type { Album, Vinyl, UserVinylType } from '../types/vinyl';
 import VinylImage from './VinylImage';
 import Button from './Button';
 
@@ -10,13 +10,21 @@ interface VinylDetailsProps {
   vinyl: Vinyl;
   album: Album;
   userId: string;
-  onConfirm: () => void;
+  onConfirm: (type: UserVinylType) => void;
+  targetType?: UserVinylType;
 }
 
-export default function VinylDetails({ vinyl, album, userId, onConfirm }: VinylDetailsProps) {
+export default function VinylDetails({ 
+  vinyl, 
+  album, 
+  userId, 
+  onConfirm,
+  targetType 
+}: VinylDetailsProps) {
   const [inCollection, setInCollection] = useState(false);
   const [inWishlist, setInWishlist] = useState(false);
-  const [displayButton, setDisplayButton] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [isMoving, setIsMoving] = useState(false);
 
   const isReissue = album.year !== vinyl.year;
 
@@ -33,10 +41,13 @@ export default function VinylDetails({ vinyl, album, userId, onConfirm }: VinylD
         if (isMounted) {
           setInCollection(inCol);
           setInWishlist(inWish);
-          setDisplayButton(true);
+          setLoading(false);
         }
       } catch (err) {
         console.error('Erreur vérification statut:', err);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
@@ -47,7 +58,168 @@ export default function VinylDetails({ vinyl, album, userId, onConfirm }: VinylD
     };
   }, [userId, vinyl.id]);
 
-  const displayAddButton = !inCollection && !inWishlist;
+  const handleMoveToCollection = async () => {
+    try {
+      setIsMoving(true);
+      await moveToCollection(userId, vinyl.id);
+      setInWishlist(false);
+      setInCollection(true);
+      // Émettre un event pour rafraîchir les listes
+      window.dispatchEvent(new Event('vinyl-added'));
+    } catch (err) {
+      console.error('Erreur déplacement:', err);
+      alert('Erreur lors du déplacement vers la collection');
+    } finally {
+      setIsMoving(false);
+    }
+  };
+
+  // Déterminer quels boutons afficher selon le contexte
+  const renderActions = () => {
+    // CONTEXTE 1 : Profil onglet Collection
+    if (targetType === 'collection') {
+      if (inCollection) {
+        return (
+          <p className="text-center text-sm text-[var(--foreground-muted)] sm:text-right">
+            Ce pressage est déjà dans votre collection
+          </p>
+        );
+      }
+      
+      if (inWishlist) {
+        // Déplacer de wishlist → collection
+        return (
+          <div className="space-y-3">
+            <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-4">
+              <p className="mb-3 text-sm text-blue-400">
+                Ce vinyle est dans votre wishlist. Le déplacer vers la collection le retirera automatiquement de la wishlist.
+              </p>
+              <Button
+                onClick={handleMoveToCollection}
+                variant="primary"
+                disabled={isMoving}
+                className="w-full sm:w-auto"
+              >
+                {isMoving ? (
+                  <>
+                    <svg className="mr-2 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Déplacement...
+                  </>
+                ) : (
+                  <>
+                    <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                    Déplacer vers la collection
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        );
+      }
+      
+      // Ni collection ni wishlist → ajouter à collection
+      return (
+        <div className="flex justify-end">
+          <Button onClick={() => onConfirm('collection')} variant="primary" className="w-full sm:w-auto">
+            Ajouter à ma collection
+          </Button>
+        </div>
+      );
+    }
+
+    // CONTEXTE 2 : Profil onglet Wishlist
+    if (targetType === 'wishlist') {
+      if (inCollection || inWishlist) {
+        return (
+          <p className="text-center text-sm text-[var(--foreground-muted)] sm:text-right">
+            {inCollection 
+              ? 'Ce pressage est déjà dans votre collection' 
+              : 'Ce pressage est déjà dans votre wishlist'}
+          </p>
+        );
+      }
+      
+      // Ni collection ni wishlist → ajouter à wishlist
+      return (
+        <div className="flex justify-end">
+          <Button onClick={() => onConfirm('wishlist')} variant="primary" className="w-full sm:w-auto">
+            Ajouter à ma wishlist
+          </Button>
+        </div>
+      );
+    }
+
+    // CONTEXTE 3 : Page Search (pas de targetType)
+    if (inCollection) {
+      return (
+        <p className="text-center text-sm text-[var(--foreground-muted)]">
+          Ce pressage est déjà dans votre collection
+        </p>
+      );
+    }
+
+    if (inWishlist) {
+      // Déplacer de wishlist → collection
+      return (
+        <div className="space-y-3">
+          <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-4">
+            <p className="mb-3 text-sm text-blue-400">
+              Ce vinyle est dans votre wishlist. Le déplacer vers la collection le retirera automatiquement de la wishlist.
+            </p>
+            <Button
+              onClick={handleMoveToCollection}
+              variant="primary"
+              disabled={isMoving}
+              className="w-full sm:w-auto"
+            >
+              {isMoving ? (
+                <>
+                  <svg className="mr-2 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Déplacement...
+                </>
+              ) : (
+                <>
+                  <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                  Déplacer vers la collection
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    // Ni collection ni wishlist → 2 boutons (CORRECTION ICI !)
+    return (
+      <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+        <Button
+          onClick={() => onConfirm('collection')}
+          variant="primary"
+          className="w-full sm:w-auto"
+        >
+          Ajouter à ma collection
+        </Button>
+
+        <Button
+          onClick={() => onConfirm('wishlist')}
+          variant="primary"
+          className="w-full sm:w-auto"
+        >
+          Ajouter à ma wishlist
+        </Button>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -135,11 +307,9 @@ export default function VinylDetails({ vinyl, album, userId, onConfirm }: VinylD
       </div>
 
       {/* Actions */}
-      {displayButton && displayAddButton && (
-        <div className="flex flex-col-reverse gap-3 border-t border-[var(--background-lighter)] pt-6 sm:flex-row sm:justify-end">
-          <Button onClick={onConfirm} variant="primary" className="w-full sm:w-auto">
-            Ajouter cette édition
-          </Button>
+      {!loading && (
+        <div className="border-t border-[var(--background-lighter)] pt-6">
+          {renderActions()}
         </div>
       )}
     </div>

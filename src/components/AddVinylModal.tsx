@@ -13,7 +13,7 @@ interface AddVinylModalProps {
   onClose: () => void;
   onSuccess: () => void;
   userId: string;
-  targetType: UserVinylType;
+  targetType?: UserVinylType;
   initialAlbum?: Album;
 }
 
@@ -81,12 +81,12 @@ export default function AddVinylModal({
     }
   };
 
-  const handleAddVinyl = async () => {
+  const handleAddVinyl = async (type: UserVinylType) => {
     if (!selectedVinyl) return;
 
     try {
       setError(null);
-      await addVinylToUser(userId, selectedVinyl.id, targetType);
+      await addVinylToUser(userId, selectedVinyl.id, type);
       setSuccess(true);
 
       // Fermer après un délai
@@ -149,7 +149,9 @@ export default function AddVinylModal({
                 {currentStep === 'albumSearch' && (
                   targetType === 'collection'
                     ? 'Ajouter à ma collection'
-                    : 'Ajouter à ma wishlist'
+                    : targetType === 'wishlist'
+                    ? 'Ajouter à ma wishlist'
+                    : 'Rechercher un album'
                 )}
                 {currentStep === 'createAlbum' && 'Créer un album'}
                 {currentStep === 'vinylSelection' && 'Choisir un pressage'}
@@ -182,9 +184,7 @@ export default function AddVinylModal({
                   clipRule="evenodd"
                 />
               </svg>
-              <span className="font-medium">
-                Vinyle ajouté {targetType === 'collection' ? 'à votre collection' : 'à votre wishlist'} !
-              </span>
+              <span className="font-medium">Vinyle ajouté avec succès !</span>
             </div>
           )}
 
@@ -249,6 +249,7 @@ export default function AddVinylModal({
                   album={selectedAlbum}
                   userId={userId}
                   onConfirm={handleAddVinyl}
+                  targetType={targetType}
                 />
               </motion.div>
             )}

@@ -8,6 +8,7 @@ import { supabase } from '../supabaseClient';
 import { getFollowStats } from '../lib/follows';
 import { getVinylStats } from '../lib/vinyls';
 import { type User } from '../types/user';
+import AddVinylModal from '../components/AddVinylModal';
 
 interface ProfileStats {
   releasesCount: number;
@@ -30,6 +31,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [activeTab, setActiveTab] = useState<'feed' | 'collection' | 'wishlist'>('collection');
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -107,6 +109,33 @@ export default function ProfilePage() {
       console.error('Erreur lors du rafraîchissement des stats:', error);
     }
   };
+
+  // Fonction pour ouvrir le modal depuis ProfileReleases
+const handleOpenAddVinyl = () => {
+  setIsModalOpen(true);
+};
+
+// Callback après succès du modal
+const handleModalSuccess = async () => {
+  setIsModalOpen(false);
+  
+  // Rafraîchir les stats
+  if (profileUser) {
+    try {
+      const vinylStats = await getVinylStats(profileUser.uid);
+      setStats((prev) => ({
+        ...prev,
+        releasesCount: vinylStats.collectionCount,
+        wishlistCount: vinylStats.wishlistCount,
+      }));
+      
+      // Émettre un event pour que ProfileReleases se rafraîchisse
+      window.dispatchEvent(new Event('vinyl-added'));
+    } catch (error) {
+      console.error('Erreur lors du rafraîchissement des stats:', error);
+    }
+  }
+};
 
   // Rediriger vers 404 si profil non trouvé
   if (notFound) {
@@ -199,6 +228,7 @@ export default function ProfilePage() {
             type="collection"
             isOwnProfile={isOwnProfile}
             username={profileUser.username}
+            onOpenAddVinyl={handleOpenAddVinyl}
           />
         )}
 
@@ -209,9 +239,22 @@ export default function ProfilePage() {
             type="wishlist"
             isOwnProfile={isOwnProfile}
             username={profileUser.username}
+            onOpenAddVinyl={handleOpenAddVinyl}
           />
         )}
       </div>
+
+      {/* Modal d'ajout de vinyle */}
+      {isOwnProfile && (
+        <AddVinylModal
+          key={isModalOpen ? 'modal-open' : 'modal-closed'}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSuccess={handleModalSuccess}
+          userId={currentUser!.id}
+          targetType={activeTab === 'wishlist' ? 'wishlist' : 'collection'}
+        />
+      )}
     </div>
   );
 }

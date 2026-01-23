@@ -1,8 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
 import Home from './pages/Home.tsx'
-import Collection from './pages/Collection.tsx'
-import Wishlist from './pages/Wishlist.tsx'
 import Signup from './pages/Signup.tsx'
 import Login from './pages/Login.tsx'
 import NotFound from './pages/NotFound.tsx'
@@ -20,11 +18,9 @@ function App() {
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
-          <Route path="/collection" element={<Collection />} />
           <Route path="/feed" element={<Feed />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
-          <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/search" element={<Search />} />
           <Route path="/settings" element={<Settings />} />
