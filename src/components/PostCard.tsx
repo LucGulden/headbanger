@@ -7,6 +7,7 @@ import type { PostWithDetails } from '../types/post'
 import type { CommentWithUser } from '../types/comment'
 import { getRelativeTimeString } from '../lib/date-utils'
 import CommentItem from './CommentItem'
+import Button from './Button'
 
 interface PostCardProps {
   post: PostWithDetails
@@ -268,13 +269,9 @@ export default function PostCard({ post, currentUserId, onDelete, priority = fal
                 className="flex-1 rounded-lg border border-[var(--background-lighter)] bg-[var(--background)] px-4 py-2 text-[var(--foreground)] placeholder:text-[var(--foreground-muted)] focus:border-[var(--primary)] focus:outline-none"
                 disabled={isCommenting}
               />
-              <button
-                type="submit"
-                disabled={!commentText.trim() || isCommenting}
-                className="rounded-lg bg-[var(--primary)] px-4 py-2 font-semibold text-white transition-colors hover:bg-[#d67118] disabled:opacity-50 disabled:cursor-not-allowed"
-              >
+              <Button type="submit" disabled={!commentText.trim() || isCommenting} variant="primary">
                 {isCommenting ? 'Envoi...' : 'Envoyer'}
-              </button>
+              </Button>
             </form>
           )}
 

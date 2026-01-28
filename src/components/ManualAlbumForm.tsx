@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { createAlbum, updateAlbumCover } from '../lib/vinyls'
 import { uploadAlbumCover, generateImagePreview } from '../lib/covers'
 import type { Album } from '../types/vinyl'
+import Button from './Button';
 
 interface ManualAlbumFormProps {
   onAlbumCreated: (album: Album) => void;
@@ -185,11 +186,7 @@ export default function ManualAlbumForm({ onAlbumCreated, onBack, userId }: Manu
         </div>
 
         {/* Submit */}
-        <button
-          type="submit"
-          disabled={!isValid || isSubmitting}
-          className="w-full rounded-lg bg-[var(--primary)] px-4 py-3 font-semibold text-white transition-colors hover:bg-[var(--primary-dark)] disabled:cursor-not-allowed disabled:opacity-50"
-        >
+        <Button type='submit' disabled={!isValid || isSubmitting} variant="primary" className="w-full">
           {isSubmitting ? (
             <span className="flex items-center justify-center gap-2">
               <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -198,7 +195,7 @@ export default function ManualAlbumForm({ onAlbumCreated, onBack, userId }: Manu
           ) : (
             'Créer l\'album'
           )}
-        </button>
+        </Button>
       </form>
     </div>
   )

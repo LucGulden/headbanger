@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth'
 import AlbumCard from './AlbumCard'
 import AddVinylModal from './AddVinylModal'
 import type { Album } from '../types/vinyl'
+import Button from './Button'
 
 interface SearchAlbumsTabProps {
   query: string;
@@ -70,19 +71,20 @@ export default function SearchAlbumsTab({ query }: SearchAlbumsTabProps) {
       )}
 
       {/* Bouton créer un album */}
-      <button
+      <Button 
         onClick={() => {
           setSelectedAlbum(null)
           setIsCreateMode(true)
           setIsModalOpen(true)
-        }}
-        className="mb-6 flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--background-lighter)] py-3 text-[var(--foreground-muted)] transition-colors hover:border-[var(--primary)] hover:text-[var(--primary)]"
+        }} 
+        variant="outline"
+        className="mb-6 w-full"
       >
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
         </svg>
         Vous ne trouvez pas ? Créer un album
-      </button>
+      </Button>
 
       {/* Loading skeletons */}
       {isLoading && searchResults.length === 0 && (

@@ -3,6 +3,7 @@ import { searchAlbums, getAlbumsByArtist } from '../lib/vinyls'
 import type { Album } from '../types/vinyl'
 import AlbumCard from './AlbumCard'
 import type { Artist } from '../types/vinyl'
+import Button from './Button'
 
 interface AlbumSearchProps {
   onAlbumSelect: (album: Album) => void;
@@ -141,15 +142,12 @@ export default function AlbumSearch({ onAlbumSelect, onCreateAlbum, artist }: Al
       </div>
       
       {/* Bouton créer un album */}
-      <button
-        onClick={onCreateAlbum}
-        className="mb-6 flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--background-lighter)] py-3 text-[var(--foreground-muted)] transition-colors hover:border-[var(--primary)] hover:text-[var(--primary)]"
-      >
+      <Button onClick={onCreateAlbum} variant="outline" className="mb-6 w-full">
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
         </svg>
         Vous ne trouvez pas ? Créer un album
-      </button>
+      </Button>
 
       {/* Erreur */}
       {error && (

@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import PostCard from './PostCard.tsx'
 import { useFeedPagination } from '../hooks/useFeedPagination.ts'
+import Button from './Button.tsx'
 
 interface FeedProps {
   userId: string
@@ -121,12 +122,9 @@ export default function Feed({ userId, profileFeed }: FeedProps) {
           />
         </svg>
         <p className="text-red-500 font-semibold mb-4">{error.message}</p>
-        <button
-          onClick={refresh}
-          className="px-6 py-2 bg-[var(--primary)] text-white rounded-lg hover:bg-[#d67118] transition-colors"
-        >
+        <Button onClick={refresh} variant="primary">
           Réessayer
-        </button>
+        </Button>
       </div>
     )
   }
@@ -188,9 +186,10 @@ export default function Feed({ userId, profileFeed }: FeedProps) {
     >
       {/* New posts notification */}
       {newPostsAvailable > 0 && !refreshing && (
-        <button
+        <Button
           onClick={refresh}
-          className="sticky top-20 z-10 mx-auto flex items-center gap-2 rounded-full bg-[var(--primary)] px-6 py-3 font-semibold text-white shadow-lg transition-all hover:bg-[#d67118] hover:scale-105"
+          variant="primary"
+          className="mx-auto flex items-center gap-2"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -207,7 +206,7 @@ export default function Feed({ userId, profileFeed }: FeedProps) {
             />
           </svg>
           {newPostsAvailable} {newPostsAvailable === 1 ? 'nouveau post' : 'nouveaux posts'}
-        </button>
+        </Button>
       )}
 
       {/* Pull-to-refresh indicator */}

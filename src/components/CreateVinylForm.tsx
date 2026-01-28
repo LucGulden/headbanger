@@ -3,6 +3,7 @@ import { createVinyl, updateVinylCover } from '../lib/vinyls'
 import { uploadVinylCover, generateImagePreview } from '../lib/covers'
 import type { Album, Vinyl } from '../types/vinyl'
 import VinylImage from './VinylImage'
+import Button from './Button'
 
 interface CreateVinylFormProps {
   album: Album;
@@ -313,18 +314,19 @@ export default function CreateVinylForm({ album, onVinylCreated, onCancel, userI
 
         {/* Boutons */}
         <div className="flex gap-3 pt-4">
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={isSubmitting}
-            className="flex-1 rounded-lg border border-[var(--background-lighter)] bg-[var(--background-light)] px-4 py-3 font-semibold text-[var(--foreground)] transition-colors hover:bg-[var(--background-lighter)] disabled:cursor-not-allowed disabled:opacity-50"
+          <Button 
+            type="button" 
+            onClick={onCancel} 
+            disabled={isSubmitting} 
+            variant="secondary" 
+            className="flex-1"
           >
             Annuler
-          </button>
-          <button
-            type="submit"
+          </Button>
+          <Button 
+            type="submit" 
             disabled={!isValid || isSubmitting}
-            className="flex-1 rounded-lg bg-[var(--primary)] px-4 py-3 font-semibold text-white transition-colors hover:bg-[var(--primary-dark)] disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex-1"
           >
             {isSubmitting ? (
               <span className="flex items-center justify-center gap-2">
@@ -334,7 +336,7 @@ export default function CreateVinylForm({ album, onVinylCreated, onCancel, userI
             ) : (
               'Créer le pressage'
             )}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

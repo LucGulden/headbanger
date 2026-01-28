@@ -3,6 +3,7 @@ import { getVinylsByAlbum, hasVinyl } from '../lib/vinyls'
 import type { Album, Vinyl } from '../types/vinyl'
 import VinylImage from './VinylImage'
 import VinylCard from './VinylCard'
+import Button from './Button'
 
 interface VinylSelectionProps {
   album: Album;
@@ -79,15 +80,12 @@ export default function VinylSelection({ album, userId, onVinylSelect, onCreateV
       </div>
 
       {/* Bouton ajouter un pressage */}
-      <button
-        onClick={onCreateVinyl}
-        className="mb-6 flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--background-lighter)] py-3 text-[var(--foreground-muted)] transition-colors hover:border-[var(--primary)] hover:text-[var(--primary)]"
-      >
+      <Button onClick={onCreateVinyl} variant="outline" className="mb-6 w-full">
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
         </svg>
         Ajouter un pressage
-      </button>
+      </Button>
       
       {/* Erreur */}
       {error && (

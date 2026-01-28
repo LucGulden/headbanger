@@ -5,6 +5,7 @@ import { useVinylsPagination } from '../hooks/useVinylsPagination'
 import { useAuth } from '../hooks/useAuth'
 import type { UserVinylType, Vinyl, Album } from '../types/vinyl'
 import { useEffect } from 'react'
+import Button from './Button'
 
 interface ProfileVinylsProps {
   userId: string;
@@ -88,12 +89,9 @@ export default function ProfileVinyls({
             : `${username} n'a pas encore ajouté de vinyles`}
         </p>
         {isOwnProfile && (
-          <button
-            onClick={onOpenAddVinyl}
-            className="rounded-full bg-[var(--primary)] px-6 py-3 font-semibold text-white transition-all hover:bg-[var(--primary)]/90"
-          >
+          <Button onClick={onOpenAddVinyl} variant="primary">
             {isCollection ? 'Ajouter à ma collection' : 'Ajouter à ma wishlist'}
-          </button>
+          </Button>
         )}
       </div>
     )
