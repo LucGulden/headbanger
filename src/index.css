@@ -16,7 +16,9 @@
 
   /* Couleurs accent */
   --primary: #E67E22;
-  --secondary: #8B4513;
+  --primary-hover: #D67118;
+  --secondary: #2D2D2D;
+  --secondary-hover: #3D3D3D;
   --primary-10: color-mix(in srgb, var(--primary) 10%, transparent);
   --primary-20: color-mix(in srgb, var(--primary) 20%, transparent);
 

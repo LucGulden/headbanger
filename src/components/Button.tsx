@@ -24,8 +24,8 @@ export default function Button({
   }
 
   const variantStyles = {
-    primary: 'bg-[var(--primary)] text-white hover:bg-[#d67118] active:scale-95',
-    secondary: 'bg-[var(--secondary)] text-white hover:bg-[#723a0f] active:scale-95',
+    primary: 'bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] active:scale-95',
+    secondary: 'bg-[var(--secondary)] text-white hover:bg-[var(--secondary-hover)] active:scale-95',
     outline: 'border-2 border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white active:scale-95',
   }
 
