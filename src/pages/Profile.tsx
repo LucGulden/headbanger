@@ -9,6 +9,7 @@ import { getFollowStats } from '../lib/follows'
 import { getVinylStats } from '../lib/vinyls'
 import { type User } from '../types/user'
 import AddVinylModal from '../components/AddVinylModal'
+import LoadingSpinner from '../components/LoadingSpinner'
 
 interface ProfileStats {
   releasesCount: number;
@@ -144,11 +145,7 @@ const handleModalSuccess = async () => {
 
   // Loading state
   if (loading || authLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-[var(--primary)] border-t-transparent" />
-      </div>
-    )
+    return <LoadingSpinner fullScreen size="lg" />
   }
 
   if (!profileUser) {

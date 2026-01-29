@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import Input from '../components/Input'
@@ -6,7 +6,7 @@ import Button from '../components/Button'
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const { signInWithPassword, user, loading: authLoading, error: authError } = useAuth()
+  const { signInWithPassword, error: authError } = useAuth()
 
   const [formData, setFormData] = useState({
     email: '',
@@ -14,13 +14,6 @@ export default function LoginPage() {
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
-
-  // Redirection si déjà connecté
-  useEffect(() => {
-    if (user && !authLoading) {
-      navigate('/feed')
-    }
-  }, [user, authLoading, navigate])
 
   // Validation du formulaire
   const validateForm = (): boolean => {
@@ -49,14 +42,13 @@ export default function LoginPage() {
     try {
       setLoading(true)
       await signInWithPassword(formData.email, formData.password)
-      navigate('/feed')
+      navigate('/')
     } catch (error) {
       console.error('Erreur de connexion:', error)
     } finally {
       setLoading(false)
     }
   }
-
 
   // Gestion des changements de champs
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,15 +58,6 @@ export default function LoginPage() {
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: '' }))
     }
-  }
-
-  // Afficher un spinner pendant le chargement initial
-  if (authLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-[var(--primary)] border-t-transparent" />
-      </div>
-    )
   }
 
   return (

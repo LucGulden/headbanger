@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import type { Album } from '../types/vinyl'
-import SpotifyAlbumImport from './SpotifyAlbumImport.tsx'
-import ManualAlbumForm from './ManualAlbumForm.tsx'
-import ModeChoice from './ModeChoice.tsx'
+import SpotifyAlbumImport from './SpotifyAlbumImport'
+import ManualAlbumForm from './ManualAlbumForm'
+import ModeChoice from './ModeChoice'
 
 interface CreateAlbumFormProps {
   onAlbumCreated: (album: Album) => void;

@@ -4,36 +4,14 @@ import { useAuth } from '../hooks/useAuth'
 import { useNotifications } from '../hooks/useNotifications'
 import { useNotificationsStore } from '../stores/notificationsStore'
 import NotificationItem from '../components/NotificationItem'
+import LoadingSpinner from '../components/LoadingSpinner'
 
 export default function Notifications() {
-  const { user, loading: authLoading } = useAuth()
+  const { user } = useAuth()
   
-  // Attendre que l'auth soit chargée
-  if (authLoading) {
-    return (
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-        </div>
-      </div>
-    )
-  }
-
-  // Si pas de user, rediriger ou afficher message
+  // Guard TypeScript (ne devrait jamais arriver grâce à ProtectedRoute)
   if (!user) {
-    return (
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        <div className="bg-background-light rounded-lg p-12 text-center">
-          <div className="text-6xl mb-4">🔒</div>
-          <h2 className="text-xl font-semibold text-foreground mb-2">
-            Connexion requise
-          </h2>
-          <p className="text-foreground-muted">
-            Vous devez être connecté pour voir vos notifications.
-          </p>
-        </div>
-      </div>
-    )
+    return null
   }
 
   return <NotificationsContent userId={user.id} />
@@ -98,65 +76,59 @@ function NotificationsContent({ userId }: { userId: string }) {
   // Loading initial
   if (loading) {
     return (
-      <>
-        <div className="max-w-2xl mx-auto px-4 py-8">
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-          </div>
+      <div className="max-w-2xl mx-auto px-4 py-8">
+        <div className="flex items-center justify-center py-12">
+          <LoadingSpinner size="md" />
         </div>
-      </>
+      </div>
     )
   }
 
   return (
-    <>
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Notifications</h1>
-            {unreadCount > 0 && (
-              <p className="text-sm text-foreground-muted mt-1">
-                {unreadCount} notification{unreadCount > 1 ? 's' : ''} non lue{unreadCount > 1 ? 's' : ''}
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Liste des notifications */}
-        {notifications.length === 0 ? (
-          // Empty state
-          <div className="bg-background-light rounded-lg p-12 text-center">
-            <div className="text-6xl mb-4">🔔</div>
-            <h2 className="text-xl font-semibold text-foreground mb-2">
-              Aucune notification
-            </h2>
-            <p className="text-foreground-muted">
-              Vous n'avez pas encore de notifications.
+    <div className="max-w-2xl mx-auto px-4 py-8">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Notifications</h1>
+          {unreadCount > 0 && (
+            <p className="text-sm text-foreground-muted mt-1">
+              {unreadCount} notification{unreadCount > 1 ? 's' : ''} non lue{unreadCount > 1 ? 's' : ''}
             </p>
-          </div>
-        ) : (
-          <div className="bg-background-light rounded-lg overflow-hidden">
-            <AnimatePresence mode="popLayout">
-              {notifications.map((notification) => (
-                <NotificationItem
-                  key={notification.id}
-                  notification={notification}
-                />
-              ))}
-            </AnimatePresence>
-
-            {/* Infinite scroll trigger */}
-            {hasMore && (
-              <div ref={loadMoreRef} className="p-4 text-center">
-                {loadingMore && (
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto" />
-                )}
-              </div>
-            )}
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </>
+
+      {/* Liste des notifications */}
+      {notifications.length === 0 ? (
+        // Empty state
+        <div className="bg-background-light rounded-lg p-12 text-center">
+          <div className="text-6xl mb-4">🔔</div>
+          <h2 className="text-xl font-semibold text-foreground mb-2">
+            Aucune notification
+          </h2>
+          <p className="text-foreground-muted">
+            Vous n'avez pas encore de notifications.
+          </p>
+        </div>
+      ) : (
+        <div className="bg-background-light rounded-lg overflow-hidden">
+          <AnimatePresence mode="popLayout">
+            {notifications.map((notification) => (
+              <NotificationItem
+                key={notification.id}
+                notification={notification}
+              />
+            ))}
+          </AnimatePresence>
+
+          {/* Infinite scroll trigger */}
+          {hasMore && (
+            <div ref={loadMoreRef} className="p-4 text-center">
+              {loadingMore && <LoadingSpinner size="sm" />}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   )
 }

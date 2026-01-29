@@ -1,8 +1,8 @@
 import { useRef, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import PostCard from './PostCard.tsx'
-import { useFeedPagination } from '../hooks/useFeedPagination.ts'
-import Button from './Button.tsx'
+import PostCard from './PostCard'
+import { useFeedPagination } from '../hooks/useFeedPagination'
+import Button from './Button'
 
 interface FeedProps {
   userId: string

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import Avatar from './Avatar.tsx'
+import Avatar from './Avatar'
 import { useNotificationsStore } from '../stores/notificationsStore'
 import { getUserByUid } from '../lib/user'
 import type { User as AppUser } from '../types/user'
@@ -76,7 +76,7 @@ export default function Navigation() {
         {user && (
           <div className="hidden items-center gap-6 md:flex">
             <Link
-              to="/feed"
+              to="/"
               className="text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
             >
               Feed

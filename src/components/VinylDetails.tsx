@@ -1,5 +1,3 @@
-// src/components/VinylDetails.tsx
-
 import { useState, useEffect } from 'react'
 import { hasVinyl, moveToCollection, removeVinylFromUser } from '../lib/vinyls'
 import type { Album, Vinyl, UserVinylType } from '../types/vinyl'

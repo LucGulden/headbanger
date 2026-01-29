@@ -4,6 +4,7 @@ import { supabase } from '../supabaseClient'
 import { getFollowing } from '../lib/follows'
 import UserListItem from '../components/UserListItem'
 import { type User } from '../types/user'
+import LoadingSpinner from '../components/LoadingSpinner'
 
 export default function Following() {
   const { username } = useParams<{ username: string }>()
@@ -79,11 +80,7 @@ export default function Following() {
   }
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-[var(--primary)] border-t-transparent" />
-      </div>
-    )
+    return <LoadingSpinner fullScreen size="lg" />
   }
 
   if (!profileUser) {
