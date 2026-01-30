@@ -1,13 +1,23 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import Avatar from './Avatar'
-import { likePost, unlikePost, hasLikedPost } from '../lib/posts'
-import { addComment, subscribeToPostComments } from '../lib/comments'
+import { likePost, unlikePost, hasLikedPost, subscribeToPostLikes } from '../lib/posts'
+import { addComment, subscribeToPostComments, subscribeToPostCommentsCount } from '../lib/comments'
 import type { PostWithDetails } from '../types/post'
 import type { CommentWithUser } from '../types/comment'
 import { getRelativeTimeString } from '../utils/date-utils'
 import CommentItem from './CommentItem'
 import Button from './Button'
+import { useUserStore } from '../stores/userStore'
+
+// Type pour les commentaires optimistes (en cours de publication)
+type OptimisticComment = CommentWithUser & { 
+  isPending: boolean
+  tempId: string
+}
+
+// Générateur d'ID temporaire unique
+const generateTempId = () => `temp_${Date.now()}_${Math.random()}`
 
 interface PostCardProps {
   post: PostWithDetails
@@ -15,13 +25,18 @@ interface PostCardProps {
   priority?: boolean
 }
 
-export default function PostCard({ post, currentUserId, priority = false }: PostCardProps) {
+export default function PostCard({ 
+  post, 
+  currentUserId, 
+  priority = false,
+}: PostCardProps) {
+  const { appUser } = useUserStore()
   const [isLiked, setIsLiked] = useState(false)
   const [likesCount, setLikesCount] = useState(post.likesCount)
   const [commentsCount, setCommentsCount] = useState(post.commentsCount)
   const [isLiking, setIsLiking] = useState(false)
   const [showComments, setShowComments] = useState(false)
-  const [comments, setComments] = useState<CommentWithUser[]>([])
+  const [comments, setComments] = useState<OptimisticComment[]>([])
   const [commentText, setCommentText] = useState('')
   const [isCommenting, setIsCommenting] = useState(false)
 
@@ -37,15 +52,43 @@ export default function PostCard({ post, currentUserId, priority = false }: Post
     checkLike()
   }, [currentUserId, post.id])
 
-  // S'abonner aux commentaires en temps réel
+  // S'abonner au compteur de commentaires en temps réel (toujours actif)
+  useEffect(() => {
+    const unsubscribe = subscribeToPostCommentsCount(
+      post.id,
+      (count: number) => {
+        setCommentsCount(count)
+      },
+      (error: Error) => {
+        console.error('Erreur lors de la récupération du compteur de commentaires:', error)
+      },
+    )
+
+    return () => unsubscribe()
+  }, [post.id])
+
+  // S'abonner à la liste des commentaires (seulement si section ouverte)
   useEffect(() => {
     if (!showComments) return
 
     const unsubscribe = subscribeToPostComments(
       post.id,
       (newComments: CommentWithUser[]) => {
-        setComments(newComments)
-        setCommentsCount(newComments.length)
+        // Fusionner les commentaires DB avec les optimistes
+        setComments(prevComments => {
+          // Garder seulement les commentaires optimistes qui n'ont pas encore été créés
+          const pendingComments = prevComments.filter(c => c.isPending)
+          
+          // Convertir les nouveaux commentaires en OptimisticComment
+          const dbComments: OptimisticComment[] = newComments.map(c => ({
+            ...c,
+            isPending: false,
+            tempId: ''
+          }))
+          
+          // Fusionner : d'abord les DB (les plus anciens en premier), puis les pending
+          return [...dbComments, ...pendingComments]
+        })
       },
       (error: Error) => {
         console.error('Erreur lors de la récupération des commentaires:', error)
@@ -54,6 +97,21 @@ export default function PostCard({ post, currentUserId, priority = false }: Post
 
     return () => unsubscribe()
   }, [post.id, showComments])
+
+  // S'abonner aux likes en temps réel (conditionnel)
+  useEffect(() => {
+    const unsubscribe = subscribeToPostLikes(
+      post.id,
+      (count: number) => {
+        setLikesCount(count)
+      },
+      (error: Error) => {
+        console.error('Erreur lors de la récupération des likes:', error)
+      },
+    )
+
+    return () => unsubscribe()
+  }, [post.id])
 
   const handleLike = async () => {
     if (!currentUserId || isLiking) return
@@ -85,20 +143,40 @@ export default function PostCard({ post, currentUserId, priority = false }: Post
   const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!currentUserId || !commentText.trim() || isCommenting) return
+    if (!currentUserId || !commentText.trim() || isCommenting || !appUser) return
 
+    const tempId = generateTempId()
+    const commentContent = commentText.trim()
+    
+    // Créer le commentaire optimiste
+    const optimisticComment: OptimisticComment = {
+      id: tempId,
+      postId: post.id,
+      userId: currentUserId,
+      content: commentContent,
+      createdAt: new Date().toISOString(),
+      user: {
+        username: appUser.username,
+        photoURL: appUser.photoUrl
+      },
+      isPending: true,
+      tempId
+    }
+
+    // Ajout optimiste à la liste
+    setComments(prev => [...prev, optimisticComment])
+    setCommentText('')
     setIsCommenting(true)
 
-    // Optimistic update du compteur
-    const previousCount = commentsCount
-    setCommentsCount(previousCount + 1)
-
     try {
-      await addComment(post.id, currentUserId, commentText)
-      setCommentText('')
+      await addComment(post.id, currentUserId, commentContent)
+      
+      // ✅ Retirer immédiatement le commentaire optimiste
+      // Le vrai commentaire arrivera via la subscription dans < 500ms
+      setComments(prev => prev.filter(c => c.tempId !== tempId))
     } catch (error) {
-      // Revert on error
-      setCommentsCount(previousCount)
+      // Revert on error : retirer le commentaire optimiste
+      setComments(prev => prev.filter(c => c.tempId !== tempId))
       console.error('Erreur lors de l\'ajout du commentaire:', error)
       alert('Impossible d\'ajouter le commentaire')
     } finally {
@@ -205,9 +283,10 @@ export default function PostCard({ post, currentUserId, priority = false }: Post
             <div className="space-y-1 mb-4 max-h-96 overflow-y-auto">
               {comments.map((comment) => (
                 <CommentItem
-                  key={comment.id}
+                  key={comment.isPending ? comment.tempId : comment.id}
                   comment={comment}
                   currentUserId={currentUserId}
+                  isPending={comment.isPending}
                   onDelete={() => {}}
                 />
               ))}

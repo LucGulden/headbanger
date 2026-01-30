@@ -86,7 +86,7 @@ export function subscribeToPostComments(
       createdAt: comment.createdAt,
       user: {
         username: comment.user.username,
-        photoURL: comment.user.photoUrl, // Notez la conversion de photo_url
+        photoURL: comment.user.photoUrl,
       },
     }))
 
@@ -110,6 +110,57 @@ export function subscribeToPostComments(
       () => {
         // Recharger tous les commentaires quand il y a un changement
         loadComments()
+      },
+    )
+    .subscribe()
+
+  // Fonction de désabonnement
+  return () => {
+    channel.unsubscribe()
+  }
+}
+
+/**
+ * S'abonner au compteur de commentaires d'un post en temps réel
+ * Plus léger que subscribeToPostComments car ne charge pas les commentaires complets
+ */
+export function subscribeToPostCommentsCount(
+  postId: string,
+  onUpdate: (count: number) => void,
+  onError: (error: Error) => void,
+): () => void {
+  // Charger le compteur initial
+  const loadCount = async () => {
+    const { count, error } = await supabase
+      .from('comments')
+      .select('*', { count: 'exact', head: true })
+      .eq('post_id', postId)
+
+    if (error) {
+      onError(error)
+      return
+    }
+
+    onUpdate(count || 0)
+  }
+
+  // Charger immédiatement
+  loadCount()
+
+  // S'abonner aux changements en temps réel
+  const channel = supabase
+    .channel(`comments-count:${postId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: '*', // INSERT, UPDATE, DELETE
+        schema: 'public',
+        table: 'comments',
+        filter: `post_id=eq.${postId}`,
+      },
+      () => {
+        // Recharger le compteur quand il y a un changement
+        loadCount()
       },
     )
     .subscribe()

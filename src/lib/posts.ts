@@ -1,5 +1,5 @@
 import { supabase } from '../supabaseClient'
-import { toCamelCase, toSnakeCase } from '../utils/caseConverter'
+import { toSnakeCase } from '../utils/caseConverter'
 import type { PostWithDetails } from '../types/post'
 
 /**
@@ -53,6 +53,56 @@ export async function hasLikedPost(userId: string, postId: string): Promise<bool
   }
 
   return data && data.length > 0
+}
+
+/**
+ * S'abonner aux likes d'un post en temps réel
+ */
+export function subscribeToPostLikes(
+  postId: string,
+  onUpdate: (likesCount: number) => void,
+  onError: (error: Error) => void,
+): () => void {
+  // Charger le compteur de likes
+  const loadLikesCount = async () => {
+    const { count, error } = await supabase
+      .from('post_likes')
+      .select('*', { count: 'exact', head: true })
+      .eq('post_id', postId)
+
+    if (error) {
+      onError(error)
+      return
+    }
+
+    onUpdate(count || 0)
+  }
+
+  // Charger immédiatement
+  loadLikesCount()
+
+  // S'abonner aux changements en temps réel
+  const channel = supabase
+    .channel(`post-likes:${postId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: '*', // INSERT, DELETE
+        schema: 'public',
+        table: 'post_likes',
+        filter: `post_id=eq.${postId}`,
+      },
+      () => {
+        // Recharger le compteur quand il y a un changement
+        loadLikesCount()
+      },
+    )
+    .subscribe()
+
+  // Fonction de désabonnement
+  return () => {
+    channel.unsubscribe()
+  }
 }
 
 /**

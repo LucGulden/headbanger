@@ -8,10 +8,16 @@ import type { CommentWithUser } from '../types/comment'
 interface CommentItemProps {
   comment: CommentWithUser
   currentUserId?: string
+  isPending?: boolean
   onDelete: () => void
 }
 
-export default function CommentItem({ comment, currentUserId, onDelete }: CommentItemProps) {
+export default function CommentItem({ 
+  comment, 
+  currentUserId, 
+  isPending = false,
+  onDelete 
+}: CommentItemProps) {
   const [isDeleting, setIsDeleting] = useState(false)
   const isOwner = currentUserId === comment.userId
 
@@ -35,7 +41,9 @@ export default function CommentItem({ comment, currentUserId, onDelete }: Commen
   }
 
   return (
-    <div className="flex gap-3 py-3">
+    <div 
+      className={`flex gap-3 py-3 transition-opacity ${isPending ? 'opacity-50' : 'opacity-100'}`}
+    >
       {/* Avatar */}
       <Link to={`/profile/${comment.user.username}`} className="flex-shrink-0">
         <Avatar 
@@ -55,7 +63,7 @@ export default function CommentItem({ comment, currentUserId, onDelete }: Commen
             {comment.user.username}
           </Link>
           <span className="text-xs text-[var(--foreground-muted)]">
-            {getRelativeTimeString(comment.createdAt)}
+            {isPending ? 'Publication...' : getRelativeTimeString(comment.createdAt)}
           </span>
         </div>
 
@@ -64,8 +72,8 @@ export default function CommentItem({ comment, currentUserId, onDelete }: Commen
         </p>
       </div>
 
-      {/* Bouton supprimer si c'est son commentaire */}
-      {isOwner && (
+      {/* Bouton supprimer si c'est son commentaire (pas visible si pending) */}
+      {isOwner && !isPending && (
         <button
           onClick={handleDelete}
           disabled={isDeleting}

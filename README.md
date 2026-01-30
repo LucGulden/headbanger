@@ -93,6 +93,8 @@ const { stats } = useVinylStatsStore()
 | `AlbumCard` | Carte album (titre, artiste, année) |
 | `ProfileVinyls` | Affiche collection/wishlist, ouvre modal au clic sur vinyle, écoute `vinylStatsStore` pour rafraîchir |
 | `LoadingSpinner` | Spinner de chargement centralisé avec options fullScreen et taille |
+| `PostCard` | Carte post avec optimistic UI et subscriptions temps réel (likes, commentaires) |
+| `CommentItem` | Item commentaire avec support mode `isPending` |
 
 ### Guards
 
@@ -247,6 +249,7 @@ type UserVinylType = 'collection' | 'wishlist';
 6. **Covers Spotify** : URL stockée directement (pas de copie)
 7. **Route guards** : ProtectedRoute gère le loading centralisé, pas de checks manuels dans les pages
 8. **State management** : Zustand pour état global, pas d'events custom (`window.dispatchEvent`)
+9. **Realtime** : Activer les tables dans Supabase publication pour temps réel
 
 ## Style d'interaction préféré
 
@@ -258,4 +261,4 @@ type UserVinylType = 'collection' | 'wishlist';
 
 ---
 
-**Dernière mise à jour** : 29 janvier 2026
+**Dernière mise à jour** : 31 janvier 2026
