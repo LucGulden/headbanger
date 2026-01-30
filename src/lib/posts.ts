@@ -53,21 +53,6 @@ export async function hasLikedPost(userId: string, postId: string): Promise<bool
 }
 
 /**
- * Supprimer un post (et ses likes/commentaires en cascade via DB)
- */
-export async function deletePost(postId: string): Promise<void> {
-  const { error } = await supabase
-    .from('posts')
-    .delete()
-    .eq('id', postId)
-
-  if (error) {
-    console.error('Erreur lors de la suppression du post:', error)
-    throw error
-  }
-}
-
-/**
  * Récupérer les posts du feed avec pagination
  * @param userId - ID de l'utilisateur connecté
  * @param profileFeed - true = posts d'un utilisateur spécifique, false = feed global

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import Avatar from './Avatar'
-import { likePost, unlikePost, hasLikedPost, deletePost } from '../lib/posts'
+import { likePost, unlikePost, hasLikedPost } from '../lib/posts'
 import { addComment, subscribeToPostComments } from '../lib/comments'
 import type { PostWithDetails } from '../types/post'
 import type { CommentWithUser } from '../types/comment'
@@ -12,11 +12,10 @@ import Button from './Button'
 interface PostCardProps {
   post: PostWithDetails
   currentUserId?: string
-  onDelete: () => void
   priority?: boolean
 }
 
-export default function PostCard({ post, currentUserId, onDelete, priority = false }: PostCardProps) {
+export default function PostCard({ post, currentUserId, priority = false }: PostCardProps) {
   const [isLiked, setIsLiked] = useState(false)
   const [likesCount, setLikesCount] = useState(post.likesCount)
   const [commentsCount, setCommentsCount] = useState(post.commentsCount)
@@ -25,9 +24,6 @@ export default function PostCard({ post, currentUserId, onDelete, priority = fal
   const [comments, setComments] = useState<CommentWithUser[]>([])
   const [commentText, setCommentText] = useState('')
   const [isCommenting, setIsCommenting] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-
-  const isOwner = currentUserId === post.userId
 
   // Vérifier si l'utilisateur a liké le post
   useEffect(() => {
@@ -110,25 +106,6 @@ export default function PostCard({ post, currentUserId, onDelete, priority = fal
     }
   }
 
-  const handleDeletePost = async () => {
-    if (!window.confirm('Supprimer ce post ?')) {
-      return
-    }
-
-    setIsDeleting(true)
-    try {
-      await deletePost(post.id)
-      if (onDelete) {
-        onDelete()
-      }
-    } catch (error) {
-      console.error('Erreur lors de la suppression du post:', error)
-      alert('Impossible de supprimer le post')
-    } finally {
-      setIsDeleting(false)
-    }
-  }
-
   const postTypeText =
     post.type === 'collection_add' ? 'a ajouté' : 'souhaite ajouter'
   const collectionText =
@@ -167,27 +144,6 @@ export default function PostCard({ post, currentUserId, onDelete, priority = fal
             à {collectionText}
           </p>
         </div>
-
-        {/* Bouton supprimer si c'est son post */}
-        {isOwner && (
-          <button
-            onClick={handleDeletePost}
-            disabled={isDeleting}
-            className="flex-shrink-0 text-[var(--foreground-muted)] hover:text-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title={isDeleting ? 'Suppression en cours...' : 'Supprimer le post'}
-          >
-            {isDeleting ? (
-              <svg className="h-5 w-5 animate-spin text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-              </svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            )}
-          </button>
-        )}
       </div>
 
       {/* Album Cover */}

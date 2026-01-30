@@ -17,7 +17,6 @@ export interface UseFeedPaginationReturn {
   newPostsAvailable: number
   loadMore: () => Promise<void>
   refresh: () => Promise<void>
-  handleDeletePost: (postId: string) => void
 }
 
 export function useFeedPagination(userId: string, profileFeed: boolean): UseFeedPaginationReturn {
@@ -84,10 +83,6 @@ export function useFeedPagination(userId: string, profileFeed: boolean): UseFeed
       setRefreshing(false)
     }
   }
-
-  const handleDeletePost = useCallback((postId: string) => {
-    setPosts((prev) => prev.filter((p) => p.id !== postId))
-  }, [])
 
   // Chargement initial
   useEffect(() => {
@@ -169,6 +164,5 @@ export function useFeedPagination(userId: string, profileFeed: boolean): UseFeed
     newPostsAvailable,
     loadMore: loadMorePosts,
     refresh: refreshFeed,
-    handleDeletePost,
   }
 }

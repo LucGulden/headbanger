@@ -20,7 +20,6 @@ export default function Feed({ userId, profileFeed }: FeedProps) {
     newPostsAvailable,
     loadMore,
     refresh,
-    handleDeletePost,
   } = useFeedPagination(userId, profileFeed)
 
   // Intersection Observer pour infinite scroll
@@ -233,7 +232,6 @@ export default function Feed({ userId, profileFeed }: FeedProps) {
           post={post}
           currentUserId={userId}
           priority={index === 0}
-          onDelete={() => handleDeletePost(post.id)}
         />
       ))}
 
