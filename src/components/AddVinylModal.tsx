@@ -38,7 +38,15 @@ export default function AddVinylModal({
 }: AddVinylModalProps) {
 
   const [currentStep, setCurrentStep] = useState<ModalStep>(
-    initialStep ?? (initialVinyl ? 'vinylDetails' : initialAlbum ? 'vinylSelection' : 'albumSearch'),
+    initialStep ?? (
+      initialVinyl 
+        ? 'vinylDetails' 
+        : initialAlbum 
+        ? 'vinylSelection' 
+        : artist 
+        ? 'albumSearch' 
+        : 'createAlbum' // Si pas d'artiste, démarre à création d'album
+    ),
   )
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(initialAlbum || null)
   const [selectedVinyl, setSelectedVinyl] = useState<Vinyl | null>(initialVinyl || null)
@@ -178,7 +186,11 @@ export default function AddVinylModal({
                   {currentStep === 'createAlbum' && 'Créer un album'}
                   {currentStep === 'vinylSelection' && 'Choisir un pressage'}
                   {currentStep === 'createVinyl' && 'Créer un pressage'}
-                  {currentStep === 'vinylDetails' && 'Confirmer l\'ajout'}
+                  {currentStep === 'vinylDetails' && (
+                    initialVinyl 
+                      ? 'Détails du vinyle'  // Consultation depuis un profil
+                      : 'Confirmer l\'ajout' // Fin du processus d'ajout
+                  )}
                 </h2>
                 {/* Sous-titre pour recherche par artiste */}
                 {currentStep === 'albumSearch' && artist && artist?.name && (
@@ -233,7 +245,7 @@ export default function AddVinylModal({
 
           {/* Contenu animé */}
           <AnimatePresence mode="wait">
-            {currentStep === 'albumSearch' && (
+            {currentStep === 'albumSearch' && artist && (
               <motion.div
                 key="albumSearch"
                 initial={{ opacity: 0, x: -20 }}

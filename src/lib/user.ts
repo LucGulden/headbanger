@@ -151,3 +151,39 @@ export async function getUserByUsername(username: string): Promise<User | null> 
     return null
   }
 }
+
+/**
+ * Recherche d'utilisateurs par username, nom ou prénom
+ * @param query - Terme de recherche
+ * @param limit - Nombre max de résultats (défaut: 20)
+ * @param offset - Offset pour la pagination (défaut: 0)
+ * @returns Liste d'utilisateurs correspondants
+ */
+export async function searchUsers(
+  query: string,
+  limit: number = 20,
+  offset: number = 0,
+): Promise<User[]> {
+  if (!query || query.trim().length < 2) {
+    return []
+  }
+
+  const searchTerm = query.trim().toLowerCase()
+
+  const { data, error } = await supabase
+    .from('users')
+    .select('uid, username, first_name, last_name, bio, photo_url, email')
+    .or(
+      `username.ilike.%${searchTerm}%,first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%`,
+    )
+    .order('username', { ascending: true })
+    .range(offset, offset + limit - 1)
+
+  if (error) {
+    console.error('[Search] Erreur recherche utilisateurs:', error)
+    throw error
+  }
+
+  // Convertir en camelCase
+  return toCamelCase<User[]>(data || [])
+}

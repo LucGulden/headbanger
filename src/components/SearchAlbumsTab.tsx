@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
-import { searchAlbums } from '../lib/vinyls'
+import { useRef, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
+import { useAlbumSearch } from '../hooks/useAlbumSearch'
 import AlbumCard from './AlbumCard'
 import AddVinylModal from './AddVinylModal'
 import type { Album } from '../types/vinyl'
 import Button from './Button'
+import { useState } from 'react'
 
 interface SearchAlbumsTabProps {
   query: string;
@@ -12,39 +13,36 @@ interface SearchAlbumsTabProps {
 
 export default function SearchAlbumsTab({ query }: SearchAlbumsTabProps) {
   const { user } = useAuth()
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<Error | null>(null)
-  const [searchResults, setSearchResults] = useState<Album[]>([])
+  const { albums, loading, loadingMore, hasMore, error, loadMore } = useAlbumSearch({ query })
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isCreateMode, setIsCreateMode] = useState(false)
+  const loadMoreRef = useRef<HTMLDivElement>(null)
 
   const hasSearched = query.trim().length > 0
 
-  // Debounce search
+  // Infinite scroll avec IntersectionObserver
   useEffect(() => {
-    if (!query || query.trim().length < 2) {
-      setSearchResults([])
-      return
-    }
+    const currentRef = loadMoreRef.current
+    if (!currentRef || !hasMore || loadingMore) return
 
-    const timer = setTimeout(async () => {
-      setIsLoading(true)
-      setError(null)
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadMore()
+        }
+      },
+      { threshold: 0.1 }
+    )
 
-      try {
-        const results = await searchAlbums(query)
-        setSearchResults(results)
-      } catch (err) {
-        console.error('[SearchAlbumsTab] Erreur lors de la recherche:', err)
-        setError(err instanceof Error ? err : new Error('Erreur lors de la recherche'))
-      } finally {
-        setIsLoading(false)
+    observer.observe(currentRef)
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef)
       }
-    }, 300)
-
-    return () => clearTimeout(timer)
-  }, [query])
+    }
+  }, [hasMore, loadingMore, loadMore])
 
   const handleAlbumClick = (album: Album) => {
     setSelectedAlbum(album)
@@ -87,7 +85,7 @@ export default function SearchAlbumsTab({ query }: SearchAlbumsTabProps) {
       </Button>
 
       {/* Loading skeletons */}
-      {isLoading && searchResults.length === 0 && (
+      {loading && albums.length === 0 && (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="animate-pulse">
@@ -100,22 +98,34 @@ export default function SearchAlbumsTab({ query }: SearchAlbumsTabProps) {
       )}
 
       {/* Résultats */}
-      {!isLoading && searchResults.length > 0 && (
+      {!loading && albums.length > 0 && (
         <>
           <p className="mb-4 text-sm text-[var(--foreground-muted)]">
-            {searchResults.length} résultat{searchResults.length > 1 ? 's' : ''} trouvé
-            {searchResults.length > 1 ? 's' : ''}
+            {albums.length}{hasMore ? '+' : ''} résultat{albums.length > 1 ? 's' : ''} trouvé
+            {albums.length > 1 ? 's' : ''}
           </p>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-            {searchResults.map((album) => (
+            {albums.map((album) => (
               <AlbumCard key={album.id} album={album} onClick={handleAlbumClick} />
             ))}
           </div>
+
+          {/* Trigger pour l'infinite scroll */}
+          {hasMore && (
+            <div ref={loadMoreRef} className="mt-8 flex justify-center">
+              {loadingMore && (
+                <div className="flex items-center gap-2 text-[var(--foreground-muted)]">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--primary)] border-t-transparent" />
+                  <span>Chargement...</span>
+                </div>
+              )}
+            </div>
+          )}
         </>
       )}
 
       {/* Empty state - Recherche effectuée mais aucun résultat */}
-      {!isLoading && hasSearched && searchResults.length === 0 && !error && (
+      {!loading && hasSearched && albums.length === 0 && !error && (
         <div className="py-16 text-center">
           <div className="mb-4 text-6xl">🔍</div>
           <h3 className="mb-2 text-xl font-semibold text-[var(--foreground)]">
@@ -128,7 +138,7 @@ export default function SearchAlbumsTab({ query }: SearchAlbumsTabProps) {
       )}
 
       {/* État initial - Pas de recherche */}
-      {!isLoading && !hasSearched && (
+      {!loading && !hasSearched && (
         <div className="py-16 text-center">
           <div className="mb-4 text-6xl">💿</div>
           <h3 className="mb-2 text-xl font-semibold text-[var(--foreground)]">

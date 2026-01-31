@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { searchAlbums, getAlbumsByArtist } from '../lib/vinyls'
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import { getAlbumsByArtist } from '../lib/vinyls'
 import type { Album } from '../types/vinyl'
 import AlbumCard from './AlbumCard'
 import type { Artist } from '../types/vinyl'
@@ -8,96 +8,47 @@ import Button from './Button'
 interface AlbumSearchProps {
   onAlbumSelect: (album: Album) => void;
   onCreateAlbum: () => void;
-  artist?: Artist;
+  artist: Artist; // Plus optionnel !
 }
 
 export default function AlbumSearch({ onAlbumSelect, onCreateAlbum, artist }: AlbumSearchProps) {
   const [query, setQuery] = useState('')
+  const [artistAlbums, setArtistAlbums] = useState<Album[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
-  const [searchResults, setSearchResults] = useState<Album[]>([])
 
   const hasSearched = query.trim().length > 0
 
-  // Charger les albums de l'artiste au montage si artistId est défini
-  useEffect(() => {
-    if (artist) {
-      setIsLoading(true)
-      setError(null)
-      
-      getAlbumsByArtist(artist.id)
-        .then((results) => {
-          setSearchResults(results)
-        })
-        .catch((err) => {
-          console.error('[Search] Erreur lors du chargement des albums:', err)
-          setError(err instanceof Error ? err : new Error('Erreur lors du chargement'))
-        })
-        .finally(() => {
-          setIsLoading(false)
-        })
+  // Charger les albums de l'artiste
+  const loadArtistAlbums = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+    
+    try {
+      const results = await getAlbumsByArtist(artist.id)
+      setArtistAlbums(results)
+    } catch (err) {
+      console.error('[AlbumSearch] Erreur lors du chargement des albums:', err)
+      setError(err instanceof Error ? err : new Error('Erreur lors du chargement'))
+    } finally {
+      setIsLoading(false)
     }
-  }, [artist])
+  }, [artist.id])
 
-  // Debounce search
+  // Charger au montage
   useEffect(() => {
-    if (!query || query.trim().length < 1) {
-      // Si pas d'artiste, vider les résultats
-      if (!artist) {
-        setSearchResults([])
-        return
-      }
-      
-      // Si artiste défini et query vide, recharger tous ses albums
-      setIsLoading(true)
-      setError(null)
-      
-      getAlbumsByArtist(artist.id)
-        .then((results) => {
-          setSearchResults(results)
-        })
-        .catch((err) => {
-          console.error('[Search] Erreur lors du chargement des albums:', err)
-          setError(err instanceof Error ? err : new Error('Erreur lors du chargement'))
-        })
-        .finally(() => {
-          setIsLoading(false)
-        })
-      
-      return
-    }
+    loadArtistAlbums()
+  }, [loadArtistAlbums])
 
-    const timer = setTimeout(async () => {
-      setIsLoading(true)
-      setError(null)
+  // Filtrer les albums selon la query
+  const filteredAlbums = useMemo(() => {
+    if (!query || query.trim().length < 1) return artistAlbums
 
-      try {
-        let results: Album[]
-        
-        if (artist) {
-          // Recherche filtrée sur les albums de l'artiste
-          const artistAlbums = await getAlbumsByArtist(artist.id)
-          const searchLower = query.toLowerCase()
-          results = artistAlbums.filter(album => 
-            album.title.toLowerCase().includes(searchLower) ||
-            album.artist?.toLowerCase().includes(searchLower),
-          )
-        } else {
-          // Recherche globale
-          results = await searchAlbums(query)
-        }
-        
-        setSearchResults(results)
-      } catch (err) {
-        console.error('[Search] Erreur lors de la recherche:', err)
-        setError(err instanceof Error ? err : new Error('Erreur lors de la recherche'))
-      } finally {
-        setIsLoading(false)
-      }
-    }, 300)
-
-    return () => clearTimeout(timer)
-  }, [query, artist])
+    const searchLower = query.toLowerCase()
+    return artistAlbums.filter(album => 
+      album.title.toLowerCase().includes(searchLower),
+    )
+  }, [query, artistAlbums])
 
   return (
     <div className="w-full">
@@ -123,21 +74,18 @@ export default function AlbumSearch({ onAlbumSelect, onCreateAlbum, artist }: Al
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={artist ? 'Filtrer les albums...' : 'Rechercher un album ou un artiste...'}
+            placeholder="Filtrer les albums..."
             className="w-full rounded-lg border border-[var(--background-lighter)] bg-[var(--background-light)] py-4 pl-12 pr-4 text-lg text-[var(--foreground)] placeholder-[var(--foreground-muted)] focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20"
             autoFocus
           />
-          {isLoading && (
+          {isLoading && filteredAlbums.length === 0 && (
             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
               <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--primary)] border-t-transparent" />
             </div>
           )}
         </div>
         <p className="mt-2 text-sm text-[var(--foreground-muted)]">
-          {artist 
-            ? `Filtrez parmi les albums de ${artist.name || 'cet artiste'}`
-            : 'Recherchez dans notre bibliothèque d\'albums'
-          }
+          Filtrez parmi les albums de {artist.name}
         </p>
       </div>
       
@@ -166,7 +114,7 @@ export default function AlbumSearch({ onAlbumSelect, onCreateAlbum, artist }: Al
       )}
 
       {/* Loading skeletons */}
-      {isLoading && searchResults.length === 0 && (
+      {isLoading && filteredAlbums.length === 0 && (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="animate-pulse">
@@ -179,14 +127,14 @@ export default function AlbumSearch({ onAlbumSelect, onCreateAlbum, artist }: Al
       )}
 
       {/* Résultats */}
-      {!isLoading && searchResults.length > 0 && (
+      {!isLoading && filteredAlbums.length > 0 && (
         <>
           <p className="mb-4 text-sm text-[var(--foreground-muted)]">
-            {searchResults.length} résultat{searchResults.length > 1 ? 's' : ''} trouvé
-            {searchResults.length > 1 ? 's' : ''}
+            {filteredAlbums.length} résultat{filteredAlbums.length > 1 ? 's' : ''} trouvé
+            {filteredAlbums.length > 1 ? 's' : ''}
           </p>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-            {searchResults.map((album) => (
+            {filteredAlbums.map((album) => (
               <AlbumCard
                 key={album.id}
                 album={album}
@@ -197,28 +145,28 @@ export default function AlbumSearch({ onAlbumSelect, onCreateAlbum, artist }: Al
         </>
       )}
 
-      {/* Empty state */}
-      {!isLoading && hasSearched && searchResults.length === 0 && !error && (
+      {/* Empty state - Filtrage sans résultat */}
+      {!isLoading && hasSearched && filteredAlbums.length === 0 && !error && (
         <div className="py-16 text-center">
           <div className="mb-4 text-6xl">🔍</div>
           <h3 className="mb-2 text-xl font-semibold text-[var(--foreground)]">
             Aucun résultat
           </h3>
           <p className="text-[var(--foreground-muted)]">
-            Aucun album trouvé dans votre bibliothèque. Essayez un autre nom d'album ou d'artiste.
+            Aucun album trouvé pour "{query}" parmi les albums de {artist.name}.
           </p>
         </div>
       )}
 
-      {/* État initial */}
-      {!isLoading && !hasSearched && !artist && (
+      {/* Aucun album pour cet artiste */}
+      {!isLoading && !hasSearched && filteredAlbums.length === 0 && !error && (
         <div className="py-16 text-center">
           <div className="mb-4 text-6xl">💿</div>
           <h3 className="mb-2 text-xl font-semibold text-[var(--foreground)]">
-            Recherchez votre premier album
+            Aucun album trouvé
           </h3>
           <p className="text-[var(--foreground-muted)]">
-            Tapez le nom d'un album ou d'un artiste pour commencer
+            Aucun album n'est encore enregistré pour {artist.name}.
           </p>
         </div>
       )}

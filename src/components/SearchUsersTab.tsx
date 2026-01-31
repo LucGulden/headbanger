@@ -1,43 +1,39 @@
-import { useState, useEffect } from 'react'
-import { searchUsers } from '../lib/search'
+import { useRef, useEffect } from 'react'
+import { useUserSearch } from '../hooks/useUserSearch'
 import UserListItem from './UserListItem'
-import type { User } from '../types/user'
 
 interface SearchUsersTabProps {
   query: string;
 }
 
 export default function SearchUsersTab({ query }: SearchUsersTabProps) {
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<Error | null>(null)
-  const [searchResults, setSearchResults] = useState<User[]>([])
+  const { users, loading, loadingMore, hasMore, error, loadMore } = useUserSearch({ query })
+  const loadMoreRef = useRef<HTMLDivElement>(null)
 
   const hasSearched = query.trim().length > 0
 
-  // Debounce search
+  // Infinite scroll avec IntersectionObserver
   useEffect(() => {
-    if (!query || query.trim().length < 2) {
-      setSearchResults([])
-      return
-    }
+    const currentRef = loadMoreRef.current
+    if (!currentRef || !hasMore || loadingMore) return
 
-    const timer = setTimeout(async () => {
-      setIsLoading(true)
-      setError(null)
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadMore()
+        }
+      },
+      { threshold: 0.1 }
+    )
 
-      try {
-        const results = await searchUsers(query)
-        setSearchResults(results)
-      } catch (err) {
-        console.error('[SearchUsersTab] Erreur lors de la recherche:', err)
-        setError(err instanceof Error ? err : new Error('Erreur lors de la recherche'))
-      } finally {
-        setIsLoading(false)
+    observer.observe(currentRef)
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef)
       }
-    }, 300)
-
-    return () => clearTimeout(timer)
-  }, [query])
+    }
+  }, [hasMore, loadingMore, loadMore])
 
   return (
     <div className="w-full">
@@ -58,7 +54,7 @@ export default function SearchUsersTab({ query }: SearchUsersTabProps) {
       )}
 
       {/* Loading skeletons */}
-      {isLoading && searchResults.length === 0 && (
+      {loading && users.length === 0 && (
         <div className="space-y-3">
           {Array.from({ length: 5 }).map((_, i) => (
             <div
@@ -78,13 +74,13 @@ export default function SearchUsersTab({ query }: SearchUsersTabProps) {
       )}
 
       {/* Résultats */}
-      {!isLoading && searchResults.length > 0 && (
+      {!loading && users.length > 0 && (
         <>
           <p className="mb-4 text-sm text-[var(--foreground-muted)]">
-            {searchResults.length} résultat{searchResults.length > 1 ? 's' : ''}
+            {users.length}{hasMore ? '+' : ''} résultat{users.length > 1 ? 's' : ''}
           </p>
           <div className="space-y-3">
-            {searchResults.map((user) => (
+            {users.map((user) => (
               <UserListItem
                 key={user.uid}
                 user={user}
@@ -92,11 +88,23 @@ export default function SearchUsersTab({ query }: SearchUsersTabProps) {
               />
             ))}
           </div>
+
+          {/* Trigger pour l'infinite scroll */}
+          {hasMore && (
+            <div ref={loadMoreRef} className="mt-8 flex justify-center">
+              {loadingMore && (
+                <div className="flex items-center gap-2 text-[var(--foreground-muted)]">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--primary)] border-t-transparent" />
+                  <span>Chargement...</span>
+                </div>
+              )}
+            </div>
+          )}
         </>
       )}
 
       {/* Empty state - Recherche effectuée mais aucun résultat */}
-      {!isLoading && hasSearched && searchResults.length === 0 && !error && (
+      {!loading && hasSearched && users.length === 0 && !error && (
         <div className="py-16 text-center">
           <div className="mb-4 text-6xl">🔍</div>
           <h3 className="mb-2 text-xl font-semibold text-[var(--foreground)]">
@@ -109,7 +117,7 @@ export default function SearchUsersTab({ query }: SearchUsersTabProps) {
       )}
 
       {/* État initial - Pas de recherche */}
-      {!isLoading && !hasSearched && (
+      {!loading && !hasSearched && (
         <div className="py-16 text-center">
           <div className="mb-4 text-6xl">👥</div>
           <h3 className="mb-2 text-xl font-semibold text-[var(--foreground)]">

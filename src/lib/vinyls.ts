@@ -216,11 +216,12 @@ export async function getVinylStats(userId: string): Promise<{
 }
 
 /**
- * Recherche d'albums dans la base de données par titre ou artiste
+ * Recherche d'albums dans la base de données par titre uniquement
  */
 export async function searchAlbums(
   query: string,
   limit: number = 20,
+  offset: number = 0,
 ): Promise<Album[]> {
   if (!query || query.trim().length < 2) {
     return []
@@ -228,8 +229,7 @@ export async function searchAlbums(
 
   const searchTerm = `%${query.trim()}%`
 
-  // 1. Chercher par titre d'album (avec artistes)
-  const { data: albumsByTitle, error: titleError } = await supabase
+  const { data, error } = await supabase
     .from('albums')
     .select(`
       *,
@@ -238,65 +238,24 @@ export async function searchAlbums(
       )
     `)
     .ilike('title', searchTerm)
-    .limit(limit)
+    .order('title', { ascending: true })
+    .range(offset, offset + limit - 1)
 
-  if (titleError) {
-    throw new Error(`Erreur lors de la recherche: ${titleError.message}`)
+  if (error) {
+    throw new Error(`Erreur lors de la recherche: ${error.message}`)
   }
 
-  // 2. Chercher par artiste (via la jointure album_artists)
-  const { data: matchingArtists, error: artistError } = await supabase
-    .from('artists')
-    .select('id')
-    .ilike('name', searchTerm)
-
-  if (artistError) {
-    throw new Error(`Erreur lors de la recherche: ${artistError.message}`)
-  }
-
-  let albumsByArtistData: any[] = []
-  if (matchingArtists && matchingArtists.length > 0) {
-    const artistIds = matchingArtists.map(a => a.id)
-    
-    const { data: artistAlbums, error: artistAlbumsError } = await supabase
-      .from('album_artists')
-      .select(`
-        album:albums(
-          *,
-          album_artists(
-            artist:artists(name)
-          )
-        )
-      `)
-      .in('artist_id', artistIds)
-      .limit(limit)
-
-    if (artistAlbumsError) {
-      throw new Error(`Erreur lors de la recherche: ${artistAlbumsError.message}`)
-    }
-
-    albumsByArtistData = (artistAlbums || [])
-      .map((item: any) => item.album)
-      .filter(Boolean)
-  }
-
-  // 3. Fusionner et dédupliquer par ID
-  const allAlbums = [...(albumsByTitle || []), ...albumsByArtistData]
-  const uniqueAlbums = Array.from(
-    new Map(allAlbums.map(album => [album.id, album])).values(),
-  )
-
-  // 4. Transformer pour extraire le nom de l'artiste
-  const transformedAlbums = uniqueAlbums.map((album: any) => {
+  // Transformer pour extraire le nom de l'artiste
+  const transformedAlbums = (data || []).map((album: any) => {
     const artists = album.album_artists?.map((aa: any) => aa.artist?.name).filter(Boolean) || []
     return {
       ...album,
       artist: artists.join(', ') || 'Artiste inconnu',
-      album_artists: undefined, // Retirer la jointure du résultat final
+      album_artists: undefined,
     }
   })
 
-  return transformedAlbums.slice(0, limit).map(album => toCamelCase<Album>(album))
+  return transformedAlbums.map(album => toCamelCase<Album>(album))
 }
 
 /**
@@ -509,6 +468,7 @@ export async function updateVinylCover(vinylId: string, coverUrl: string): Promi
 export async function searchArtists(
   query: string,
   limit: number = 20,
+  offset: number = 0,
 ): Promise<Artist[]> {
   if (!query || query.trim().length < 2) {
     return []
@@ -521,7 +481,7 @@ export async function searchArtists(
     .select('*')
     .ilike('name', searchTerm)
     .order('name', { ascending: true })
-    .limit(limit)
+    .range(offset, offset + limit - 1)
 
   if (error) {
     throw new Error(`Erreur lors de la recherche d'artistes: ${error.message}`)

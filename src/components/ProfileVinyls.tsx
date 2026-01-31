@@ -6,6 +6,7 @@ import { useVinylStatsStore } from '../stores/vinylStatsStore'
 import { useAuth } from '../hooks/useAuth'
 import type { UserVinylType, Vinyl, Album } from '../types/vinyl'
 import Button from './Button'
+import { Link } from 'react-router-dom'
 
 interface ProfileVinylsProps {
   userId: string;
@@ -90,9 +91,11 @@ export default function ProfileVinyls({
             : `${username} n'a pas encore ajouté de vinyles`}
         </p>
         {isOwnProfile && (
-          <Button onClick={onOpenAddVinyl} variant="primary">
-            {isCollection ? 'Ajouter à ma collection' : 'Ajouter à ma wishlist'}
-          </Button>
+          <Link to="/search">
+            <Button variant="primary">
+              {isCollection ? 'Ajouter à ma collection' : 'Ajouter à ma wishlist'}
+            </Button>
+          </Link>
         )}
       </div>
     )
