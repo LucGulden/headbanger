@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
 import { AlbumsController } from './albums.controller';
 import { AlbumsService } from './albums.service';
-import { SupabaseService } from '../common/database/supabase.service';
 
 @Module({
   controllers: [AlbumsController],
-  providers: [AlbumsService, SupabaseService],
+  providers: [AlbumsService],
   exports: [AlbumsService], // Exporte si d'autres modules en ont besoin
 })
 export class AlbumsModule {}

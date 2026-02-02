@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../common/database/supabase.service';
-import { Album } from '@fillcrate/shared';
+import { Album, ArtistLight } from '@fillcrate/shared';
 
 @Injectable()
 export class AlbumsService {
@@ -53,19 +53,21 @@ export class AlbumsService {
    */
   private transformAlbumData(data: any): Album {
     // Récupère et trie les artistes par position
-    const artists = data.album_artists
+    const artists: ArtistLight[] = (data.vinyl_artists || [])
       .sort((a: any, b: any) => a.position - b.position)
-      .map((aa: any) => aa.artists.name);
-
-    // Concatène les artistes avec des virgules
-    const artistString = artists.join(', ');
+      .map((va: any) => ({
+        id: va.artist?.id,
+        name: va.artist?.name,
+        imageUrl: va.artist?.image_url,
+      }))
+      .filter((artist: ArtistLight) => artist.id && artist.name);
 
     return {
       id: data.id,
       spotifyId: data.spotify_id,
       spotifyUrl: data.spotify_url,
       title: data.title,
-      artist: artistString,
+      artists: artists,
       coverUrl: data.cover_url,
       year: data.year,
       createdBy: data.created_by,
