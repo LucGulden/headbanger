@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Post,
-  Delete,
-  Get,
-  Param,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Post, Delete, Get, Param, UseGuards } from '@nestjs/common';
 import { PostLikesService } from './post-likes.service';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';

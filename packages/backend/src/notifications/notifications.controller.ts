@@ -32,9 +32,7 @@ export class NotificationsController {
    * Compte les notifications non lues
    */
   @Get('unread-count')
-  async getUnreadCount(
-    @CurrentUser() user: AuthenticatedUser,
-  ): Promise<{ count: number }> {
+  async getUnreadCount(@CurrentUser() user: AuthenticatedUser): Promise<{ count: number }> {
     const count = await this.notificationsService.getUnreadCount(user.id);
     return { count };
   }
@@ -44,9 +42,7 @@ export class NotificationsController {
    * Marque toutes les notifications comme lues
    */
   @Put('mark-all-read')
-  async markAllAsRead(
-    @CurrentUser() user: AuthenticatedUser,
-  ): Promise<{ success: boolean }> {
+  async markAllAsRead(@CurrentUser() user: AuthenticatedUser): Promise<{ success: boolean }> {
     await this.notificationsService.markAllAsRead(user.id);
     return { success: true };
   }

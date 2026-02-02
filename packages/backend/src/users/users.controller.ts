@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Get,
-  Put,
-  Param,
-  Query,
-  Body,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Put, Param, Query, Body, UseGuards } from '@nestjs/common';
 import { User } from '@fillcrate/shared';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -76,10 +68,7 @@ export class UsersController {
     @Query('username') username: string,
     @Query('excludeUserId') excludeUserId?: string,
   ): Promise<{ available: boolean }> {
-    const available = await this.usersService.checkUsernameAvailability(
-      username,
-      excludeUserId,
-    );
+    const available = await this.usersService.checkUsernameAvailability(username, excludeUserId);
     return { available };
   }
 

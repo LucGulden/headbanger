@@ -13,11 +13,7 @@ export class UsersService {
   async getUserByUid(uid: string): Promise<User> {
     const supabase = this.supabaseService.getClient();
 
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('uid', uid)
-      .single();
+    const { data, error } = await supabase.from('users').select('*').eq('uid', uid).single();
 
     if (error || !data) {
       throw new NotFoundException(`User with UID ${uid} not found`);
@@ -48,11 +44,7 @@ export class UsersService {
   /**
    * Recherche d'utilisateurs par username, nom ou prénom
    */
-  async searchUsers(
-    query: string,
-    limit: number = 20,
-    offset: number = 0,
-  ): Promise<User[]> {
+  async searchUsers(query: string, limit: number = 20, offset: number = 0): Promise<User[]> {
     if (!query || query.trim().length < 2) {
       return [];
     }
@@ -79,10 +71,7 @@ export class UsersService {
   /**
    * Vérifie la disponibilité d'un username
    */
-  async checkUsernameAvailability(
-    username: string,
-    excludeUserId?: string,
-  ): Promise<boolean> {
+  async checkUsernameAvailability(username: string, excludeUserId?: string): Promise<boolean> {
     const supabase = this.supabaseService.getClient();
 
     const { data, error } = await supabase
@@ -110,16 +99,10 @@ export class UsersService {
   /**
    * Met à jour le profil utilisateur
    */
-  async updateUserProfile(
-    userId: string,
-    updateDto: UpdateUserDto,
-  ): Promise<User> {
+  async updateUserProfile(userId: string, updateDto: UpdateUserDto): Promise<User> {
     // Si le username change, vérifier sa disponibilité
     if (updateDto.username) {
-      const isAvailable = await this.checkUsernameAvailability(
-        updateDto.username,
-        userId,
-      );
+      const isAvailable = await this.checkUsernameAvailability(updateDto.username, userId);
 
       if (!isAvailable) {
         throw new BadRequestException('Username is already taken');

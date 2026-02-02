@@ -23,7 +23,8 @@ export class UserVinylsService {
 
     let query = supabase
       .from('user_vinyls')
-      .select(`
+      .select(
+        `
         id,
         added_at,
         release_id,
@@ -38,7 +39,8 @@ export class UserVinylsService {
             )
           )
         )
-      `)
+      `,
+      )
       .eq('user_id', userId)
       .eq('type', type)
       .order('added_at', { ascending: false })
@@ -61,10 +63,7 @@ export class UserVinylsService {
   /**
    * Compte le nombre total de vinyles
    */
-  async getUserVinylsCount(
-    userId: string,
-    type: UserVinylType,
-  ): Promise<number> {
+  async getUserVinylsCount(userId: string, type: UserVinylType): Promise<number> {
     const supabase = this.supabaseService.getClient();
 
     const { count, error } = await supabase
@@ -83,11 +82,7 @@ export class UserVinylsService {
   /**
    * Vérifie si un vinyle existe déjà dans la collection/wishlist
    */
-  async hasVinyl(
-    userId: string,
-    vinylId: string,
-    type: UserVinylType,
-  ): Promise<boolean> {
+  async hasVinyl(userId: string, vinylId: string, type: UserVinylType): Promise<boolean> {
     const supabase = this.supabaseService.getClient();
 
     const { data, error } = await supabase
@@ -109,11 +104,7 @@ export class UserVinylsService {
   /**
    * Ajoute un vinyle à la collection ou wishlist
    */
-  async addVinylToUser(
-    userId: string,
-    vinylId: string,
-    type: UserVinylType,
-  ): Promise<UserVinyl> {
+  async addVinylToUser(userId: string, vinylId: string, type: UserVinylType): Promise<UserVinyl> {
     // Vérifier que le vinyl existe
     await this.vinylsService.getById(vinylId); // Lance NotFoundException si n'existe pas
 
@@ -134,7 +125,8 @@ export class UserVinylsService {
         release_id: vinylId,
         type,
       })
-      .select(`
+      .select(
+        `
         id,
         added_at,
         release_id,
@@ -149,7 +141,8 @@ export class UserVinylsService {
             )
           )
         )
-      `)
+      `,
+      )
       .single();
 
     if (error) {
@@ -162,11 +155,7 @@ export class UserVinylsService {
   /**
    * Retire un vinyle de la collection ou wishlist
    */
-  async removeVinylFromUser(
-    userId: string,
-    vinylId: string,
-    type: UserVinylType,
-  ): Promise<void> {
+  async removeVinylFromUser(userId: string, vinylId: string, type: UserVinylType): Promise<void> {
     const supabase = this.supabaseService.getClient();
 
     const { error } = await supabase
@@ -241,7 +230,8 @@ export class UserVinylsService {
       vinyl: {
         id: vinylData.id,
         title: vinylData.title,
-        artists: artists.length > 0 ? artists : [{ id: '', name: 'Artiste inconnu', imageUrl: null }],
+        artists:
+          artists.length > 0 ? artists : [{ id: '', name: 'Artiste inconnu', imageUrl: null }],
         coverUrl: vinylData.cover_url,
         year: vinylData.year,
         label: vinylData.label,

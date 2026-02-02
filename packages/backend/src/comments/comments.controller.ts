@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Delete,
-  Param,
-  Body,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Body, UseGuards } from '@nestjs/common';
 import { Comment } from '@fillcrate/shared';
 import { CommentsService } from './comments.service';
 import { AuthGuard } from '../common/guards/auth.guard';

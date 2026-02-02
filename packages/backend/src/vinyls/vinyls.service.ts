@@ -14,7 +14,8 @@ export class VinylsService {
 
     const { data, error } = await supabase
       .from('vinyls')
-      .select(`
+      .select(
+        `
         *,
         vinyl_artists(
           position,
@@ -24,7 +25,8 @@ export class VinylsService {
             image_url
           )
         )
-      `)
+      `,
+      )
       .eq('id', id)
       .single();
 

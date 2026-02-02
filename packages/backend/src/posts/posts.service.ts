@@ -45,7 +45,8 @@ export class PostsService {
     // Query pour récupérer les posts
     let query = supabase
       .from('posts')
-      .select(`
+      .select(
+        `
         id,
         user_id,
         vinyl_id,
@@ -83,7 +84,8 @@ export class PostsService {
             )
           )
         )
-      `)
+      `,
+      )
       .in('user_id', userIds)
       .order('created_at', { ascending: false })
       .limit(limit);
@@ -127,10 +129,7 @@ export class PostsService {
     });
 
     commentsData?.forEach((comment) => {
-      commentsCountMap.set(
-        comment.post_id,
-        (commentsCountMap.get(comment.post_id) || 0) + 1,
-      );
+      commentsCountMap.set(comment.post_id, (commentsCountMap.get(comment.post_id) || 0) + 1);
     });
 
     // Transformer les données
@@ -145,7 +144,8 @@ export class PostsService {
 
     const { data, error } = await supabase
       .from('posts')
-      .select(`
+      .select(
+        `
         id,
         user_id,
         vinyl_id,
@@ -183,7 +183,8 @@ export class PostsService {
             )
           )
         )
-      `)
+      `,
+      )
       .eq('id', postId)
       .single();
 
@@ -211,11 +212,7 @@ export class PostsService {
   /**
    * Crée un post (appelé automatiquement lors de l'ajout à collection/wishlist)
    */
-  async createPost(
-    userId: string,
-    vinylId: string,
-    type: PostType,
-  ): Promise<PostWithDetails> {
+  async createPost(userId: string, vinylId: string, type: PostType): Promise<PostWithDetails> {
     const supabase = this.supabaseService.getClient();
 
     const { data, error } = await supabase
@@ -225,7 +222,8 @@ export class PostsService {
         vinyl_id: vinylId,
         type,
       })
-      .select(`
+      .select(
+        `
         id,
         user_id,
         vinyl_id,
@@ -263,7 +261,8 @@ export class PostsService {
             )
           )
         )
-      `)
+      `,
+      )
       .single();
 
     if (error) {

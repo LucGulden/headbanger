@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Delete,
-  Param,
-  Query,
-  Body,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Query, Body, UseGuards } from '@nestjs/common';
 import { UserVinyl, VinylStats } from '@fillcrate/shared';
 import type { UserVinylType } from '@fillcrate/shared';
 import { UserVinylsService } from './user-vinyls.service';
@@ -57,9 +48,7 @@ export class UserVinylsController {
    * Statistiques globales de l'utilisateur
    */
   @Get('stats')
-  async getVinylStats(
-    @CurrentUser() user: AuthenticatedUser,
-  ): Promise<VinylStats> {
+  async getVinylStats(@CurrentUser() user: AuthenticatedUser): Promise<VinylStats> {
     return this.userVinylsService.getVinylStats(user.id);
   }
 

@@ -12,11 +12,7 @@ export class ArtistsService {
   async getById(id: string): Promise<Artist> {
     const supabase = this.supabaseService.getClient();
 
-    const { data, error } = await supabase
-      .from('artists')
-      .select('*')
-      .eq('id', id)
-      .single();
+    const { data, error } = await supabase.from('artists').select('*').eq('id', id).single();
 
     if (error || !data) {
       throw new NotFoundException(`Artist with ID ${id} not found`);
@@ -28,11 +24,7 @@ export class ArtistsService {
   /**
    * Recherche d'artistes par nom
    */
-  async search(
-    query: string,
-    limit: number = 20,
-    offset: number = 0,
-  ): Promise<ArtistLight[]> {
+  async search(query: string, limit: number = 20, offset: number = 0): Promise<ArtistLight[]> {
     if (!query || query.trim().length < 2) {
       return [];
     }

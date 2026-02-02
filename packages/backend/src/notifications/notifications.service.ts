@@ -18,7 +18,8 @@ export class NotificationsService {
 
     let query = supabase
       .from('notifications')
-      .select(`
+      .select(
+        `
         *,
         actor:users!notifications_actor_id_fkey (
           uid,
@@ -52,7 +53,8 @@ export class NotificationsService {
           id,
           content
         )
-      `)
+      `,
+      )
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(limit);
@@ -158,8 +160,7 @@ export class NotificationsService {
         .map((aa: any) => aa.artist?.name)
         .filter(Boolean);
 
-      const artist =
-        vinylArtists.join(', ') || albumArtists.join(', ') || 'Artiste inconnu';
+      const artist = vinylArtists.join(', ') || albumArtists.join(', ') || 'Artiste inconnu';
 
       notification.post = {
         id: data.post.id,

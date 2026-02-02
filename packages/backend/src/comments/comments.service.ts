@@ -14,7 +14,8 @@ export class CommentsService {
 
     const { data, error } = await supabase
       .from('comments')
-      .select(`
+      .select(
+        `
         id,
         user_id,
         post_id,
@@ -25,7 +26,8 @@ export class CommentsService {
           username,
           photo_url
         )
-      `)
+      `,
+      )
       .eq('post_id', postId)
       .order('created_at', { ascending: true });
 
@@ -39,11 +41,7 @@ export class CommentsService {
   /**
    * Ajoute un commentaire à un post
    */
-  async addComment(
-    postId: string,
-    userId: string,
-    content: string,
-  ): Promise<Comment> {
+  async addComment(postId: string, userId: string, content: string): Promise<Comment> {
     // Valider le contenu
     if (!content || content.trim().length === 0) {
       throw new BadRequestException('Comment content cannot be empty');
@@ -62,7 +60,8 @@ export class CommentsService {
         user_id: userId,
         content: content.trim(),
       })
-      .select(`
+      .select(
+        `
         id,
         user_id,
         post_id,
@@ -73,7 +72,8 @@ export class CommentsService {
           username,
           photo_url
         )
-      `)
+      `,
+      )
       .single();
 
     if (error) {
