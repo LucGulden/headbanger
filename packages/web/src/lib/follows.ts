@@ -16,7 +16,6 @@ export async function getFollowStats(userId: string): Promise<{
       .from('follows')
       .select('id')
       .eq('following_id', userId)
-      .eq('status', 'active')
 
     if (followersError) throw followersError
 
@@ -25,7 +24,6 @@ export async function getFollowStats(userId: string): Promise<{
       .from('follows')
       .select('id')
       .eq('follower_id', userId)
-      .eq('status', 'active')
 
     if (followingError) throw followingError
 
@@ -55,7 +53,6 @@ export async function followUser(
   const dbData = toSnakeCase({
     followerId,
     followingId,
-    status: 'active',
   })
 
   const { error } = await supabase.from('follows').insert(dbData)
@@ -102,7 +99,6 @@ export async function isFollowing(
     .select('id')
     .eq('follower_id', followerId)
     .eq('following_id', followingId)
-    .eq('status', 'active')
 
   if (error) {
     console.error('Erreur lors de la vérification du follow:', error)
@@ -120,7 +116,6 @@ export async function getFollowers(userId: string) {
     .from('follows')
     .select('follower_id')
     .eq('following_id', userId)
-    .eq('status', 'active')
     .order('created_at', { ascending: false })
 
   if (error) {
@@ -158,7 +153,6 @@ export async function getFollowing(userId: string) {
     .from('follows')
     .select('following_id')
     .eq('follower_id', userId)
-    .eq('status', 'active')
     .order('created_at', { ascending: false })
 
   if (error) {

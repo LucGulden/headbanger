@@ -127,7 +127,6 @@ export async function getFeedPosts(
         user_id,
         vinyl_id,
         type,
-        content,
         created_at,
         user:users!user_id (
           uid,
@@ -164,7 +163,6 @@ export async function getFeedPosts(
         .from('follows')
         .select('following_id')
         .eq('follower_id', userId)
-        .eq('status', 'active')
 
       if (followsError) {
         console.error('Erreur lors de la récupération des follows:', followsError)

@@ -26,7 +26,6 @@ export interface NotificationWithDetails extends Notification {
   post?: {
     id: string;
     vinylId: string;
-    content: string | null;
     vinyl: {
       id: string;
       title: string;

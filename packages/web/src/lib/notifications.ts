@@ -28,7 +28,6 @@ export async function getNotifications(
       post:post_id (
         id,
         vinyl_id,
-        content,
         vinyl:vinyl_id (
           id,
           title,

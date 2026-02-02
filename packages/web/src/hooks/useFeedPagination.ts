@@ -110,7 +110,6 @@ export function useFeedPagination(userId: string, profileFeed: boolean): UseFeed
           .select('id')
           .eq('follower_id', userId)
           .eq('following_id', postUserId)
-          .eq('status', 'active')
 
         if (error) {
           console.error('Erreur lors de la vérification du follow:', error)
