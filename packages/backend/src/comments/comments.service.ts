@@ -1,10 +1,16 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { Comment } from '@fillcrate/shared';
 import { SupabaseService } from '../common/database/supabase.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class CommentsService {
-  constructor(private readonly supabaseService: SupabaseService) {}
+  private readonly logger = new Logger(CommentsService.name);
+
+  constructor(
+    private readonly supabaseService: SupabaseService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   /**
    * Récupère tous les commentaires d'un post
@@ -53,6 +59,7 @@ export class CommentsService {
 
     const supabase = this.supabaseService.getClient();
 
+    // 1. Créer le commentaire
     const { data, error } = await supabase
       .from('comments')
       .insert({
@@ -80,6 +87,9 @@ export class CommentsService {
       throw new Error(`Error adding comment: ${error.message}`);
     }
 
+    // 2. Créer la notification (async, non-bloquant)
+    this.createCommentNotification(userId, postId, data.id);
+
     return this.transformCommentData(data);
   }
 
@@ -104,6 +114,10 @@ export class CommentsService {
       throw new BadRequestException('You can only delete your own comments');
     }
 
+    // 1. Supprimer la notification AVANT de supprimer le commentaire
+    await this.notificationsService.deleteByComment(commentId);
+
+    // 2. Supprimer le commentaire
     const { error } = await supabase.from('comments').delete().eq('id', commentId);
 
     if (error) {
@@ -127,6 +141,48 @@ export class CommentsService {
     }
 
     return count || 0;
+  }
+
+  /**
+   * Crée une notification de commentaire (privée, async)
+   */
+  private async createCommentNotification(
+    userId: string,
+    postId: string,
+    commentId: string,
+  ): Promise<void> {
+    try {
+      const supabase = this.supabaseService.getClient();
+
+      // Récupérer l'auteur du post
+      const { data: post, error } = await supabase
+        .from('posts')
+        .select('user_id')
+        .eq('id', postId)
+        .single();
+
+      if (error || !post) {
+        this.logger.warn(`Post ${postId} not found for comment notification`);
+        return;
+      }
+
+      // Ne pas notifier si on commente son propre post
+      if (userId === post.user_id) {
+        return;
+      }
+
+      // Créer la notification
+      await this.notificationsService.createNotification(
+        post.user_id, // destinataire
+        'post_comment',
+        userId, // acteur
+        postId,
+        commentId,
+      );
+    } catch (error) {
+      this.logger.error('Failed to create comment notification', error);
+      // Ne pas faire échouer le commentaire si la notification échoue
+    }
   }
 
   /**

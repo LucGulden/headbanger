@@ -1,9 +1,15 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { SupabaseService } from '../common/database/supabase.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class PostLikesService {
-  constructor(private readonly supabaseService: SupabaseService) {}
+  private readonly logger = new Logger(PostLikesService.name);
+
+  constructor(
+    private readonly supabaseService: SupabaseService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   /**
    * Ajoute un like à un post
@@ -11,24 +17,31 @@ export class PostLikesService {
   async likePost(userId: string, postId: string): Promise<void> {
     const supabase = this.supabaseService.getClient();
 
+    // 1. Créer le like
     const { error } = await supabase.from('post_likes').insert({
       user_id: userId,
       post_id: postId,
     });
 
     if (error) {
-      // Si c'est une erreur de duplication (déjà liké)
       if (error.code === '23505') {
         throw new BadRequestException('You already liked this post');
       }
       throw new Error(`Error liking post: ${error.message}`);
     }
+
+    // 2. Créer la notification (async, non-bloquant)
+    this.createLikeNotification(userId, postId);
   }
 
   /**
    * Retire un like d'un post
    */
   async unlikePost(userId: string, postId: string): Promise<void> {
+    // 1. Supprimer la notification AVANT de supprimer le like
+    await this.notificationsService.deleteByLike(userId, postId);
+
+    // 2. Supprimer le like
     const supabase = this.supabaseService.getClient();
 
     const { error } = await supabase
@@ -56,7 +69,6 @@ export class PostLikesService {
       .single();
 
     if (error && error.code !== 'PGRST116') {
-      // PGRST116 = not found, c'est OK
       throw new Error(`Error checking like: ${error.message}`);
     }
 
@@ -79,5 +91,42 @@ export class PostLikesService {
     }
 
     return count || 0;
+  }
+
+  /**
+   * Crée une notification de like (privée, async)
+   */
+  private async createLikeNotification(userId: string, postId: string): Promise<void> {
+    try {
+      const supabase = this.supabaseService.getClient();
+
+      // Récupérer l'auteur du post
+      const { data: post, error } = await supabase
+        .from('posts')
+        .select('user_id')
+        .eq('id', postId)
+        .single();
+
+      if (error || !post) {
+        this.logger.warn(`Post ${postId} not found for like notification`);
+        return;
+      }
+
+      // Ne pas notifier si on like son propre post
+      if (userId === post.user_id) {
+        return;
+      }
+
+      // Créer la notification
+      await this.notificationsService.createNotification(
+        post.user_id, // destinataire
+        'post_like',
+        userId, // acteur
+        postId,
+      );
+    } catch (error) {
+      this.logger.error('Failed to create like notification', error);
+      // Ne pas faire échouer le like si la notification échoue
+    }
   }
 }

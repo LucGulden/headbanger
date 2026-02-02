@@ -68,6 +68,22 @@ Chaque fonctionnalité est organisée en module NestJS (controller + service + m
 |-----------|------|
 | `@CurrentUser()` | Récupère l'utilisateur authentifié dans un controller |
 
+### Logique métier et actions dérivées
+
+**Architecture basée sur les services** : Toute la logique métier est gérée dans les services NestJS, pas dans des triggers SQL. Cela permet :
+- ✅ **Testabilité** : Chaque comportement est testable unitairement
+- ✅ **Visibilité** : La logique est explicite dans le code
+- ✅ **Flexibilité** : Facile d'ajouter des conditions, du throttling, des préférences utilisateur
+- ✅ **Débogage** : Logs, gestion d'erreur, monitoring
+
+**Actions dérivées automatiques** :
+- **Notifications** : Créées/supprimées automatiquement par les services lors des interactions sociales
+- **Posts automatiques** : Créés lors de l'ajout d'un vinyl en collection/wishlist
+- **Logging asynchrone** : Les actions non-critiques ne bloquent pas les opérations principales
+
+**Trigger SQL restant** :
+- `update_users_updated_at` : Mise à jour automatique du champ `updated_at` (housekeeping)
+
 ## Configuration
 
 ### Variables d'environnement
@@ -116,6 +132,7 @@ pnpm test:cov
 
 # Linter
 pnpm lint
+pnpm lint:fix
 ```
 
 ## Endpoints
@@ -147,7 +164,7 @@ pnpm lint
 | `GET` | `/user-vinyls/count?type=...` | ✅ | Compte total de vinyles |
 | `GET` | `/user-vinyls/stats` | ✅ | Statistiques (collection + wishlist) |
 | `GET` | `/user-vinyls/check/:vinylId?type=...` | ✅ | Vérifie si vinyl dans collection/wishlist |
-| `POST` | `/user-vinyls` | ✅ | Ajoute un vinyl (body: vinylId, type) |
+| `POST` | `/user-vinyls` | ✅ | Ajoute un vinyl (body: vinylId, type) + crée post automatiquement |
 | `DELETE` | `/user-vinyls/:vinylId?type=...` | ✅ | Retire un vinyl |
 | `POST` | `/user-vinyls/:vinylId/move-to-collection` | ✅ | Déplace de wishlist → collection |
 
@@ -168,8 +185,8 @@ pnpm lint
 |---------|-------|------|-------------|
 | `GET` | `/follows/stats/:userId` | Public | Statistiques follow (followers/following count) |
 | `GET` | `/follows/check/:userId` | ✅ | Vérifie si on suit un utilisateur |
-| `POST` | `/follows/:userId` | ✅ | Suivre un utilisateur |
-| `DELETE` | `/follows/:userId` | ✅ | Ne plus suivre |
+| `POST` | `/follows/:userId` | ✅ | Suivre un utilisateur + notification automatique |
+| `DELETE` | `/follows/:userId` | ✅ | Ne plus suivre + supprime notification |
 | `GET` | `/follows/followers/:userId` | Public | Liste des followers |
 | `GET` | `/follows/following/:userId` | Public | Liste des following |
 
@@ -186,8 +203,8 @@ pnpm lint
 
 | Méthode | Route | Auth | Description |
 |---------|-------|------|-------------|
-| `POST` | `/post-likes/:postId` | ✅ | Like un post |
-| `DELETE` | `/post-likes/:postId` | ✅ | Unlike un post |
+| `POST` | `/post-likes/:postId` | ✅ | Like un post + notification automatique |
+| `DELETE` | `/post-likes/:postId` | ✅ | Unlike un post + supprime notification |
 | `GET` | `/post-likes/check/:postId` | ✅ | Vérifie si on a liké |
 | `GET` | `/post-likes/count/:postId` | Public | Nombre de likes |
 
@@ -197,8 +214,8 @@ pnpm lint
 |---------|-------|------|-------------|
 | `GET` | `/comments/post/:postId` | Public | Liste des commentaires d'un post |
 | `GET` | `/comments/post/:postId/count` | Public | Nombre de commentaires |
-| `POST` | `/comments` | ✅ | Ajoute un commentaire (body: postId, content) |
-| `DELETE` | `/comments/:id` | ✅ | Supprime un commentaire |
+| `POST` | `/comments` | ✅ | Ajoute un commentaire (body: postId, content) + notification automatique |
+| `DELETE` | `/comments/:id` | ✅ | Supprime un commentaire + supprime notification |
 
 ### Notifications
 
@@ -332,6 +349,79 @@ if (lastCreatedAt) {
 
 Frontend utilise `lastCreatedAt` du dernier item pour charger la page suivante.
 
+### Gestion des notifications et actions dérivées
+
+Les actions dérivées (notifications, posts automatiques) sont gérées dans les services de manière asynchrone et non-bloquante :
+```typescript
+// Exemple : PostLikesService
+async likePost(userId: string, postId: string): Promise<void> {
+  // 1. Action principale (bloquante)
+  await this.createLike(userId, postId);
+  
+  // 2. Action dérivée (async, non-bloquante)
+  this.createLikeNotification(userId, postId);
+}
+
+private async createLikeNotification(userId: string, postId: string): Promise<void> {
+  try {
+    // Récupérer l'auteur du post
+    const post = await this.getPost(postId);
+    
+    // Ne pas notifier si on like son propre post
+    if (userId === post.userId) return;
+    
+    // Créer la notification
+    await this.notificationsService.createNotification(
+      post.userId,
+      'post_like',
+      userId,
+      postId
+    );
+  } catch (error) {
+    this.logger.error('Failed to create notification', error);
+    // Ne pas faire échouer le like si la notification échoue
+  }
+}
+```
+
+**Principes** :
+- ✅ Actions principales = synchrones et bloquantes
+- ✅ Actions dérivées = asynchrones et non-bloquantes
+- ✅ Logging des erreurs sur actions dérivées
+- ✅ Ne jamais faire échouer l'action principale si l'action dérivée échoue
+
+### Injection de dépendances entre services
+
+Les services utilisent l'injection de dépendances NestJS pour communiquer :
+```typescript
+// post-likes.service.ts
+@Injectable()
+export class PostLikesService {
+  constructor(
+    private readonly supabaseService: SupabaseService,
+    private readonly notificationsService: NotificationsService, // Injection
+  ) {}
+}
+```
+
+**Modules à configurer** :
+```typescript
+// post-likes.module.ts
+@Module({
+  imports: [NotificationsModule], // Importer le module
+  providers: [PostLikesService],
+  exports: [PostLikesService],
+})
+export class PostLikesModule {}
+
+// notifications.module.ts
+@Module({
+  providers: [NotificationsService],
+  exports: [NotificationsService], // Exporter le service
+})
+export class NotificationsModule {}
+```
+
 ## Supabase RLS
 
 Le backend utilise `SUPABASE_ANON_KEY` + JWT user pour respecter les Row Level Security policies.
@@ -363,6 +453,10 @@ myData(@CurrentUser() user: AuthenticatedUser) {
 6. **Types partagés** : Ne jamais dupliquer les types, toujours importer depuis `@fillcrate/shared`
 7. **Artistes** : Toujours triés par `position` avant affichage (pour collaborations)
 8. **Pagination** : Utiliser cursor-based avec `lastCreatedAt` ou `lastAddedAt` pour infinite scroll
+9. **Logique métier** : Toujours dans les services NestJS, jamais dans des triggers SQL (sauf housekeeping automatique)
+10. **Actions dérivées** : Toujours asynchrones et non-bloquantes pour ne pas impacter l'action principale
+11. **Notifications** : Gérées automatiquement par les services lors des interactions sociales
+12. **Posts automatiques** : Créés automatiquement lors de l'ajout d'un vinyl en collection/wishlist
 
 ## Déploiement
 
@@ -391,6 +485,29 @@ Start command : `cd packages/backend && node dist/main.js`
 - ✅ DTOs pour validation des inputs
 - ✅ Pagination cursor-based pour infinite scroll
 - ✅ Types Light (User, Artist, Album) pour optimiser les réponses
+- ✅ Logique métier dans les services, pas dans les triggers SQL
+- ✅ Actions dérivées asynchrones et non-bloquantes
+- ✅ Injection de dépendances pour communication inter-services
+
+## Décisions architecturales
+
+### Pourquoi la logique est dans les services et pas dans les triggers SQL ?
+
+**Avantages de la logique dans les services** :
+- ✅ **Testabilité** : Chaque comportement peut être testé unitairement
+- ✅ **Visibilité** : La logique métier est explicite et documentée dans le code
+- ✅ **Flexibilité** : Facile d'ajouter des conditions (préférences utilisateur, throttling, etc.)
+- ✅ **Gestion d'erreur** : Logs détaillés, retry, monitoring
+- ✅ **Évolutivité** : Ajout facile de webhooks, emails, push notifications
+- ✅ **API centralisée** : Logique partagée pour web + mobile + futures plateformes
+
+**Quand utiliser des triggers SQL** :
+- ✅ Housekeeping automatique (`updated_at`, `created_at`)
+- ✅ Contraintes de données strictes
+- ✅ Cascades de suppression (safety net)
+
+**Triggers SQL actuels** :
+- `update_users_updated_at` : Mise à jour automatique du timestamp `updated_at`
 
 ## Fonctionnalités futures
 
@@ -400,7 +517,24 @@ Start command : `cd packages/backend && node dist/main.js`
 - [ ] Image upload/resize pour avatars
 - [ ] Recherche full-text avec ElasticSearch
 - [ ] Analytics et metrics (Prometheus)
+- [ ] Groupement de notifications (throttling)
+- [ ] Préférences utilisateur pour notifications
 
+### Gestion des posts et vinyles
+
+**Règle importante** : Les posts ne sont jamais supprimés automatiquement, même si le vinyl est retiré de la collection/wishlist.
+
+**Pourquoi ?**
+- Les posts sont des **événements historiques** (journal d'activité), pas des **états actuels**
+- Les likes et commentaires associés sont préservés
+- La timeline reste cohérente
+
+**Cas d'usage** :
+- Retirer un vinyl → Le post reste visible
+- Déplacer wishlist → collection → 2 posts (wishlist_add + collection_add)
+- Racheter un vinyl vendu → Nouveau post, l'ancien reste visible
+
+**Pour supprimer un post** : L'utilisateur doit utiliser l'endpoint `DELETE /posts/:id` manuellement.
 ---
 
 **Dernière mise à jour** : 2 février 2026

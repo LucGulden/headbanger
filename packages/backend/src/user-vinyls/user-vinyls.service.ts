@@ -1,13 +1,18 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { UserVinyl, UserVinylType, VinylStats } from '@fillcrate/shared';
 import { SupabaseService } from '../common/database/supabase.service';
 import { VinylsService } from '../vinyls/vinyls.service';
+import { PostsService } from 'src/posts/posts.service';
 
 @Injectable()
 export class UserVinylsService {
+  private readonly logger = new Logger(UserVinylsService.name);
+
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly vinylsService: VinylsService,
+    private readonly postsService: PostsService,
   ) {}
 
   /**
@@ -106,7 +111,7 @@ export class UserVinylsService {
    */
   async addVinylToUser(userId: string, vinylId: string, type: UserVinylType): Promise<UserVinyl> {
     // Vérifier que le vinyl existe
-    await this.vinylsService.getById(vinylId); // Lance NotFoundException si n'existe pas
+    await this.vinylsService.getById(vinylId);
 
     // Vérifier si déjà présent
     const exists = await this.hasVinyl(userId, vinylId, type);
@@ -118,6 +123,7 @@ export class UserVinylsService {
 
     const supabase = this.supabaseService.getClient();
 
+    // 1. Ajouter le vinyl
     const { data, error } = await supabase
       .from('user_vinyls')
       .insert({
@@ -149,7 +155,26 @@ export class UserVinylsService {
       throw new Error(`Error adding vinyl: ${error.message}`);
     }
 
+    // 2. Créer le post automatiquement (async, non-bloquant)
+    this.createVinylPost(userId, vinylId, type);
+
     return this.transformUserVinylData(data);
+  }
+
+  /**
+   * Crée un post automatiquement lors de l'ajout d'un vinyl (privée, async)
+   */
+  private async createVinylPost(
+    userId: string,
+    vinylId: string,
+    type: UserVinylType,
+  ): Promise<void> {
+    try {
+      const postType = type === 'collection' ? 'collection_add' : 'wishlist_add';
+      await this.postsService.createPost(userId, vinylId, postType);
+    } catch (error) {
+      this.logger.error('Failed to create post for vinyl add', error);
+    }
   }
 
   /**

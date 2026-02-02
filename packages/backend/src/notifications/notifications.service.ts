@@ -184,4 +184,83 @@ export class NotificationsService {
 
     return notification;
   }
+
+  /**
+   * Crée une notification (utilisé par les autres services)
+   */
+  async createNotification(
+    userId: string,
+    type: 'post_like' | 'post_comment' | 'new_follower',
+    actorId: string,
+    postId?: string,
+    commentId?: string,
+  ): Promise<void> {
+    const supabase = this.supabaseService.getClient();
+
+    const { error } = await supabase.from('notifications').insert({
+      user_id: userId,
+      type,
+      actor_id: actorId,
+      post_id: postId || null,
+      comment_id: commentId || null,
+    });
+
+    if (error && error.code !== '23505') {
+      // 23505 = duplicate, on ignore (ON CONFLICT DO NOTHING)
+      throw new Error(`Error creating notification: ${error.message}`);
+    }
+  }
+
+  /**
+   * Supprime les notifications liées à un like
+   */
+  async deleteByLike(actorId: string, postId: string): Promise<void> {
+    const supabase = this.supabaseService.getClient();
+
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('type', 'post_like')
+      .eq('actor_id', actorId)
+      .eq('post_id', postId);
+
+    if (error) {
+      throw new Error(`Error deleting like notification: ${error.message}`);
+    }
+  }
+
+  /**
+   * Supprime les notifications liées à un commentaire
+   */
+  async deleteByComment(commentId: string): Promise<void> {
+    const supabase = this.supabaseService.getClient();
+
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('type', 'post_comment')
+      .eq('comment_id', commentId);
+
+    if (error) {
+      throw new Error(`Error deleting comment notification: ${error.message}`);
+    }
+  }
+
+  /**
+   * Supprime les notifications liées à un follow
+   */
+  async deleteByFollow(followerId: string, followedId: string): Promise<void> {
+    const supabase = this.supabaseService.getClient();
+
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('type', 'new_follower')
+      .eq('actor_id', followerId)
+      .eq('user_id', followedId);
+
+    if (error) {
+      throw new Error(`Error deleting follow notification: ${error.message}`);
+    }
+  }
 }

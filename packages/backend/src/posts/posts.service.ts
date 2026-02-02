@@ -137,79 +137,6 @@ export class PostsService {
   }
 
   /**
-   * Récupère un post par son ID
-   */
-  async getPostById(postId: string): Promise<PostWithDetails> {
-    const supabase = this.supabaseService.getClient();
-
-    const { data, error } = await supabase
-      .from('posts')
-      .select(
-        `
-        id,
-        user_id,
-        vinyl_id,
-        type,
-        created_at,
-        user:users!posts_user_id_fkey (
-          uid,
-          username,
-          photo_url
-        ),
-        vinyl:vinyls!posts_vinyl_id_fkey (
-          id,
-          title,
-          cover_url,
-          album_id,
-          vinyl_artists(
-            position,
-            artist:artists(
-              id,
-              name,
-              image_url
-            )
-          ),
-          album:albums!vinyls_album_id_fkey (
-            id,
-            title,
-            cover_url,
-            album_artists(
-              position,
-              artist:artists(
-                id,
-                name,
-                image_url
-              )
-            )
-          )
-        )
-      `,
-      )
-      .eq('id', postId)
-      .single();
-
-    if (error || !data) {
-      throw new NotFoundException(`Post with ID ${postId} not found`);
-    }
-
-    // Récupérer les stats pour ce post
-    const { count: likesCount } = await supabase
-      .from('post_likes')
-      .select('*', { count: 'exact', head: true })
-      .eq('post_id', postId);
-
-    const { count: commentsCount } = await supabase
-      .from('comments')
-      .select('*', { count: 'exact', head: true })
-      .eq('post_id', postId);
-
-    const likesCountMap = new Map<string, number>([[postId, likesCount || 0]]);
-    const commentsCountMap = new Map<string, number>([[postId, commentsCount || 0]]);
-
-    return this.transformPostData(data, likesCountMap, commentsCountMap);
-  }
-
-  /**
    * Crée un post (appelé automatiquement lors de l'ajout à collection/wishlist)
    */
   async createPost(userId: string, vinylId: string, type: PostType): Promise<PostWithDetails> {
@@ -273,34 +200,6 @@ export class PostsService {
     const commentsCountMap = new Map<string, number>([[data.id, 0]]);
 
     return this.transformPostData(data, likesCountMap, commentsCountMap);
-  }
-
-  /**
-   * Supprime un post
-   */
-  async deletePost(postId: string, userId: string): Promise<void> {
-    const supabase = this.supabaseService.getClient();
-
-    // Vérifier que le post appartient à l'utilisateur
-    const { data: post, error: fetchError } = await supabase
-      .from('posts')
-      .select('user_id')
-      .eq('id', postId)
-      .single();
-
-    if (fetchError || !post) {
-      throw new NotFoundException(`Post with ID ${postId} not found`);
-    }
-
-    if (post.user_id !== userId) {
-      throw new BadRequestException('You can only delete your own posts');
-    }
-
-    const { error } = await supabase.from('posts').delete().eq('id', postId);
-
-    if (error) {
-      throw new Error(`Error deleting post: ${error.message}`);
-    }
   }
 
   /**

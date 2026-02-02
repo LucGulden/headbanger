@@ -1,13 +1,17 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { User, FollowStats } from '@fillcrate/shared';
 import { SupabaseService } from '../common/database/supabase.service';
 import { UsersService } from '../users/users.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class FollowsService {
+  private readonly logger = new Logger(FollowsService.name);
+
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly usersService: UsersService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -16,7 +20,6 @@ export class FollowsService {
   async getFollowStats(userId: string): Promise<FollowStats> {
     const supabase = this.supabaseService.getClient();
 
-    // Compter les followers (personnes qui suivent cet utilisateur)
     const { count: followersCount, error: followersError } = await supabase
       .from('follows')
       .select('*', { count: 'exact', head: true })
@@ -26,7 +29,6 @@ export class FollowsService {
       throw new Error(`Error counting followers: ${followersError.message}`);
     }
 
-    // Compter les following (personnes que cet utilisateur suit)
     const { count: followingCount, error: followingError } = await supabase
       .from('follows')
       .select('*', { count: 'exact', head: true })
@@ -46,34 +48,39 @@ export class FollowsService {
    * Suivre un utilisateur
    */
   async followUser(followerId: string, followingId: string): Promise<void> {
-    // Vérifier qu'on ne suit pas soi-même
     if (followerId === followingId) {
       throw new BadRequestException('You cannot follow yourself');
     }
 
-    // Vérifier que l'utilisateur à suivre existe
     await this.usersService.getUserByUid(followingId);
 
     const supabase = this.supabaseService.getClient();
 
+    // 1. Créer le follow
     const { error } = await supabase.from('follows').insert({
       follower_id: followerId,
       following_id: followingId,
     });
 
     if (error) {
-      // Si c'est une erreur de duplication (déjà en train de suivre)
       if (error.code === '23505') {
         throw new BadRequestException('You are already following this user');
       }
       throw new Error(`Error following user: ${error.message}`);
     }
+
+    // 2. Créer la notification (async, non-bloquant)
+    this.createFollowNotification(followerId, followingId);
   }
 
   /**
    * Ne plus suivre un utilisateur
    */
   async unfollowUser(followerId: string, followingId: string): Promise<void> {
+    // 1. Supprimer la notification AVANT de supprimer le follow
+    await this.notificationsService.deleteByFollow(followerId, followingId);
+
+    // 2. Supprimer le follow
     const supabase = this.supabaseService.getClient();
 
     const { error } = await supabase
@@ -101,7 +108,6 @@ export class FollowsService {
       .single();
 
     if (error && error.code !== 'PGRST116') {
-      // PGRST116 = not found, c'est OK
       throw new Error(`Error checking follow: ${error.message}`);
     }
 
@@ -124,14 +130,12 @@ export class FollowsService {
       throw new Error(`Error fetching followers: ${error.message}`);
     }
 
-    // Récupérer les IDs des followers
     const followerIds = data.map((f) => f.follower_id);
 
     if (followerIds.length === 0) {
       return [];
     }
 
-    // Récupérer les infos complètes des users
     const { data: users, error: usersError } = await supabase
       .from('users')
       .select('*')
@@ -160,14 +164,12 @@ export class FollowsService {
       throw new Error(`Error fetching following: ${error.message}`);
     }
 
-    // Récupérer les IDs des following
     const followingIds = data.map((f) => f.following_id);
 
     if (followingIds.length === 0) {
       return [];
     }
 
-    // Récupérer les infos complètes des users
     const { data: users, error: usersError } = await supabase
       .from('users')
       .select('*')
@@ -178,6 +180,22 @@ export class FollowsService {
     }
 
     return (users || []).map((user) => this.transformUserData(user));
+  }
+
+  /**
+   * Crée une notification de follow (privée, async)
+   */
+  private async createFollowNotification(followerId: string, followedId: string): Promise<void> {
+    try {
+      await this.notificationsService.createNotification(
+        followedId, // destinataire
+        'new_follower',
+        followerId, // acteur
+      );
+    } catch (error) {
+      this.logger.error('Failed to create follow notification', error);
+      // Ne pas faire échouer le follow si la notification échoue
+    }
   }
 
   /**
