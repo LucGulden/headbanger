@@ -3,7 +3,6 @@ import { useEffect, useRef } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { useNotificationsStore } from './stores/notificationsStore'
 import { useUserStore } from './stores/userStore'
-import { useVinylStatsStore } from './stores/vinylStatsStore'
 import Layout from './components/Layout'
 import ProtectedRoute from './guards/ProtectedRoute'
 import PublicOnlyRoute from './guards/PublicOnlyRoute'
@@ -27,7 +26,6 @@ function App() {
   
   const { initialize: initializeNotifications, cleanup: cleanupNotifications } = useNotificationsStore()
   const { initialize: initializeUser, cleanup: cleanupUser } = useUserStore()
-  const { initialize: initializeVinylStats, cleanup: cleanupVinylStats } = useVinylStatsStore()
 
   // Initialiser les stores quand l'utilisateur se connecte
   useEffect(() => {
@@ -40,18 +38,16 @@ function App() {
         // Connexion
         initializeNotifications(currentUserId)
         initializeUser()
-        initializeVinylStats()
       } else {
         // Déconnexion
         cleanupNotifications()
         cleanupUser()
-        cleanupVinylStats()
       }
 
       // Mettre à jour la référence
       previousUserIdRef.current = currentUserId
     }
-  }, [user, initializeNotifications, cleanupNotifications, initializeUser, cleanupUser, initializeVinylStats, cleanupVinylStats])
+  }, [user, initializeNotifications, cleanupNotifications, initializeUser, cleanupUser])
 
   return (
     <BrowserRouter>

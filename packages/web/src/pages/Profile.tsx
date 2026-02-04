@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { useParams, Navigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useUserStore } from '../stores/userStore'
-import { useVinylStatsStore } from '../stores/vinylStatsStore'
 import ProfileHeader from '../components/ProfileHeader'
 import ProfileVinyls from '../components/ProfileVinyls'
 import Feed from '../components/Feed'
@@ -23,7 +22,6 @@ export default function ProfilePage() {
   const { username } = useParams<{ username: string }>()
   const { user: currentUser, loading: authLoading } = useAuth()
   const { appUser } = useUserStore()
-  const vinylStatsStore = useVinylStatsStore()
 
   const [profileUser, setProfileUser] = useState<User | null>(null)
   const [stats, setStats] = useState<ProfileStats>({
@@ -88,34 +86,22 @@ export default function ProfilePage() {
       if (!profileUser) return
 
       try {
-        // Pour son propre profil, utiliser le store
-        if (isOwnProfile && vinylStatsStore.isInitialized) {
-          const followStats = await getFollowStats(profileUser.uid)
-          setStats({
-            releasesCount: vinylStatsStore.stats.collectionCount,
-            wishlistCount: vinylStatsStore.stats.wishlistCount,
-            followersCount: followStats.followersCount,
-            followingCount: followStats.followingCount,
-          })
-        } else {
-          // Pour les autres profils, charger depuis la DB
-          const vinylStats = await getVinylStats()
-          const followStats = await getFollowStats(profileUser.uid)
+        const vinylStats = await getVinylStats()
+        const followStats = await getFollowStats(profileUser.uid)
 
-          setStats({
-            releasesCount: vinylStats.collectionCount,
-            wishlistCount: vinylStats.wishlistCount,
-            followersCount: followStats.followersCount,
-            followingCount: followStats.followingCount,
-          })
-        }
+        setStats({
+          releasesCount: vinylStats.collectionCount,
+          wishlistCount: vinylStats.wishlistCount,
+          followersCount: followStats.followersCount,
+          followingCount: followStats.followingCount,
+        })
       } catch (error) {
         console.error('Erreur lors du chargement des stats:', error)
       }
     }
 
     loadStats()
-  }, [profileUser, isOwnProfile, vinylStatsStore.stats, vinylStatsStore.isInitialized])
+  }, [profileUser, isOwnProfile])
 
   // Callback pour rafraîchir les stats après un follow/unfollow
   const handleFollowChange = async () => {

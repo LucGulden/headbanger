@@ -1,7 +1,5 @@
-import { useEffect } from 'react'
 import VinylGrid from './VinylGrid'
 import { useVinylsPagination } from '../hooks/useVinylsPagination'
-import { useVinylStatsStore } from '../stores/vinylStatsStore'
 import type { UserVinylType } from '@fillcrate/shared'
 import Button from './Button'
 import { Link } from 'react-router-dom'
@@ -30,16 +28,6 @@ export default function ProfileVinyls({
     refresh,
   } = useVinylsPagination({ userId, type })
   
-  // ✨ Store Zustand pour observer les changements
-  const vinylStatsStore = useVinylStatsStore()
-
-  // ✨ Rafraîchir quand les stats changent
-  useEffect(() => {
-    if (isOwnProfile) {
-      refresh()
-    }
-  }, [vinylStatsStore.stats.collectionCount, vinylStatsStore.stats.wishlistCount, isOwnProfile, refresh])
-
 
   // Empty state
   if (!loading && vinyls.length === 0) {

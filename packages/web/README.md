@@ -71,7 +71,6 @@ src/
 ├── stores/              # State management Zustand
 │   ├── notificationsStore.ts
 │   ├── userStore.ts
-│   └── vinylStatsStore.ts
 ├── types/               # Types TypeScript
 └── database/            # Migrations SQL
 ```
@@ -217,7 +216,6 @@ Trois stores centralisés gèrent l'état global de l'application :
 |-------|--------------|----------------|
 | `notificationsStore` | `/stores/notificationsStore.ts` | Compteur de notifications non lues + subscription temps réel |
 | `userStore` | `/stores/userStore.ts` | Données du profil utilisateur connecté (photo, username, bio) |
-| `vinylStatsStore` | `/stores/vinylStatsStore.ts` | Compteurs collection/wishlist de l'utilisateur connecté |
 
 ### Cycle de vie des stores
 
@@ -256,7 +254,6 @@ updateAppUser(updates)
 ```typescript
 const { unreadCount } = useNotificationsStore()
 const { appUser } = useUserStore()
-const { stats } = useVinylStatsStore()
 ```
 
 ## Authentification
@@ -296,7 +293,7 @@ const {
 | `VinylCard` | Carte vinyle avec `variant`: `'full'` ou `'compact'` |
 | `VinylGrid` | Grille avec infinite scroll, utilise VinylCard en mode compact |
 | `VinylDetails` | Détails vinyle avec actions contextuelles selon `targetType` et `isOwnProfile` |
-| `ProfileVinyls` | Affiche collection/wishlist, écoute `vinylStatsStore` pour rafraîchir |
+| `ProfileVinyls` | Affiche collection/wishlist |
 | `PostCard` | Carte post avec optimistic UI et subscriptions temps réel (likes, commentaires) |
 | `CommentItem` | Item commentaire avec support mode `isPending` |
 

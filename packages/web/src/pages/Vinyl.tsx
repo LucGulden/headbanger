@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { getVinylById } from '../lib/api/vinyls'
 import { hasVinyl, moveToCollection, removeVinylFromUser, addVinylToUser } from '../lib/api/userVinyls'
-import { useVinylStatsStore } from '../stores/vinylStatsStore'
 import type { Vinyl } from '@fillcrate/shared'
 import VinylImage from '../components/VinylImage'
 import Button from '../components/Button'
@@ -28,9 +27,6 @@ export default function VinylPage() {
   const [isMoving, setIsMoving] = useState(false)
   const [isRemoving, setIsRemoving] = useState(false)
   const [isAdding, setIsAdding] = useState(false)
-
-  // Store Zustand
-  const { incrementCollection, decrementCollection, incrementWishlist, decrementWishlist } = useVinylStatsStore()
 
   // Charger le vinyle
   useEffect(() => {
@@ -108,7 +104,6 @@ export default function VinylPage() {
       setIsAdding(true)
       await addVinylToUser(vinyl.id, 'collection')
       setInCollection(true)
-      incrementCollection()
     } catch (err) {
       console.error('Erreur ajout collection:', err)
       alert('Erreur lors de l\'ajout à la collection')
@@ -124,7 +119,6 @@ export default function VinylPage() {
       setIsAdding(true)
       await addVinylToUser(vinyl.id, 'wishlist')
       setInWishlist(true)
-      incrementWishlist()
     } catch (err) {
       console.error('Erreur ajout wishlist:', err)
       alert('Erreur lors de l\'ajout à la wishlist')
@@ -141,10 +135,6 @@ export default function VinylPage() {
       await moveToCollection(vinyl.id)
       setInWishlist(false)
       setInCollection(true)
-
-      // Mise à jour du store : -1 wishlist, +1 collection
-      decrementWishlist()
-      incrementCollection()
     } catch (err) {
       console.error('Erreur déplacement:', err)
       alert('Erreur lors du déplacement vers la collection')
@@ -160,7 +150,6 @@ export default function VinylPage() {
       setIsRemoving(true)
       await removeVinylFromUser(vinyl.id, 'collection')
       setInCollection(false)
-      decrementCollection()
     } catch (err) {
       console.error('Erreur suppression:', err)
       alert('Erreur lors de la suppression')
@@ -176,7 +165,6 @@ export default function VinylPage() {
       setIsRemoving(true)
       await removeVinylFromUser(vinyl.id, 'wishlist')
       setInWishlist(false)
-      decrementWishlist()
     } catch (err) {
       console.error('Erreur suppression:', err)
       alert('Erreur lors de la suppression')
