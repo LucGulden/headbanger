@@ -22,7 +22,7 @@ export default function FeedPage() {
         </div>
 
         {/* Feed */}
-        <FeedComponent userId={user.id} profileFeed={false} />
+        <FeedComponent />
       </div>
     </div>
   )

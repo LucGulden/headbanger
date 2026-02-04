@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import Avatar from './Avatar'
-import { deleteComment } from '../lib/comments'
+import { deleteComment } from '../lib/api/comments'
 import { getRelativeTimeString } from '../utils/date-utils'
-import type { CommentWithUser } from '../types/comment'
+import type { Comment } from '@fillcrate/shared'
 
 interface CommentItemProps {
-  comment: CommentWithUser
+  comment: Comment
   currentUserId?: string
   isPending?: boolean
   onDelete: () => void
@@ -19,7 +19,7 @@ export default function CommentItem({
   onDelete 
 }: CommentItemProps) {
   const [isDeleting, setIsDeleting] = useState(false)
-  const isOwner = currentUserId === comment.userId
+  const isOwner = currentUserId === comment.user.uid
 
   const handleDelete = async () => {
     if (!window.confirm('Supprimer ce commentaire ?')) {
@@ -47,7 +47,7 @@ export default function CommentItem({
       {/* Avatar */}
       <Link to={`/profile/${comment.user.username}`} className="flex-shrink-0">
         <Avatar 
-          src={comment.user.photoURL} 
+          src={comment.user.photoUrl} 
           username={comment.user.username} 
           size="sm" 
         />

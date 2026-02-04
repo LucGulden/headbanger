@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import Avatar from './Avatar'
 import Button from './Button'
-import { followUser, unfollowUser, isFollowing } from '../lib/follows'
+import { followUser, unfollowUser, isFollowing } from '../lib/api/follows'
 import { useAuth } from '../hooks/useAuth'
-import { type User } from '../types/user'
+import { type User } from '@fillcrate/shared'
 
 interface ProfileStats {
   releasesCount: number;
@@ -38,7 +38,7 @@ export default function ProfileHeader({
 
     const checkFollowing = async () => {
       try {
-        const result = await isFollowing(currentUser.id, user.uid)
+        const result = await isFollowing(currentUser.id)
         setFollowing(result)
       } catch (error) {
         console.error('Erreur lors de la vérification du follow:', error)
@@ -56,10 +56,10 @@ export default function ProfileHeader({
       setLoading(true)
       
       if (following) {
-        await unfollowUser(currentUser.id, user.uid)
+        await unfollowUser(currentUser.id)
         setFollowing(false)
       } else {
-        await followUser(currentUser.id, user.uid)
+        await followUser(currentUser.id)
         setFollowing(true)
       }
 

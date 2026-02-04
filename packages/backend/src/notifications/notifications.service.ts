@@ -110,23 +110,6 @@ export class NotificationsService {
   }
 
   /**
-   * Marque une notification spécifique comme lue
-   */
-  async markAsRead(notificationId: string, userId: string): Promise<void> {
-    const supabase = this.supabaseService.getClient();
-
-    const { error } = await supabase
-      .from('notifications')
-      .update({ read: true })
-      .eq('id', notificationId)
-      .eq('user_id', userId);
-
-    if (error) {
-      throw new Error(`Error marking notification as read: ${error.message}`);
-    }
-  }
-
-  /**
    * Transformation DB → Notification (camelCase)
    */
   private transformNotificationData(data: any): Notification {

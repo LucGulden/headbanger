@@ -46,17 +46,4 @@ export class NotificationsController {
     await this.notificationsService.markAllAsRead(user.id);
     return { success: true };
   }
-
-  /**
-   * PUT /notifications/:id/read
-   * Marque une notification comme lue
-   */
-  @Put(':id/read')
-  async markAsRead(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('id') id: string,
-  ): Promise<{ success: boolean }> {
-    await this.notificationsService.markAsRead(id, user.id);
-    return { success: true };
-  }
 }

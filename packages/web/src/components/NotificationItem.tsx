@@ -3,10 +3,10 @@ import { motion } from 'framer-motion'
 import Avatar from './Avatar'
 import VinylImage from './VinylImage'
 import { getRelativeTimeString } from '../utils/date-utils'
-import type { NotificationWithDetails } from '../types/notification'
+import type { Notification } from '@fillcrate/shared'
 
 interface NotificationItemProps {
-  notification: NotificationWithDetails;
+  notification: Notification;
 }
 
 export default function NotificationItem({ 

@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import Avatar from './Avatar'
-import { likePost, unlikePost, hasLikedPost, subscribeToPostLikes } from '../lib/posts'
-import { addComment, subscribeToPostComments, subscribeToPostCommentsCount } from '../lib/comments'
-import type { PostWithDetails } from '../types/post'
-import type { CommentWithUser } from '../types/comment'
+import { likePost, unlikePost, hasLikedPost, subscribeToPostLikes } from '../lib/api/postLikes'
+import { addComment, subscribeToPostComments, subscribeToPostCommentsCount } from '../lib/api/comments'
+import type { Comment } from '@fillcrate/shared'
 import { getRelativeTimeString } from '../utils/date-utils'
 import CommentItem from './CommentItem'
 import Button from './Button'
 import { useUserStore } from '../stores/userStore'
+import type { PostWithDetails } from '@fillcrate/shared'
 
 // Type pour les commentaires optimistes (en cours de publication)
-type OptimisticComment = CommentWithUser & { 
+type OptimisticComment = Comment & { 
   isPending: boolean
   tempId: string
 }
@@ -40,12 +40,11 @@ export default function PostCard({
   const [commentText, setCommentText] = useState('')
   const [isCommenting, setIsCommenting] = useState(false)
 
-  // Vérifier si l'utilisateur a liké le post
   useEffect(() => {
     if (!currentUserId) return
 
     const checkLike = async () => {
-      const liked = await hasLikedPost(currentUserId, post.id)
+      const liked = await hasLikedPost(post.id)
       setIsLiked(liked)
     }
 
@@ -73,7 +72,7 @@ export default function PostCard({
 
     const unsubscribe = subscribeToPostComments(
       post.id,
-      (newComments: CommentWithUser[]) => {
+      (newComments: Comment[]) => {
         // Fusionner les commentaires DB avec les optimistes
         setComments(prevComments => {
           // Garder seulement les commentaires optimistes qui n'ont pas encore été créés
@@ -126,9 +125,9 @@ export default function PostCard({
 
     try {
       if (wasLiked) {
-        await unlikePost(currentUserId, post.id)
+        await unlikePost(post.id)
       } else {
-        await likePost(currentUserId, post.id)
+        await likePost(post.id)
       }
     } catch (error) {
       // Revert on error
@@ -152,12 +151,12 @@ export default function PostCard({
     const optimisticComment: OptimisticComment = {
       id: tempId,
       postId: post.id,
-      userId: currentUserId,
       content: commentContent,
       createdAt: new Date().toISOString(),
       user: {
+        uid: currentUserId,
         username: appUser.username,
-        photoURL: appUser.photoUrl
+        photoUrl: appUser.photoUrl
       },
       isPending: true,
       tempId
@@ -169,9 +168,8 @@ export default function PostCard({
     setIsCommenting(true)
 
     try {
-      await addComment(post.id, currentUserId, commentContent)
+      await addComment(post.id, commentContent)
       
-      // ✅ Retirer immédiatement le commentaire optimiste
       // Le vrai commentaire arrivera via la subscription dans < 500ms
       setComments(prev => prev.filter(c => c.tempId !== tempId))
     } catch (error) {
@@ -194,7 +192,7 @@ export default function PostCard({
       {/* Header */}
       <div className="flex items-start gap-3 mb-4">
         <Link to={`/profile/${post.user.username}`} className="flex-shrink-0">
-          <Avatar src={post.user.photoURL} username={post.user.username} size="md" />
+          <Avatar src={post.user.photoUrl} username={post.user.username} size="md" />
         </Link>
 
         <div className="flex-1 min-w-0">
@@ -216,10 +214,15 @@ export default function PostCard({
               {post.album.title}
             </span>{' '}
             de{' '}
-            <span className="font-semibold text-[var(--foreground)]">
-              {post.album.artist}
-            </span>{' '}
-            à {collectionText}
+            {post.album.artists.map((artist, index) => (
+              <span key={artist.id}>
+                <span className="font-semibold text-[var(--foreground)]">
+                  {artist.name}
+                </span>
+                {index < post.album.artists.length - 1 && ', '}
+              </span>
+            ))}
+            {' '}à {collectionText}
           </p>
         </div>
       </div>
@@ -228,7 +231,7 @@ export default function PostCard({
       <div className="mb-4 relative w-full max-w-md mx-auto aspect-square">
         <img
           src={post.album.coverUrl}
-          alt={`${post.album.title} - ${post.album.artist}`}
+          alt={`${post.album.title} - ${post.album.artists.map(artist => artist.name).join(', ')}`}
           className="rounded-xl shadow-md object-cover w-full h-full"
           loading={priority ? 'eager' : 'lazy'}
         />

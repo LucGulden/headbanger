@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../supabaseClient'
 import { toCamelCase } from '../utils/caseConverter'
-import type { PostWithDetails } from '../types/post'
-import { getFeedPosts } from '../lib/posts'
+import type { PostWithDetails } from '@fillcrate/shared'
+import { getGlobalFeed, getProfileFeed } from '../lib/api/posts'
 
 const INITIAL_LOAD_COUNT = 15
 const LOAD_MORE_COUNT = 10
@@ -19,7 +19,13 @@ export interface UseFeedPaginationReturn {
   refresh: () => Promise<void>
 }
 
-export function useFeedPagination(userId: string, profileFeed: boolean): UseFeedPaginationReturn {
+/**
+ * Hook pour gérer la pagination d'un feed (global ou profil)
+ * 
+ * @param userId - ID de l'utilisateur du profil (requis seulement si profileFeed = true)
+ * @param profileFeed - true = feed d'un profil spécifique, false = feed global
+ */
+export function useFeedPagination(userId?: string, profileFeed: boolean = false): UseFeedPaginationReturn {
   const [posts, setPosts] = useState<PostWithDetails[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -33,7 +39,21 @@ export function useFeedPagination(userId: string, profileFeed: boolean): UseFeed
     setError(null)
 
     try {
-      const initialPosts = await getFeedPosts(userId, profileFeed, INITIAL_LOAD_COUNT)
+      let initialPosts: PostWithDetails[]
+
+      if (profileFeed && userId) {
+        // Feed d'un profil spécifique
+        initialPosts = await getProfileFeed({
+          userId,
+          limit: INITIAL_LOAD_COUNT,
+        })
+      } else {
+        // Feed global (utilisateur connecté + ceux qu'il suit)
+        initialPosts = await getGlobalFeed({
+          limit: INITIAL_LOAD_COUNT,
+        })
+      }
+
       setPosts(initialPosts)
       setHasMore(initialPosts.length === INITIAL_LOAD_COUNT)
     } catch (err) {
@@ -51,7 +71,22 @@ export function useFeedPagination(userId: string, profileFeed: boolean): UseFeed
 
     try {
       const lastPost = posts[posts.length - 1]
-      const morePosts = await getFeedPosts(userId, profileFeed, LOAD_MORE_COUNT, lastPost)
+      let morePosts: PostWithDetails[]
+
+      if (profileFeed && userId) {
+        // Feed d'un profil spécifique
+        morePosts = await getProfileFeed({
+          userId,
+          limit: LOAD_MORE_COUNT,
+          lastCreatedAt: lastPost.createdAt,
+        })
+      } else {
+        // Feed global
+        morePosts = await getGlobalFeed({
+          limit: LOAD_MORE_COUNT,
+          lastCreatedAt: lastPost.createdAt,
+        })
+      }
 
       if (morePosts.length === 0) {
         setHasMore(false)
@@ -73,7 +108,21 @@ export function useFeedPagination(userId: string, profileFeed: boolean): UseFeed
     setNewPostsAvailable(0)
 
     try {
-      const initialPosts = await getFeedPosts(userId, profileFeed, INITIAL_LOAD_COUNT)
+      let initialPosts: PostWithDetails[]
+
+      if (profileFeed && userId) {
+        // Feed d'un profil spécifique
+        initialPosts = await getProfileFeed({
+          userId,
+          limit: INITIAL_LOAD_COUNT,
+        })
+      } else {
+        // Feed global
+        initialPosts = await getGlobalFeed({
+          limit: INITIAL_LOAD_COUNT,
+        })
+      }
+
       setPosts(initialPosts)
       setHasMore(initialPosts.length === INITIAL_LOAD_COUNT)
     } catch (err) {
@@ -96,19 +145,19 @@ export function useFeedPagination(userId: string, profileFeed: boolean): UseFeed
     const newestPostTime = posts[0].createdAt
 
     // Fonction pour vérifier si un post doit être dans le feed
-    const shouldIncludePost = async (postUserId: string): Promise<boolean> => {
-      if (profileFeed) {
-        // Feed de profil : seulement les posts de l'utilisateur
+    const shouldIncludePost = async (postUserId: string, connectedUserId: string): Promise<boolean> => {
+      if (profileFeed && userId) {
+        // Feed de profil : seulement les posts de l'utilisateur du profil
         return postUserId === userId
       } else {
         // Feed global : posts des utilisateurs suivis + les siens
-        if (postUserId === userId) return true
+        if (postUserId === connectedUserId) return true
 
         // Vérifier si on suit cet utilisateur
         const { data, error } = await supabase
           .from('follows')
           .select('id')
-          .eq('follower_id', userId)
+          .eq('follower_id', connectedUserId)
           .eq('following_id', postUserId)
 
         if (error) {
@@ -131,6 +180,12 @@ export function useFeedPagination(userId: string, profileFeed: boolean): UseFeed
           table: 'posts',
         },
         async (payload) => {
+          // Récupérer l'utilisateur connecté
+          const { data: { session } } = await supabase.auth.getSession()
+          if (!session?.user) return
+
+          const connectedUserId = session.user.id
+
           // ⚠️ Les données Realtime arrivent en snake_case depuis Supabase
           const newPostRaw = payload.new as any
           
@@ -139,7 +194,7 @@ export function useFeedPagination(userId: string, profileFeed: boolean): UseFeed
           
           if (newPost.createdAt > newestPostTime) {
             // Vérifier si ce post doit être inclus dans le feed
-            const shouldInclude = await shouldIncludePost(newPost.userId)
+            const shouldInclude = await shouldIncludePost(newPost.userId, connectedUserId)
             
             if (shouldInclude) {
               // Incrémenter le compteur de nouveaux posts

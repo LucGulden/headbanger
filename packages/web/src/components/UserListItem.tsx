@@ -2,14 +2,14 @@ import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import Avatar from './Avatar'
 import Button from './Button'
-import { followUser, unfollowUser, isFollowing } from '../lib/follows'
+import { followUser, unfollowUser, isFollowing } from '../lib/api/follows' // ✅ Changer import
 import { useAuth } from '../hooks/useAuth'
-import { type User } from '../types/user'
+import { type User } from '@fillcrate/shared'
 
 interface UserListItemProps {
-  user: User;
-  showFollowButton?: boolean;
-  onFollowChange?: () => void;
+  user: User
+  showFollowButton?: boolean
+  onFollowChange?: () => void
 }
 
 export default function UserListItem({
@@ -30,7 +30,7 @@ export default function UserListItem({
 
     const checkFollowing = async () => {
       try {
-        const result = await isFollowing(currentUser.id, user.uid)
+        const result = await isFollowing(user.uid) // ✅ Plus besoin de currentUser.id
         setFollowing(result)
       } catch (error) {
         console.error('Erreur lors de la vérification du follow:', error)
@@ -49,10 +49,10 @@ export default function UserListItem({
       setLoading(true)
 
       if (following) {
-        await unfollowUser(currentUser.id, user.uid)
+        await unfollowUser(user.uid) // ✅ Plus besoin de currentUser.id
         setFollowing(false)
       } else {
-        await followUser(currentUser.id, user.uid)
+        await followUser(user.uid) // ✅ Plus besoin de currentUser.id
         setFollowing(true)
       }
 

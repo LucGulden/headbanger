@@ -6,11 +6,11 @@ import Button from './Button'
 import { useAuth } from '../hooks/useAuth'
 
 interface FeedProps {
-  userId: string
-  profileFeed: boolean
+  userId?: string // Optionnel : seulement pour feed profil
+  profileFeed?: boolean // Par défaut false (feed global)
 }
 
-export default function Feed({ userId, profileFeed }: FeedProps) {
+export default function Feed({ userId, profileFeed = false }: FeedProps) {
   const { user: currentUser } = useAuth()
 
   const {

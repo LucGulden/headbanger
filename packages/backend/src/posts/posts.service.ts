@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PostWithDetails, PostType, ArtistLight } from '@fillcrate/shared';
 import { SupabaseService } from '../common/database/supabase.service';
 
@@ -7,42 +7,58 @@ export class PostsService {
   constructor(private readonly supabaseService: SupabaseService) {}
 
   /**
-   * Récupère les posts du feed avec pagination cursor-based
+   * Feed global : posts de l'utilisateur + ceux qu'il suit
    */
-  async getFeedPosts(
+  async getGlobalFeed(
     userId: string,
-    profileFeed: boolean,
     limit: number = 20,
     lastCreatedAt?: string,
   ): Promise<PostWithDetails[]> {
     const supabase = this.supabaseService.getClient();
 
-    let userIds: string[] = [];
+    // Récupérer les utilisateurs suivis
+    const { data: followsData, error: followsError } = await supabase
+      .from('follows')
+      .select('following_id')
+      .eq('follower_id', userId);
 
-    if (profileFeed) {
-      // Feed d'un utilisateur spécifique
-      userIds = [userId];
-    } else {
-      // Feed global : posts des utilisateurs suivis + les siens
-      const { data: followsData, error: followsError } = await supabase
-        .from('follows')
-        .select('following_id')
-        .eq('follower_id', userId);
-
-      if (followsError) {
-        throw new Error(`Error fetching follows: ${followsError.message}`);
-      }
-
-      // Utilisateurs suivis + soi-même
-      userIds = followsData.map((f) => f.following_id);
-      userIds.push(userId);
+    if (followsError) {
+      throw new Error(`Error fetching follows: ${followsError.message}`);
     }
 
+    // Utilisateurs suivis + soi-même
+    const userIds = followsData.map((f) => f.following_id);
+    userIds.push(userId);
+
+    return this.fetchPostsByUserIds(userIds, limit, lastCreatedAt);
+  }
+
+  /**
+   * Feed d'un profil spécifique : posts de cet utilisateur uniquement
+   */
+  async getProfileFeed(
+    userId: string,
+    limit: number = 20,
+    lastCreatedAt?: string,
+  ): Promise<PostWithDetails[]> {
+    return this.fetchPostsByUserIds([userId], limit, lastCreatedAt);
+  }
+
+  /**
+   * Méthode privée commune pour récupérer les posts
+   */
+  private async fetchPostsByUserIds(
+    userIds: string[],
+    limit: number,
+    lastCreatedAt?: string,
+  ): Promise<PostWithDetails[]> {
     if (userIds.length === 0) {
       return [];
     }
 
-    // Query pour récupérer les posts
+    const supabase = this.supabaseService.getClient();
+
+    // Query posts
     let query = supabase
       .from('posts')
       .select(
@@ -105,22 +121,20 @@ export class PostsService {
       return [];
     }
 
-    // Récupérer les stats (likes et commentaires) pour tous les posts
+    // Récupérer les stats (likes et commentaires)
     const postIds = data.map((post) => post.id);
 
-    // Compter les likes
     const { data: likesData } = await supabase
       .from('post_likes')
       .select('post_id')
       .in('post_id', postIds);
 
-    // Compter les commentaires
     const { data: commentsData } = await supabase
       .from('comments')
       .select('post_id')
       .in('post_id', postIds);
 
-    // Créer des maps pour un accès rapide
+    // Maps pour comptage
     const likesCountMap = new Map<string, number>();
     const commentsCountMap = new Map<string, number>();
 
@@ -129,11 +143,15 @@ export class PostsService {
     });
 
     commentsData?.forEach((comment) => {
-      commentsCountMap.set(comment.post_id, (commentsCountMap.get(comment.post_id) || 0) + 1);
+      commentsCountMap.set(
+        comment.post_id,
+        (commentsCountMap.get(comment.post_id) || 0) + 1,
+      );
     });
 
-    // Transformer les données
-    return data.map((post: any) => this.transformPostData(post, likesCountMap, commentsCountMap));
+    return data.map((post: any) =>
+      this.transformPostData(post, likesCountMap, commentsCountMap),
+    );
   }
 
   /**

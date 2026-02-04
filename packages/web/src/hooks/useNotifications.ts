@@ -2,22 +2,22 @@ import { useState, useEffect, useCallback } from 'react'
 import { 
   getNotifications, 
   markAllAsRead,
-} from '../lib/notifications'
-import type { NotificationWithDetails } from '../types/notification'
+} from '../lib/api/notifications'
+import type { Notification } from '@fillcrate/shared'
 
 interface UseNotificationsReturn {
-  notifications: NotificationWithDetails[];
-  loading: boolean;
-  loadingMore: boolean;
-  hasMore: boolean;
-  error: Error | null;
-  loadMore: () => Promise<void>;
-  refresh: () => Promise<void>;
-  handleMarkAllAsRead: () => Promise<void>;
+  notifications: Notification[]
+  loading: boolean
+  loadingMore: boolean
+  hasMore: boolean
+  error: Error | null
+  loadMore: () => Promise<void>
+  refresh: () => Promise<void>
+  handleMarkAllAsRead: () => Promise<void>
 }
 
-export function useNotifications(userId: string): UseNotificationsReturn {
-  const [notifications, setNotifications] = useState<NotificationWithDetails[]>([])
+export function useNotifications(): UseNotificationsReturn {
+  const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
@@ -27,13 +27,6 @@ export function useNotifications(userId: string): UseNotificationsReturn {
 
   // Charger les notifications initiales
   const loadNotifications = useCallback(async (reset: boolean = false) => {
-    // Protection : ne rien faire si pas de userId
-    if (!userId || userId.trim() === '') {
-      setLoading(false)
-      setLoadingMore(false)
-      return
-    }
-
     try {
       if (reset) {
         setLoading(true)
@@ -44,11 +37,12 @@ export function useNotifications(userId: string): UseNotificationsReturn {
       }
 
       const lastNotification = reset ? undefined : notifications[notifications.length - 1]
-      const data = await getNotifications(
-        userId,
-        LIMIT,
-        lastNotification?.createdAt,
-      )
+      
+      // ✅ Plus besoin de userId
+      const data = await getNotifications({
+        limit: LIMIT,
+        lastCreatedAt: lastNotification?.createdAt,
+      })
 
       if (reset) {
         setNotifications(data)
@@ -65,8 +59,7 @@ export function useNotifications(userId: string): UseNotificationsReturn {
       setLoading(false)
       setLoadingMore(false)
     }
-  }, [userId, notifications])
-
+  }, [notifications])
 
   // Charger plus de notifications (infinite scroll)
   const loadMore = useCallback(async () => {
@@ -84,23 +77,21 @@ export function useNotifications(userId: string): UseNotificationsReturn {
     try {
       // Optimistic update
       setNotifications(prev =>
-        prev.map(notif => ({ ...notif, read: true })),
+        prev.map(notif => ({ ...notif, isRead: true })), // ✅ isRead au lieu de read
       )
 
-      await markAllAsRead(userId)
+      await markAllAsRead() // ✅ Plus besoin de userId
     } catch (err) {
       console.error('Error marking all as read:', err)
       // Revert on error
       await loadNotifications(true)
     }
-  }, [userId, loadNotifications])
+  }, [loadNotifications])
 
   // Chargement initial
   useEffect(() => {
-    if (userId && userId.trim() !== '') {
-      loadNotifications(true)
-    }
-  }, []) // ← Une seule fois au montage (si userId est présent)
+    loadNotifications(true)
+  }, []) // ✅ Pas de dépendance userId, le backend le récupère du JWT
 
   return {
     notifications,

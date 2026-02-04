@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { getUnreadCount, subscribeToNotifications } from '../lib/notifications'
+import { getUnreadCount, subscribeToNotifications } from '../lib/api/notifications'
 
 interface NotificationsStore {
   unreadCount: number
@@ -29,16 +29,16 @@ export const useNotificationsStore = create<NotificationsStore>((set, get) => ({
     }
 
     try {
-      // 1. Charger le count initial
-      const count = await getUnreadCount(userId)
+      // 1. Charger le count initial via l'API backend
+      const count = await getUnreadCount()
       set({ unreadCount: count })
 
-      // 2. Subscribe aux nouvelles notifications en temps réel
+      // 2. Subscribe aux nouvelles notifications en temps réel (Supabase)
       const unsubscribeFn = subscribeToNotifications(
-        userId,
+        userId, // ✅ userId requis pour Supabase filter
         async () => {
-          // ✅ Recharger le count complet (plus robuste que increment)
-          const newCount = await getUnreadCount(userId)
+          // ✅ Recharger le count complet via l'API
+          const newCount = await getUnreadCount()
           set({ unreadCount: newCount })
         },
         (error) => {
