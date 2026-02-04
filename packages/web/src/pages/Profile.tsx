@@ -6,13 +6,12 @@ import { useVinylStatsStore } from '../stores/vinylStatsStore'
 import ProfileHeader from '../components/ProfileHeader'
 import ProfileVinyls from '../components/ProfileVinyls'
 import Feed from '../components/Feed'
-import { supabase } from '../supabaseClient'
 import { getFollowStats } from '../lib/api/follows'
-import { getVinylStats } from '../lib/vinyls'
-import { type User } from '../types/user'
+import { getVinylStats } from '../lib/api/userVinyls'
+import type { User } from '@fillcrate/shared'
 import AddVinylModal from '../components/AddVinylModal'
 import LoadingSpinner from '../components/LoadingSpinner'
-import { getUserByUsername } from '../lib/user'
+import { getUserByUsername } from '../lib/api/users'
 
 interface ProfileStats {
   releasesCount: number;
@@ -102,7 +101,7 @@ export default function ProfilePage() {
           })
         } else {
           // Pour les autres profils, charger depuis la DB
-          const vinylStats = await getVinylStats(profileUser.uid)
+          const vinylStats = await getVinylStats()
           const followStats = await getFollowStats(profileUser.uid)
 
           setStats({
@@ -134,11 +133,6 @@ export default function ProfilePage() {
     } catch (error) {
       console.error('Erreur lors du rafraîchissement des stats:', error)
     }
-  }
-
-  // Fonction pour ouvrir le modal depuis ProfileVinyls
-  const handleOpenAddVinyl = () => {
-    setIsModalOpen(true)
   }
 
   // Callback après succès du modal
@@ -232,7 +226,6 @@ export default function ProfilePage() {
             type="collection"
             isOwnProfile={isOwnProfile}
             username={profileUser.username}
-            onOpenAddVinyl={handleOpenAddVinyl}
           />
         )}
 
@@ -243,7 +236,6 @@ export default function ProfilePage() {
             type="wishlist"
             isOwnProfile={isOwnProfile}
             username={profileUser.username}
-            onOpenAddVinyl={handleOpenAddVinyl}
           />
         )}
       </div>

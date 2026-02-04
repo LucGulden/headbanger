@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { createAlbum, updateAlbumCover } from '../lib/vinyls'
+import { createAlbum, updateAlbumCover } from '../lib/api/albums'
 import { uploadAlbumCover, generateImagePreview } from '../lib/covers'
-import type { Album } from '../types/vinyl'
+import type { Album } from '@fillcrate/shared'
 import Button from './Button'
 
 interface ManualAlbumFormProps {

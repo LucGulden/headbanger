@@ -4,7 +4,7 @@ import AddVinylModal from './AddVinylModal'
 import { useVinylsPagination } from '../hooks/useVinylsPagination'
 import { useVinylStatsStore } from '../stores/vinylStatsStore'
 import { useAuth } from '../hooks/useAuth'
-import type { UserVinylType, Vinyl, Album } from '../types/vinyl'
+import type { UserVinylType, Vinyl, Album } from '@fillcrate/shared'
 import Button from './Button'
 import { Link } from 'react-router-dom'
 
@@ -13,7 +13,6 @@ interface ProfileVinylsProps {
   type: UserVinylType;
   isOwnProfile: boolean;
   username: string;
-  onOpenAddVinyl?: () => void;
 }
 
 export default function ProfileVinyls({
@@ -21,7 +20,6 @@ export default function ProfileVinyls({
   type,
   isOwnProfile,
   username,
-  onOpenAddVinyl,
 }: ProfileVinylsProps) {
   const { user } = useAuth()
   const {

@@ -36,7 +36,7 @@ function App() {
       if (currentUserId) {
         // Connexion
         initializeNotifications(currentUserId)
-        initializeUser(currentUserId)
+        initializeUser()
         initializeVinylStats(currentUserId)
       } else {
         // Déconnexion

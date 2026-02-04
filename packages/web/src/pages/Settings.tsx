@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import EditProfileForm from '../components/EditProfileForm'
 import LoadingSpinner from '../components/LoadingSpinner'
-import { getUserByUid } from '../lib/user'
-import type { User } from '../types/user'
+import { getCurrentUser } from '../lib/api/users'
+import type { User } from '@fillcrate/shared'
 
 export default function Settings() {
   const { user: authUser } = useAuth()
@@ -20,7 +20,7 @@ export default function Settings() {
         return
       }
 
-      const userData = await getUserByUid(authUser.id)
+      const userData = await getCurrentUser()
       setUser(userData)
       setLoading(false)
     }

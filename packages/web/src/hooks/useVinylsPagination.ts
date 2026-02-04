@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { getUserVinyls, getUserVinylsCount } from '../lib/vinyls'
-import type { UserVinylType, UserVinylWithDetails } from '../types/vinyl'
+import { getUserVinyls, getUserVinylsCount } from '../lib/api/userVinyls'
+import type { UserVinylType, UserVinyl } from '@fillcrate/shared'
 
 interface UseVinylsPaginationParams {
   userId: string;
@@ -9,7 +9,7 @@ interface UseVinylsPaginationParams {
 }
 
 interface UseVinylsPaginationReturn {
-  vinyls: UserVinylWithDetails[];
+  vinyls: UserVinyl[];
   loading: boolean;
   loadingMore: boolean;
   hasMore: boolean;
@@ -25,7 +25,7 @@ export function useVinylsPagination({
   type,
   pageSize = 20,
 }: UseVinylsPaginationParams): UseVinylsPaginationReturn {
-  const [vinyls, setVinyls] = useState<UserVinylWithDetails[]>([])
+  const [vinyls, setVinyls] = useState<UserVinyl[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
@@ -41,8 +41,8 @@ export function useVinylsPagination({
 
     try {
       const [vinylsData, count] = await Promise.all([
-        getUserVinyls(userId, type, pageSize),
-        getUserVinylsCount(userId, type),
+        getUserVinyls(type, pageSize),
+        getUserVinylsCount(type),
       ])
 
       setVinyls(vinylsData)
@@ -66,7 +66,7 @@ export function useVinylsPagination({
       const lastVinyl = vinyls[vinyls.length - 1]
       const lastAddedAt = lastVinyl?.addedAt
 
-      const moreVinyls = await getUserVinyls(userId, type, pageSize, lastAddedAt)
+      const moreVinyls = await getUserVinyls(type, pageSize, lastAddedAt)
 
       setVinyls((prev) => [...prev, ...moreVinyls])
       setHasMore(moreVinyls.length >= pageSize)
@@ -84,7 +84,7 @@ export function useVinylsPagination({
 
   // Retirer un vinyle de la liste (optimistic update)
   const removeVinylFromList = useCallback((vinylId: string) => {
-    setVinyls((prev) => prev.filter((v) => v.releaseId !== vinylId))
+    setVinyls((prev) => prev.filter((v) => v.id !== vinylId))
     setTotal((prev) => Math.max(0, prev - 1))
   }, [])
 

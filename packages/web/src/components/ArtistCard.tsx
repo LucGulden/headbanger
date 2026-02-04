@@ -1,4 +1,4 @@
-import type { Artist } from '../types/vinyl'
+import type { Artist } from '@fillcrate/shared'
 
 interface ArtistCardProps {
   artist: Artist;

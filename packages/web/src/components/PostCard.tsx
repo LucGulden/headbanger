@@ -82,7 +82,7 @@ export default function PostCard({
           const dbComments: OptimisticComment[] = newComments.map(c => ({
             ...c,
             isPending: false,
-            tempId: ''
+            tempId: '',
           }))
           
           // Fusionner : d'abord les DB (les plus anciens en premier), puis les pending
@@ -156,10 +156,10 @@ export default function PostCard({
       user: {
         uid: currentUserId,
         username: appUser.username,
-        photoUrl: appUser.photoUrl
+        photoUrl: appUser.photoUrl,
       },
       isPending: true,
-      tempId
+      tempId,
     }
 
     // Ajout optimiste à la liste
@@ -231,7 +231,7 @@ export default function PostCard({
       <div className="mb-4 relative w-full max-w-md mx-auto aspect-square">
         <img
           src={post.album.coverUrl}
-          alt={`${post.album.title} - ${post.album.artists.map(artist => artist.name).join(', ')}`}
+          alt={`${post.album.title} - ${post.album.artists.map(a => a.name).join(', ')}`}
           className="rounded-xl shadow-md object-cover w-full h-full"
           loading={priority ? 'eager' : 'lazy'}
         />

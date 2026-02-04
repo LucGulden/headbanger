@@ -1,15 +1,15 @@
 import { create } from 'zustand'
-import { getUserByUid } from '../lib/user'
-import type { User as AppUser } from '../types/user'
+import type { User } from '@fillcrate/shared'
+import { getCurrentUser } from '../lib/api/users'
 
 interface UserStore {
-  appUser: AppUser | null
+  appUser: User | null
   isInitialized: boolean
   
   // Actions
-  initialize: (userId: string) => Promise<void>
-  setAppUser: (user: AppUser | null) => void
-  updateAppUser: (updates: Partial<AppUser>) => void
+  initialize: () => Promise<void>
+  setAppUser: (user: User | null) => void
+  updateAppUser: (updates: Partial<User>) => void
   cleanup: () => void
 }
 
@@ -17,14 +17,14 @@ export const useUserStore = create<UserStore>((set, get) => ({
   appUser: null,
   isInitialized: false,
 
-  initialize: async (userId: string) => {
+  initialize: async () => {
     // Éviter les doubles initialisations
     if (get().isInitialized) {
       return
     }
 
     try {
-      const user = await getUserByUid(userId)
+      const user = await getCurrentUser()
       set({ 
         appUser: user,
         isInitialized: true,

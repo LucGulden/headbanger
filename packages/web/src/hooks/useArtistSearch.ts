@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { searchArtists } from '../lib/vinyls'
-import type { Artist } from '../types/vinyl'
+import { searchArtists } from '../lib/api/artists'
+import type { Artist } from '@fillcrate/shared'
 
 interface UseArtistSearchParams {
   query: string;

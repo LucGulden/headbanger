@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { searchSpotifyAlbums, type SpotifyAlbumResult } from '../lib/spotify'
-import { createAlbum, getAlbumBySpotifyId } from '../lib/vinyls'
-import type { Album } from '../types/vinyl'
+import { createAlbum, getAlbumBySpotifyId } from '../lib/api/albums'
+import type { Album } from '@fillcrate/shared'
 import VinylImage from './VinylImage'
 
 interface SpotifyAlbumImportProps {

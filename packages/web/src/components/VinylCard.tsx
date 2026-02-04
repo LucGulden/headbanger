@@ -1,9 +1,8 @@
-import type { Vinyl } from '../types/vinyl'
+import type { Vinyl } from '@fillcrate/shared'
 import VinylImage from './VinylImage'
 
 interface VinylCardProps {
   vinyl: Vinyl;
-  albumCoverUrl?: string;
   inCollection?: boolean;
   inWishlist?: boolean;
   onClick: () => void;
@@ -12,7 +11,6 @@ interface VinylCardProps {
 
 export default function VinylCard({
   vinyl,
-  albumCoverUrl,
   inCollection = false,
   inWishlist = false,
   onClick,
@@ -52,8 +50,8 @@ export default function VinylCard({
       {/* Cover */}
       <div className="relative aspect-square w-full overflow-hidden rounded-lg border border-[var(--background-lighter)] bg-[var(--background-lighter)]">
         <VinylImage
-          src={vinyl.coverUrl || albumCoverUrl || ''}
-          alt={`${vinyl.title} par ${vinyl.artist}`}
+          src={vinyl.coverUrl}
+          alt={`${vinyl.title} par ${vinyl.artists.map(a => a.name).join(', ')}`}
           className="h-full w-full object-cover transition-transform"
         />
       </div>
@@ -85,7 +83,7 @@ export default function VinylCard({
             {vinyl.title}
           </h3>
           <p className="truncate text-sm text-[var(--foreground-muted)]">
-            {vinyl.artist}
+            {vinyl.artists.map(a => a.name).join(', ')}
           </p>
           <p className="text-xs text-[var(--foreground-muted)]">
             {vinyl.year}

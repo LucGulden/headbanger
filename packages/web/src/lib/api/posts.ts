@@ -46,6 +46,6 @@ export async function getProfileFeed(options: ProfileFeedOptions): Promise<PostW
 
   const queryString = params.toString()
   return apiClient.get<PostWithDetails[]>(
-    `/posts/profile/${options.userId}${queryString ? `?${queryString}` : ''}`
+    `/posts/profile/${options.userId}${queryString ? `?${queryString}` : ''}`,
   )
 }

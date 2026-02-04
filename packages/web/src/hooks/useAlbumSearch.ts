@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { searchAlbums } from '../lib/vinyls'
-import type { Album } from '../types/vinyl'
+import { searchAlbums } from '../lib/api/albums'
+import type { Album } from '@fillcrate/shared'
 
 interface UseAlbumSearchParams {
   query: string;

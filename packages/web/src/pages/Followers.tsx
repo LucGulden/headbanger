@@ -3,7 +3,7 @@ import { useParams, Link, Navigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { getFollowers } from '../lib/api/follows'
 import UserListItem from '../components/UserListItem'
-import { type User } from '@fillcrate/shared'
+import type { User } from '@fillcrate/shared'
 import LoadingSpinner from '../components/LoadingSpinner'
 
 export default function Followers() {

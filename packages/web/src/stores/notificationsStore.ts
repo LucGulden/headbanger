@@ -24,7 +24,6 @@ export const useNotificationsStore = create<NotificationsStore>((set, get) => ({
     // ✅ Cleanup d'abord si déjà initialisé
     const { isInitialized, unsubscribe } = get()
     if (isInitialized && unsubscribe) {
-      console.log('🧹 Cleaning up existing subscription before reinit')
       unsubscribe()
     }
 

@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { createVinyl, updateVinylCover } from '../lib/vinyls'
+import { createVinyl, updateVinylCover } from '../lib/api/vinyls'
 import { uploadVinylCover, generateImagePreview } from '../lib/covers'
-import type { Album, Vinyl } from '../types/vinyl'
+import type { Album, Vinyl } from '@fillcrate/shared'
 import VinylImage from './VinylImage'
 import Button from './Button'
 
@@ -90,7 +90,7 @@ export default function CreateVinylForm({ album, onVinylCreated, onCancel, userI
       const newVinyl = await createVinyl({
         albumId: album.id,
         title: title.trim(),
-        artist: album.artist,
+        artist: album.artists.map(a => a.name).join(', '),
         year: parseInt(year, 10),
         label: label.trim(),
         catalogNumber: catalogNumber.trim(),
@@ -129,13 +129,13 @@ export default function CreateVinylForm({ album, onVinylCreated, onCancel, userI
         <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg">
           <VinylImage
             src={album.coverUrl || ''}
-            alt={`${album.title} par ${album.artist}`}
+            alt={`${album.title} par ${album.artists.map(a => a.name).join(', ')}`}
             className="h-full w-full object-cover"
           />
         </div>
         <div>
           <h3 className="font-bold text-[var(--foreground)]">{album.title}</h3>
-          <p className="text-sm text-[var(--foreground-muted)]">{album.artist}</p>
+          <p className="text-sm text-[var(--foreground-muted)]">{album.artists.map(a => a.name).join(', ')}</p>
         </div>
       </div>
 

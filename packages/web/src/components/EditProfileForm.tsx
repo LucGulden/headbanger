@@ -9,9 +9,9 @@ import {
   checkUsernameAvailability,
   validateUsername,
   validateBio,
-} from '../lib/user'
+} from '../lib/api/users'
 import { useUserStore } from '../stores/userStore'
-import type { User } from '../types/user'
+import type { User } from '@fillcrate/shared'
 
 interface EditProfileFormProps {
   user: User;
@@ -144,7 +144,7 @@ export default function EditProfileForm({ user, onSuccess }: EditProfileFormProp
       }
 
       // Mise à jour du profil en BDD
-      await updateUserProfile(user.uid, updates)
+      await updateUserProfile(updates)
 
       // Mise à jour du store Zustand (met à jour la navbar automatiquement)
       updateAppUser(updates)

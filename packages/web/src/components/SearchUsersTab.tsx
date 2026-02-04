@@ -23,7 +23,7 @@ export default function SearchUsersTab({ query }: SearchUsersTabProps) {
           loadMore()
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.1 },
     )
 
     observer.observe(currentRef)

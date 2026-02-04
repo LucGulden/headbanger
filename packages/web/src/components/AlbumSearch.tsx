@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { getAlbumsByArtist } from '../lib/vinyls'
-import type { Album } from '../types/vinyl'
+import { getAlbumsByArtist } from '../lib/api/albums'
+import type { Album } from '@fillcrate/shared'
 import AlbumCard from './AlbumCard'
-import type { Artist } from '../types/vinyl'
+import type { Artist } from '@fillcrate/shared'
 import Button from './Button'
 
 interface AlbumSearchProps {

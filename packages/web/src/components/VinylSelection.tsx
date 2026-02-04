@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { getVinylsByAlbum, hasVinyl } from '../lib/vinyls'
-import type { Album, Vinyl } from '../types/vinyl'
+import { getVinylsByAlbum } from '../lib/api/vinyls'
+import { hasVinyl } from '../lib/api/userVinyls'
+import type { Album, Vinyl } from '@fillcrate/shared'
 import VinylImage from './VinylImage'
 import VinylCard from './VinylCard'
 import Button from './Button'
@@ -38,8 +39,8 @@ export default function VinylSelection({ album, userId, onVinylSelect, onCreateV
           vinylResults.map(async (vinyl) => {
             try {
               const [inCol, inWish] = await Promise.all([
-                hasVinyl(userId, vinyl.id, 'collection'),
-                hasVinyl(userId, vinyl.id, 'wishlist'),
+                hasVinyl(vinyl.id, 'collection'),
+                hasVinyl(vinyl.id, 'wishlist'),
               ])
               statusMap.set(vinyl.id, {
                 inCollection: inCol,
@@ -69,13 +70,13 @@ export default function VinylSelection({ album, userId, onVinylSelect, onCreateV
         <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg">
           <VinylImage
             src={album.coverUrl || ''}
-            alt={`${album.title} par ${album.artist}`}
+            alt={`${album.title} par ${album.artists.map(a => a.name).join(', ')}`}
             className="h-full w-full object-cover"
           />
         </div>
         <div>
           <h3 className="font-bold text-[var(--foreground)]">{album.title}</h3>
-          <p className="text-sm text-[var(--foreground-muted)]">{album.artist}</p>
+          <p className="text-sm text-[var(--foreground-muted)]">{album.artists.map(a => a.name).join(', ')}</p>
         </div>
       </div>
 
@@ -142,7 +143,6 @@ export default function VinylSelection({ album, userId, onVinylSelect, onCreateV
                 <VinylCard
                   key={vinyl.id}
                   vinyl={vinyl}
-                  albumCoverUrl={album.coverUrl || undefined}
                   inCollection={status?.inCollection}
                   inWishlist={status?.inWishlist}
                   onClick={() => onVinylSelect(vinyl)}

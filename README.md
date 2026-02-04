@@ -10,8 +10,31 @@ FillCrate est organisé en monorepo avec trois packages :
 - **`@fillcrate/backend`** : API REST NestJS avec Fastify et Supabase
 - **`@fillcrate/shared`** : Types TypeScript partagés entre tous les projets
 
-## Structure du monorepo
+## Architecture
 
+### Approche hybride Backend + Supabase
+
+FillCrate utilise une architecture hybride qui combine le meilleur des deux mondes :
+
+**Backend NestJS (API REST)** :
+- Logique métier centralisée (posts, likes, comments, follows, notifications)
+- Validation et autorisation (JWT Supabase vérifié par AuthGuard)
+- Endpoints propres pour frontend web + future app mobile
+- Transformations de données (snake_case DB → camelCase API)
+
+**Supabase direct** :
+- Realtime (likes, comments, notifications via WebSocket)
+- Storage (avatars, covers avec policies RLS)
+- Recherche avancée (albums, artistes, utilisateurs)
+- Certaines mutations de données (création albums/vinyles)
+
+**Authentification** :
+- Supabase Auth génère les JWT
+- Frontend envoie JWT dans headers `Authorization: Bearer <token>`
+- Backend valide JWT via `AuthGuard` et récupère `userId` automatiquement
+- Pas de `userId` dans les appels API protégés (récupéré du JWT)
+
+## Structure du monorepo
 ```
 fillcrate/
 ├── packages/
@@ -22,10 +45,40 @@ fillcrate/
 │   │   └── package.json
 │   ├── backend/             # API NestJS
 │   │   ├── src/
+│   │   │   ├── albums/
+│   │   │   ├── artists/
+│   │   │   ├── vinyls/
+│   │   │   ├── user-vinyls/
+│   │   │   ├── users/
+│   │   │   ├── follows/
+│   │   │   ├── posts/
+│   │   │   ├── post-likes/
+│   │   │   ├── comments/
+│   │   │   ├── notifications/
+│   │   │   └── common/
+│   │   │       ├── database/
+│   │   │       ├── guards/
+│   │   │       └── decorators/
 │   │   ├── package.json
 │   │   └── README.md
 │   └── web/                 # Frontend React
 │       ├── src/
+│       │   ├── lib/
+│       │   │   └── api/    # Services API centralisés
+│       │   │       ├── apiClient.ts
+│       │   │       ├── posts.ts
+│       │   │       ├── postLikes.ts
+│       │   │       ├── comments.ts
+│       │   │       ├── notifications.ts
+│       │   │       ├── follows.ts
+│       │   │       ├── albums.ts
+│       │   │       ├── vinyls.ts
+│       │   │       ├── artists.ts
+│       │   │       ├── userVinyls.ts
+│       │   │       └── users.ts
+│       │   ├── components/
+│       │   ├── pages/
+│       │   └── stores/
 │       ├── package.json
 │       └── README.md
 ├── package.json             # Root avec workspaces
@@ -40,7 +93,6 @@ fillcrate/
 - **Supabase** : Projet configuré avec les tables nécessaires
 
 ## Installation
-
 ```bash
 # Cloner le repository
 git clone https://github.com/ton-username/fillcrate.git
@@ -59,8 +111,9 @@ pnpm install
 **`packages/backend/.env`** :
 ```bash
 SUPABASE_URL=https://ton-projet.supabase.co
-SUPABASE_ANON_KEY=ta-anon-key
+SUPABASE_ANON_KEY=ta-anon-key  # Pas service_role !
 PORT=3001
+NODE_ENV=development
 ```
 
 **`packages/web/.env`** :
@@ -73,7 +126,6 @@ VITE_API_URL=http://localhost:3001
 ## Scripts disponibles
 
 ### Développement
-
 ```bash
 # Lancer frontend + backend en parallèle
 pnpm dev
@@ -86,7 +138,6 @@ pnpm dev:backend
 ```
 
 ### Build
-
 ```bash
 # Builder tous les packages
 pnpm build
@@ -98,7 +149,6 @@ pnpm build:backend     # Backend
 ```
 
 ### Autres commandes
-
 ```bash
 # Nettoyer tous les builds et node_modules
 pnpm clean
@@ -107,28 +157,44 @@ pnpm clean
 pnpm install:all
 ```
 
-## Architecture
+## Architecture détaillée
 
 ### @fillcrate/shared
 
 Package de types TypeScript partagés entre frontend et backend. C'est la **single source of truth** pour tous les contrats de données.
 
 **Types disponibles** :
-- `Album` : Structure d'un album avec artistes
-- *(À ajouter progressivement : Vinyl, User, Post, etc.)*
+- `Album`, `AlbumLight` : Structures d'albums avec artistes
+- `Vinyl` : Pressages vinyles avec artistes
+- `Artist`, `ArtistLight` : Artistes musicaux
+- `User`, `UserLight` : Utilisateurs et profils
+- `UserVinyl` : Relations user-vinyl (collection/wishlist)
+- `PostWithDetails` : Posts sociaux avec détails
+- `Comment` : Commentaires
+- `Notification` : Notifications
+- `FollowStats`, `VinylStats` : Statistiques
 
 **Utilisation** :
 ```typescript
-import { Album } from '@fillcrate/shared';
+import { Album, User, PostWithDetails } from '@fillcrate/shared';
 ```
 
 ### @fillcrate/backend
 
-API REST NestJS avec Fastify. Expose des endpoints pour gérer albums, vinyles, utilisateurs, posts, etc.
+API REST NestJS avec Fastify. Centralise la logique métier et expose des endpoints pour gérer albums, vinyles, utilisateurs, posts, etc.
 
-**Endpoints disponibles** :
-- `GET /health` : Healthcheck
-- `GET /albums/:id` : Récupérer un album avec artistes
+**Modules disponibles** :
+- Albums, Artists, Vinyls
+- UserVinyls (collections/wishlists)
+- Users (profils)
+- Follows (relations sociales)
+- Posts, PostLikes, Comments
+- Notifications
+
+**Authentification** :
+- Valide JWT Supabase via `AuthGuard`
+- Récupère automatiquement `userId` du token
+- `@CurrentUser()` decorator pour accéder à l'utilisateur authentifié
 
 **Documentation complète** : [`packages/backend/README.md`](packages/backend/README.md)
 
@@ -136,10 +202,27 @@ API REST NestJS avec Fastify. Expose des endpoints pour gérer albums, vinyles, 
 
 Application React avec Vite, TypeScript, Tailwind CSS et Zustand. Interface utilisateur pour gérer collections, découvrir albums et interagir avec la communauté.
 
+**Architecture API frontend** :
+```
+src/lib/api/
+├── apiClient.ts      # Client HTTP centralisé avec JWT auto
+├── posts.ts          # Endpoints posts
+├── postLikes.ts      # Endpoints likes
+├── comments.ts       # Endpoints commentaires
+├── notifications.ts  # Endpoints notifications
+├── follows.ts        # Endpoints follows
+├── albums.ts         # Endpoints albums
+├── vinyls.ts         # Endpoints vinyls
+├── artists.ts        # Endpoints artistes
+├── userVinyls.ts     # Endpoints collections/wishlists
+└── users.ts          # Endpoints profils
+```
+
 **Features** :
-- Gestion collection/wishlist
-- Feed social avec posts, likes, commentaires
-- Recherche d'albums (Spotify/MusicBrainz)
+- Gestion collection/wishlist (via backend)
+- Feed social avec posts, likes, commentaires (via backend)
+- Realtime pour likes/comments (via Supabase WebSocket)
+- Recherche d'albums/artistes/utilisateurs
 - Profils utilisateurs
 - Notifications temps réel
 - Infinite scroll
@@ -154,9 +237,9 @@ Application React avec Vite, TypeScript, Tailwind CSS et Zustand. Interface util
 2. Exporter le nouveau type
 3. Builder shared : `pnpm build:shared`
 4. Utiliser le type dans web ou backend :
-   ```typescript
+```typescript
    import { MonNouveauType } from '@fillcrate/shared';
-   ```
+```
 
 ### Ajouter un nouveau endpoint backend
 
@@ -164,17 +247,23 @@ Application React avec Vite, TypeScript, Tailwind CSS et Zustand. Interface util
 2. Créer controller + service + module
 3. Importer le module dans `app.module.ts`
 4. Utiliser les types depuis `@fillcrate/shared`
+5. Créer le service API correspondant dans `packages/web/src/lib/api/`
 
 ### Connecter frontend au backend
-
 ```typescript
 // packages/web/src/lib/api/albums.ts
-export async function getAlbum(id: string): Promise<Album> {
-  const response = await fetch(`${import.meta.env.VITE_API_URL}/albums/${id}`);
-  if (!response.ok) throw new Error('Failed to fetch album');
-  return response.json();
+import { apiClient } from './apiClient'
+import type { Album } from '@fillcrate/shared'
+
+export async function getAlbumById(albumId: string): Promise<Album> {
+  return apiClient.get<Album>(`/albums/${albumId}`)
 }
 ```
+
+Le `apiClient` gère automatiquement :
+- Ajout du JWT dans les headers
+- Gestion des erreurs
+- Content-Type (uniquement si body présent)
 
 ## Technologies
 
@@ -201,6 +290,10 @@ Relations :
 - Vinyls ↔ Artists (many-to-many via `vinyl_artists`)
 - Users ↔ Vinyls (many-to-many via `user_vinyls`)
 
+**Row Level Security (RLS)** :
+- Frontend → Supabase : RLS actif 🔒 (Realtime, Storage)
+- Backend → Supabase : Sécurité implémentée dans les services
+
 ## Déploiement
 
 ### Frontend (Vercel)
@@ -215,52 +308,33 @@ Relations :
 - Build command : Géré par `railway.toml` et `nixpacks.toml`
 - Variables d'env : `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `PORT`, `FRONTEND_URL`, `NODE_ENV`
 
-### Migration Turborepo (optionnel)
-
-Pour optimiser les builds et déploiements séparés, installer Turborepo :
-
-```bash
-pnpm add -Dw turbo
-```
-
-Voir la documentation Turborepo pour la configuration complète.
-
-## Structure Git
-
-```bash
-# Un seul repository Git à la racine
-fillcrate/
-├── .git/
-├── .gitignore
-└── packages/
-    ├── shared/
-    ├── backend/
-    └── web/
-```
-
 ## Troubleshooting
 
 ### "Cannot find module @fillcrate/shared"
-
 ```bash
 # Builder shared et réinstaller
 pnpm build:shared
 pnpm install
 ```
 
+### Erreur 401 sur les endpoints backend
+
+Vérifier que :
+- Le JWT Supabase est valide
+- `apiClient` récupère bien le token via `supabase.auth.getSession()`
+- Le backend utilise bien `SUPABASE_ANON_KEY` (pas service_role)
+
 ### Port déjà utilisé
 
 Changer les ports dans les fichiers `.env` respectifs.
 
 ### Erreurs TypeScript
-
 ```bash
 # Redémarrer le serveur TypeScript dans VSCode
 Ctrl+Shift+P > TypeScript: Restart TS Server
 ```
 
 ### Dépendances manquantes
-
 ```bash
 # Nettoyer et réinstaller
 pnpm clean
@@ -290,4 +364,4 @@ Privé - Tous droits réservés
 
 ---
 
-**Dernière mise à jour** : 2 février 2026
+**Dernière mise à jour** : 4 février 2026

@@ -16,7 +16,7 @@ export default function CommentItem({
   comment, 
   currentUserId, 
   isPending = false,
-  onDelete 
+  onDelete, 
 }: CommentItemProps) {
   const [isDeleting, setIsDeleting] = useState(false)
   const isOwner = currentUserId === comment.user.uid

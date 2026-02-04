@@ -4,7 +4,33 @@
 
 FillCrate est un réseau social pour passionnés de vinyles : gestion de collection/wishlist, feed social, follows, likes, commentaires, notifications, recherche d'albums et utilisateurs, création d'albums (Spotify ou manuel) et de pressages vinyles.
 
-**Stack** : React 18 + TypeScript + Vite 7 + Supabase + Tailwind CSS + Framer Motion + Zustand
+**Stack** : React 18 + TypeScript + Vite 7 + Supabase + NestJS Backend + Tailwind CSS + Framer Motion + Zustand
+
+## Architecture
+
+### Approche hybride : Backend API + Supabase
+
+FillCrate utilise une architecture hybride qui combine le meilleur des deux mondes :
+
+**Backend NestJS (API REST)** :
+- Logique métier centralisée (posts, likes, comments, follows, notifications)
+- Validation et autorisation (JWT Supabase vérifié par AuthGuard)
+- Endpoints propres pour web + future app mobile
+- Transformations de données (snake_case DB → camelCase API)
+- **Pas de `userId` dans les appels** : récupéré automatiquement du JWT
+
+**Supabase direct** :
+- Authentification (signup, login, JWT generation via `useAuth` hook)
+- Realtime (likes, comments, notifications via WebSocket)
+- Storage (avatars, covers avec policies RLS)
+- Recherche avancée (albums, artistes pour certaines fonctions)
+- Création albums/vinyles (via RPC functions)
+
+**Flow d'authentification** :
+1. `useAuth` hook → Login via Supabase Auth → JWT
+2. `apiClient` récupère le JWT via `supabase.auth.getSession()`
+3. Ajoute automatiquement `Authorization: Bearer <JWT>` dans les headers
+4. Backend valide le JWT et récupère `userId` automatiquement
 
 ## Structure du projet
 ```
@@ -12,11 +38,143 @@ src/
 ├── components/          # Composants UI réutilisables
 ├── pages/               # Pages de l'application
 ├── guards/              # Route guards (ProtectedRoute, PublicOnlyRoute, HomeRoute)
-├── hooks/               # Hooks personnalisés (useAuth, useFeedPagination, useVinylsPagination, useAlbumSearch, useArtistSearch, useUserSearch, useNotifications)
-├── lib/                 # Fonctions utilitaires (API calls, helpers)
+├── hooks/               # Hooks personnalisés
+│   ├── useAuth.ts       # Auth Supabase (signup, login, logout)
+│   ├── useFeedPagination.ts
+│   ├── useVinylsPagination.ts
+│   ├── useNotifications.ts
+│   └── ...
+├── lib/
+│   ├── api/             # Services API centralisés (Backend NestJS)
+│   │   ├── apiClient.ts      # Client HTTP avec JWT auto
+│   │   ├── posts.ts          # Endpoints posts
+│   │   ├── postLikes.ts      # Endpoints likes
+│   │   ├── comments.ts       # Endpoints commentaires
+│   │   ├── notifications.ts  # Endpoints notifications
+│   │   ├── follows.ts        # Endpoints follows
+│   │   ├── albums.ts         # Endpoints albums
+│   │   ├── vinyls.ts         # Endpoints vinyls
+│   │   ├── artists.ts        # Endpoints artistes
+│   │   ├── userVinyls.ts     # Endpoints collections/wishlists
+│   │   └── users.ts          # Endpoints profils
+│   ├── spotify.ts       # API Spotify direct
+│   ├── storage.ts       # Supabase Storage direct
+│   └── covers.ts        # Upload covers
 ├── stores/              # State management Zustand
+│   ├── notificationsStore.ts
+│   ├── userStore.ts
+│   └── vinylStatsStore.ts
 ├── types/               # Types TypeScript
 └── database/            # Migrations SQL
+```
+
+## Installation
+```bash
+# Depuis la racine du monorepo
+pnpm install
+
+# Configurer les variables d'environnement
+cp .env.example .env
+```
+
+### Variables d'environnement
+
+Créer un fichier `.env` à la racine de `packages/web/` :
+```bash
+# Supabase
+VITE_SUPABASE_URL=https://ton-projet.supabase.co
+VITE_SUPABASE_ANON_KEY=ta-anon-key
+
+# Backend API
+VITE_API_URL=http://localhost:3001
+```
+
+En production (Vercel), configurer ces variables dans les settings du projet.
+
+## Scripts disponibles
+```bash
+# Développement avec hot reload
+pnpm dev
+
+# Build pour production
+pnpm build
+
+# Preview du build
+pnpm preview
+
+# Linter
+pnpm lint
+pnpm lint:fix
+```
+
+## Architecture API Frontend
+
+### Services API centralisés (`/lib/api`)
+
+Tous les appels au backend NestJS passent par des services typés :
+
+| Service | Description | Auth |
+|---------|-------------|------|
+| `apiClient.ts` | Client HTTP centralisé avec JWT automatique | - |
+| `posts.ts` | Feed global/profil, création, suppression | ✅ |
+| `postLikes.ts` | Like/unlike posts, vérification, compteur | ✅ |
+| `comments.ts` | CRUD commentaires, compteur | ✅ |
+| `notifications.ts` | Liste, compteur non lues, mark as read | ✅ |
+| `follows.ts` | Follow/unfollow, listes, statistiques | ✅ |
+| `albums.ts` | Récupération albums (+ Supabase direct pour search) | Public |
+| `vinyls.ts` | Récupération vinyls (+ Supabase direct pour RPC) | Public |
+| `artists.ts` | Récupération/recherche artistes | Public |
+| `userVinyls.ts` | Collections/wishlists, ajout, suppression, déplacement | ✅ |
+| `users.ts` | Profils, recherche, update profil | ✅/Public |
+
+### apiClient - Client HTTP centralisé
+
+Le `apiClient` gère automatiquement :
+- Récupération du JWT via `supabase.auth.getSession()`
+- Ajout du header `Authorization: Bearer <token>`
+- Ajout de `Content-Type: application/json` seulement si body présent
+- Gestion des erreurs HTTP
+```typescript
+// Exemple d'utilisation
+import { apiClient } from './apiClient'
+
+// GET request
+const posts = await apiClient.get<PostWithDetails[]>('/posts/feed?limit=20')
+
+// POST request avec body
+const post = await apiClient.post<PostWithDetails>('/posts', { 
+  vinylId: '123',
+  type: 'collection_add'
+})
+
+// DELETE request
+await apiClient.delete(`/posts/${postId}`)
+```
+
+### Pattern d'utilisation
+
+**Avant (ancien pattern Supabase direct)** :
+```typescript
+// ❌ userId passé en paramètre
+await addVinylToUser(userId, vinylId, 'collection')
+await likePost(userId, postId)
+await followUser(currentUserId, targetUserId)
+```
+
+**Après (nouveau pattern API centralisée)** :
+```typescript
+// ✅ userId récupéré automatiquement du JWT
+await addVinylToUser(vinylId, 'collection')
+await likePost(postId)
+await followUser(targetUserId)
+```
+
+**Endpoints publics** (inchangés) :
+```typescript
+// ✅ Toujours avec userId car public
+await getFollowStats(userId)
+await getUserByUsername(username)
+await getAlbumById(albumId)
 ```
 
 ## State Management
@@ -37,9 +195,9 @@ Trois stores centralisés gèrent l'état global de l'application :
 ```typescript
 useEffect(() => {
   if (user) {
-    initializeNotifications(user.id)
-    initializeUser(user.id)
-    initializeVinylStats(user.id)
+    initializeNotifications(user.id)  // ⚠️ userId requis pour Supabase Realtime filter
+    initializeUser(user.id)           // ⚠️ Pourrait devenir getCurrentUser() à terme
+    initializeVinylStats(user.id)     // ⚠️ Pourrait devenir getVinylStats() à terme
   } else {
     cleanupNotifications()
     cleanupUser()
@@ -48,23 +206,19 @@ useEffect(() => {
 }, [user])
 ```
 
-**Mise à jour** : Les composants appellent les actions du store après mutation DB :
+**Mise à jour** : Les composants appellent les actions du store après mutation API :
 ```typescript
 // Ajout en collection
-await addVinylToUser(userId, vinylId, 'collection')
+await addVinylToUser(vinylId, 'collection') // Plus besoin de userId
 incrementCollection()
 
-// Suppression de la wishlist
-await removeVinylFromUser(userId, vinylId, 'wishlist')
-decrementWishlist()
-
 // Déplacement wishlist → collection
-await moveToCollection(userId, vinylId)
+await moveToCollection(vinylId) // Plus besoin de userId
 decrementWishlist()
 incrementCollection()
 
 // Modification du profil
-await updateUserProfile(userId, updates)
+await updateUserProfile(updates) // Plus besoin de userId
 updateAppUser(updates)
 ```
 
@@ -75,30 +229,23 @@ const { appUser } = useUserStore()
 const { stats } = useVinylStatsStore()
 ```
 
-### Pattern de synchronisation
+## Authentification
 
-1. Mutation en base de données (Supabase)
-2. Action Zustand pour mettre à jour le state local
-3. Re-render automatique des composants abonnés
-4. Pas d'events custom, pas de props drilling
+### Hook useAuth
 
-### Composants clés
+Le hook `useAuth` gère l'authentification via Supabase Auth :
+```typescript
+const { 
+  user,           // User Supabase (uid, email)
+  loading,        // État de chargement
+  error,          // Erreurs auth
+  signUp,         // Inscription
+  signInWithPassword, // Connexion
+  signOut         // Déconnexion
+} = useAuth()
+```
 
-| Composant | Rôle |
-|-----------|------|
-| `AddVinylModal` | Modal 5 étapes : albumSearch (mode artiste uniquement) → createAlbum → vinylSelection → createVinyl → vinylDetails |
-| `AlbumSearch` | Recherche filtrée par artiste (filtrage client sur les albums de l'artiste) |
-| `VinylCard` | Carte vinyle avec `variant`: `'full'` (badges, détails) ou `'compact'` (titre + artiste) |
-| `VinylGrid` | Grille avec infinite scroll, utilise VinylCard en mode compact |
-| `VinylDetails` | Détails vinyle avec actions contextuelles selon `targetType` et `isOwnProfile` |
-| `AlbumCard` | Carte album (titre, artiste, année) |
-| `ProfileVinyls` | Affiche collection/wishlist, ouvre modal au clic sur vinyle, écoute `vinylStatsStore` pour rafraîchir |
-| `LoadingSpinner` | Spinner de chargement centralisé avec options fullScreen et taille |
-| `PostCard` | Carte post avec optimistic UI et subscriptions temps réel (likes, commentaires) |
-| `CommentItem` | Item commentaire avec support mode `isPending` |
-| `SearchAlbumsTab` | Recherche d'albums avec infinite scroll (pagination offset-based) |
-| `SearchArtistsTab` | Recherche d'artistes avec infinite scroll (pagination offset-based) |
-| `SearchUsersTab` | Recherche d'utilisateurs avec infinite scroll (pagination offset-based) |
+**Important** : Supabase Auth reste la source d'authentification. Le backend NestJS valide juste les JWT, il ne gère pas le signup/login.
 
 ### Guards
 
@@ -108,46 +255,43 @@ const { stats } = useVinylStatsStore()
 | `PublicOnlyRoute` | Bloque l'accès si connecté → redirect `/` |
 | `HomeRoute` | Route `/` dynamique : Landing si déconnecté, Feed si connecté |
 
-## Base de données
+## Composants clés
 
-### Tables principales
+### Composants de données
 
-- **users** : uid, email, username, first_name, last_name, photo_url, bio
-- **artists** : id, name, spotify_id?, image_url?, created_at
-- **albums** : id, spotify_id?, musicbrainz_release_group_id?, title, cover_url, year, created_by?
-- **album_artists** : album_id (FK), artist_id (FK), position — **Relation many-to-many albums ↔ artists**
-- **vinyls** : id, album_id (FK), musicbrainz_release_id?, title, cover_url, year, label, catalog_number, country, format, created_by?
-- **vinyl_artists** : vinyl_id (FK), artist_id (FK), position — **Relation many-to-many vinyls ↔ artists**
-- **user_vinyls** : user_id, release_id, type ('collection'|'wishlist') — **un vinyle ne peut JAMAIS être dans les deux**
-- **posts** : user_id, vinyl_id, type ('collection_add'|'wishlist_add'), content?
-- **post_likes**, **comments**, **follows**, **notifications**
+| Composant | Rôle |
+|-----------|------|
+| `AddVinylModal` | Modal 5 étapes : albumSearch → createAlbum → vinylSelection → createVinyl → vinylDetails |
+| `AlbumSearch` | Recherche filtrée par artiste (filtrage client sur les albums de l'artiste) |
+| `VinylCard` | Carte vinyle avec `variant`: `'full'` ou `'compact'` |
+| `VinylGrid` | Grille avec infinite scroll, utilise VinylCard en mode compact |
+| `VinylDetails` | Détails vinyle avec actions contextuelles selon `targetType` et `isOwnProfile` |
+| `ProfileVinyls` | Affiche collection/wishlist, écoute `vinylStatsStore` pour rafraîchir |
+| `PostCard` | Carte post avec optimistic UI et subscriptions temps réel (likes, commentaires) |
+| `CommentItem` | Item commentaire avec support mode `isPending` |
 
-### Architecture vinyles
+### Composants de recherche
 
-- **Album** = œuvre musicale abstraite (peut avoir plusieurs pressages)
-- **Vinyl** = pressage physique spécifique (lié à un album)
-- **UserVinyl** = relation user ↔ vinyle (collection ou wishlist)
+| Composant | Rôle |
+|-----------|------|
+| `SearchAlbumsTab` | Recherche d'albums avec infinite scroll (pagination offset-based) |
+| `SearchArtistsTab` | Recherche d'artistes avec infinite scroll (pagination offset-based) |
+| `SearchUsersTab` | Recherche d'utilisateurs avec infinite scroll (pagination offset-based) |
 
-### Architecture artistes
+### Composants UI
 
-- Les albums et vinyles n'ont **plus de colonne `artist` directe** (migration vers tables de jointure)
-- Relation many-to-many via `album_artists` et `vinyl_artists` (supporte les collaborations)
-- Fonction RPC `ensure_artist(artist_name)` : crée ou récupère un artiste (case-insensitive, déduplique automatiquement)
-- Fonction RPC `create_album_with_artist()` : gère atomiquement la création album + artiste + relation
-- Fonction RPC `create_vinyl_with_artist()` : gère atomiquement la création vinyle + artiste + relation
-- Les requêtes récupèrent les artistes via jointures et reconstituent le champ `artist` (concaténation avec virgules pour les collabs)
-
-### Triggers automatiques
-
-- Création user à l'inscription
-- Création post à l'ajout en collection
-- Notifications : follow, like, comment (+ cleanup à la suppression)
+| Composant | Rôle |
+|-----------|------|
+| `LoadingSpinner` | Spinner de chargement centralisé avec options fullScreen et taille |
+| `Avatar` | Avatar utilisateur avec fallback |
+| `Button` | Bouton réutilisable avec variants |
+| `AlbumCard` | Carte album (titre, artiste, année) |
 
 ## Routes
 
 ### Routes publiques (accessibles déconnecté ET connecté)
 ```
-/search                     Recherche albums (par titre), artistes, utilisateurs avec infinite scroll
+/search                     Recherche albums (par titre), artistes, utilisateurs
 /profile/:username          Profil (3 onglets : feed/collection/wishlist)
 /profile/:username/followers|following
 ```
@@ -176,13 +320,13 @@ interface AddVinylModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  userId: string;
-  targetType?: 'collection' | 'wishlist';  // Contexte d'ajout
-  initialAlbum?: Album;                     // Démarre à vinylSelection
-  initialStep?: ModalStep;                  // Démarre à une étape spécifique
-  initialVinyl?: Vinyl;                     // Démarre à vinylDetails
-  isOwnProfile?: boolean;                   // Actions de gestion vs ajout
-  artist?: Artist;                          // Requis pour albumSearch, démarre à createAlbum si absent
+  userId: string;                       // ⚠️ Encore nécessaire pour certaines vérifications
+  targetType?: 'collection' | 'wishlist';
+  initialAlbum?: Album;
+  initialStep?: ModalStep;
+  initialVinyl?: Vinyl;
+  isOwnProfile?: boolean;
+  artist?: Artist;
 }
 ```
 
@@ -190,21 +334,23 @@ interface AddVinylModalProps {
 
 | Contexte | Condition | Actions |
 |----------|-----------|---------|
-| Mon profil > Collection | - | "Retirer de ma collection" (decrementCollection) |
-| Mon profil > Wishlist | - | "J'ai acheté !" (decrementWishlist + incrementCollection) + "Retirer de ma wishlist" (decrementWishlist) |
+| Mon profil > Collection | - | "Retirer de ma collection" |
+| Mon profil > Wishlist | - | "J'ai acheté !" + "Retirer de ma wishlist" |
 | Profil autre / Search | En collection | Message "déjà possédé" |
-| Profil autre / Search | En wishlist | "Déplacer vers la collection" (decrementWishlist + incrementCollection) |
-| Profil autre / Search | Non possédé | 2 boutons : collection (incrementCollection) + wishlist (incrementWishlist) |
+| Profil autre / Search | En wishlist | "Déplacer vers la collection" |
+| Profil autre / Search | Non possédé | 2 boutons : collection + wishlist |
 
-## Types principaux
-```typescript
-interface UserVinylWithDetails extends UserVinyl {
-  vinyl: Vinyl;
-  album: Album;  // Jointure incluse
-}
+## Realtime (Supabase WebSocket)
 
-type UserVinylType = 'collection' | 'wishlist';
-```
+Certaines fonctionnalités utilisent encore Supabase Realtime en direct :
+
+| Feature | Pourquoi Realtime |
+|---------|-------------------|
+| Likes sur posts | Mise à jour instantanée du compteur |
+| Commentaires | Nouveaux commentaires apparaissent en temps réel |
+| Notifications | Compteur non lu mis à jour instantanément |
+
+**Future migration** : Socket.IO dans le backend pour unifier le realtime.
 
 ## Patterns et conventions
 
@@ -212,16 +358,37 @@ type UserVinylType = 'collection' | 'wishlist';
 ```typescript
 <AddVinylModal
   key={isModalOpen ? 'open' : 'closed'}  // Force remount pour reset
-  initialStep="createAlbum"              // Ouvre directement à création
-  artist={selectedArtist}                // Requis pour albumSearch
-  // ...
+  initialStep="createAlbum"
+  artist={selectedArtist}
 />
 ```
 
 ### VinylImage
 ```typescript
 // ✅ Utiliser opacity (pas hidden avec loading="lazy")
-<img className={loaded ? 'opacity-100' : 'opacity-0'} loading="lazy" />
+<img 
+  className={loaded ? 'opacity-100' : 'opacity-0'} 
+  loading="lazy" 
+/>
+```
+
+### Optimistic UI
+```typescript
+// Pattern pour likes/comments
+const handleLike = async () => {
+  // 1. Update UI immédiatement
+  setIsLiked(!isLiked)
+  setLikesCount(likesCount + 1)
+  
+  try {
+    // 2. Appel API
+    await likePost(postId) // Plus besoin de userId
+  } catch (error) {
+    // 3. Rollback si erreur
+    setIsLiked(isLiked)
+    setLikesCount(likesCount)
+  }
+}
 ```
 
 ## Variables CSS
@@ -237,26 +404,43 @@ type UserVinylType = 'collection' | 'wishlist';
 
 ## Libs utilitaires
 
+### API Backend (via apiClient)
+
+| Fichier | Fonctions clés | Note |
+|---------|----------------|------|
+| `posts.ts` | getGlobalFeed, getProfileFeed, createPost, deletePost | userId du JWT |
+| `postLikes.ts` | likePost, unlikePost, hasLikedPost, getLikesCount | userId du JWT |
+| `comments.ts` | addComment, deleteComment, getComments | userId du JWT |
+| `notifications.ts` | getNotifications, getUnreadCount, markAllAsRead | userId du JWT |
+| `follows.ts` | followUser, unfollowUser, isFollowing, getFollowers | userId du JWT pour actions |
+| `userVinyls.ts` | getUserVinyls, addVinylToUser, removeVinylFromUser, moveToCollection | userId du JWT |
+| `users.ts` | getCurrentUser, updateUserProfile, searchUsers, getUserByUsername | userId du JWT pour /me |
+| `albums.ts` | getAlbumById, searchAlbums (Supabase), createAlbum (Supabase RPC) | Public + Supabase |
+| `vinyls.ts` | getVinylById, getVinylsByAlbum (Supabase), createVinyl (Supabase RPC) | Public + Supabase |
+| `artists.ts` | getArtistById, searchArtists | Public |
+
+### Autres services
+
 | Fichier | Fonctions clés |
 |---------|----------------|
-| `vinyls.ts` | getUserVinyls, addVinylToUser, removeVinylFromUser, moveToCollection, searchAlbums (titre uniquement, offset-based), searchArtists (offset-based), getAlbumsByArtist, createAlbum (via RPC), createVinyl (via RPC) |
-| `search.ts` | searchUsers (offset-based) |
 | `spotify.ts` | searchSpotifyAlbums, getSpotifyAlbum (Client Credentials Flow) |
 | `covers.ts` | uploadAlbumCover, uploadVinylCover (compression WebP 600px) |
-| `storage.ts` | uploadProfilePhoto |
+| `storage.ts` | uploadProfilePhoto (Supabase Storage) |
 
 ## Points d'attention
 
-1. **Ordre des routes** : spécifiques AVANT génériques
+1. **Ordre des routes** : Spécifiques AVANT génériques dans React Router
 2. **Policies Supabase** : INSERT sur users, UPDATE sur albums/vinyls
-3. **Règle collection/wishlist** : jamais les deux en même temps
+3. **Règle collection/wishlist** : Jamais les deux en même temps
 4. **Images** : opacity au lieu de hidden avec lazy loading
-5. **Modal reset** : utiliser `key` pour forcer le remount
+5. **Modal reset** : Utiliser `key` pour forcer le remount
 6. **Covers Spotify** : URL stockée directement (pas de copie)
-7. **Route guards** : ProtectedRoute gère le loading centralisé, pas de checks manuels dans les pages
-8. **State management** : Zustand pour état global, pas d'events custom (`window.dispatchEvent`)
-9. **Realtime** : Activer les tables dans Supabase publication pour temps réel
-10. **Infinite scroll** : IntersectionObserver avec pagination offset-based pour la recherche
+7. **Route guards** : ProtectedRoute gère le loading centralisé
+8. **State management** : Zustand pour état global, pas d'events custom
+9. **Realtime** : Activer les tables dans Supabase publication
+10. **API calls** : Ne jamais passer `userId` dans les appels backend protégés
+11. **useAuth** : Source unique d'authentification (Supabase Auth)
+12. **Types partagés** : Toujours importer depuis `@fillcrate/shared`
 
 ## Style d'interaction préféré
 
@@ -265,7 +449,75 @@ type UserVinylType = 'collection' | 'wishlist';
 - ✅ Modifications ciblées plutôt que fichiers complets
 - ✅ Un composant = un fichier
 - ✅ Réutiliser l'existant
+- ✅ Imports depuis `@fillcrate/shared` pour les types
+
+## Déploiement (Vercel)
+
+### Configuration
+
+Le projet est configuré pour Vercel avec `vercel.json`.
+
+Variables d'environnement à configurer dans Vercel :
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+- `VITE_API_URL` (URL du backend Railway en prod)
+
+Build settings :
+- Framework Preset : Vite
+- Build Command : `pnpm build` (géré par vercel.json)
+- Output Directory : `dist`
+
+## Migration notes
+
+### Différences avec l'ancien code
+
+**Ancien pattern (Supabase direct)** :
+```typescript
+import { addVinylToUser } from '../lib/vinyls'
+await addVinylToUser(userId, vinylId, 'collection')
+```
+
+**Nouveau pattern (Backend API)** :
+```typescript
+import { addVinylToUser } from '../lib/api/userVinyls'
+await addVinylToUser(vinylId, 'collection') // Plus de userId
+```
+
+### Checklist de migration
+
+- [ ] Remplacer tous les imports `from '../lib/xxx'` par `from '../lib/api/xxx'`
+- [ ] Retirer les paramètres `userId` des appels API protégés
+- [ ] Utiliser `getCurrentUser()` au lieu de `getUserByUid(currentUser.id)`
+- [ ] Vérifier que `apiClient` récupère bien le JWT
+- [ ] Tester toutes les fonctionnalités protégées
+
+## Troubleshooting
+
+### Erreur 401 Unauthorized
+
+Vérifier que :
+- L'utilisateur est bien connecté (`useAuth`)
+- Le JWT est récupéré par `apiClient` via `supabase.auth.getSession()`
+- Le backend utilise bien `SUPABASE_ANON_KEY`
+
+### Compteur notifications non synchronisé
+
+- Vérifier que `notificationsStore` est initialisé dans `App.tsx`
+- Vérifier la subscription Supabase Realtime
+
+### Images ne chargent pas
+
+- Vérifier les policies Supabase Storage
+- Utiliser `opacity-0` → `opacity-100` avec `loading="lazy"`
+
+### Types TypeScript non reconnus
+```bash
+# Rebuilder le package shared
+cd ../../
+pnpm build:shared
+pnpm install
+```
 
 ---
 
-**Dernière mise à jour** : 31 janvier 2026
+**Dernière mise à jour** : 4 février 2026

@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { addVinylToUser } from '../lib/vinyls'
+import { addVinylToUser } from '../lib/api/userVinyls'
 import { useVinylStatsStore } from '../stores/vinylStatsStore'
-import type { Album, Artist, UserVinylType, Vinyl } from '../types/vinyl'
+import type { Album, Artist, UserVinylType, Vinyl } from '@fillcrate/shared'
 import AlbumSearch from './AlbumSearch'
 import VinylSelection from './VinylSelection'
 import VinylDetails from './VinylDetails'
@@ -107,7 +107,7 @@ export default function AddVinylModal({
 
     try {
       setError(null)
-      await addVinylToUser(userId, selectedVinyl.id, type)
+      await addVinylToUser(selectedVinyl.id, type)
       setSuccess(true)
       
       if (type === 'collection') {

@@ -65,6 +65,7 @@ export interface UserVinyl {
   id: string;
   addedAt: string;
   vinyl: Vinyl;
+  album: Album;
 }
 
 export interface VinylStats {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { hasVinyl, moveToCollection, removeVinylFromUser } from '../lib/vinyls'
+import { hasVinyl, moveToCollection, removeVinylFromUser } from '../lib/api/userVinyls'
 import { useVinylStatsStore } from '../stores/vinylStatsStore'
-import type { Album, Vinyl, UserVinylType } from '../types/vinyl'
+import type { Album, Vinyl, UserVinylType } from '@fillcrate/shared'
 import VinylImage from './VinylImage'
 import Button from './Button'
 
@@ -31,7 +31,7 @@ export default function VinylDetails({
   const [isRemoving, setIsRemoving] = useState(false)
   
   // ✨ Store Zustand
-  const { incrementCollection, decrementCollection, incrementWishlist, decrementWishlist } = useVinylStatsStore()
+  const { incrementCollection, decrementCollection, decrementWishlist } = useVinylStatsStore()
 
   const isReissue = album.year !== vinyl.year
 
@@ -41,8 +41,8 @@ export default function VinylDetails({
     const checkStatus = async () => {
       try {
         const [inCol, inWish] = await Promise.all([
-          hasVinyl(userId, vinyl.id, 'collection'),
-          hasVinyl(userId, vinyl.id, 'wishlist'),
+          hasVinyl(vinyl.id, 'collection'),
+          hasVinyl(vinyl.id, 'wishlist'),
         ])
 
         if (isMounted) {
@@ -68,7 +68,7 @@ export default function VinylDetails({
   const handleMoveToCollection = async () => {
     try {
       setIsMoving(true)
-      await moveToCollection(userId, vinyl.id)
+      await moveToCollection(vinyl.id)
       setInWishlist(false)
       setInCollection(true)
       
@@ -88,7 +88,7 @@ export default function VinylDetails({
   const handleRemove = async (type: UserVinylType) => {
     try {
       setIsRemoving(true)
-      await removeVinylFromUser(userId, vinyl.id, type)
+      await removeVinylFromUser(vinyl.id, type)
       
       if (type === 'collection') {
         setInCollection(false)
@@ -269,7 +269,7 @@ export default function VinylDetails({
         <div className="relative aspect-square w-full overflow-hidden rounded-lg border border-[var(--background-lighter)] bg-[var(--background-lighter)] md:w-[300px]">
           <VinylImage
             src={vinyl.coverUrl || ''}
-            alt={`${vinyl.title} - ${vinyl.artist}`}
+            alt={`${vinyl.title} - ${vinyl.artists.map(a => a.name).join(', ')}`}
             className="h-full w-full object-cover"
           />
         </div>
@@ -279,7 +279,7 @@ export default function VinylDetails({
           <div>
             <h3 className="text-2xl font-bold text-[var(--foreground)]">{vinyl.title}</h3>
             <p className="mt-1 text-lg font-medium text-[var(--foreground-muted)]">
-              {vinyl.artist}
+              {vinyl.artists.map(a => a.name).join(', ')}
             </p>
             <p className="mt-1 text-sm text-[var(--foreground-muted)]">
               {isReissue ? (

@@ -3,7 +3,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useArtistSearch } from '../hooks/useArtistSearch'
 import ArtistCard from './ArtistCard'
 import AddVinylModal from './AddVinylModal'
-import type { Artist } from '../types/vinyl'
+import type { Artist } from '@fillcrate/shared'
 import { useState } from 'react'
 
 interface SearchArtistsTabProps {
@@ -30,7 +30,7 @@ export default function SearchArtistsTab({ query }: SearchArtistsTabProps) {
           loadMore()
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.1 },
     )
 
     observer.observe(currentRef)

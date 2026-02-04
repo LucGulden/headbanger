@@ -3,7 +3,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useAlbumSearch } from '../hooks/useAlbumSearch'
 import AlbumCard from './AlbumCard'
 import AddVinylModal from './AddVinylModal'
-import type { Album } from '../types/vinyl'
+import type { Album } from '@fillcrate/shared'
 import Button from './Button'
 import { useState } from 'react'
 
@@ -32,7 +32,7 @@ export default function SearchAlbumsTab({ query }: SearchAlbumsTabProps) {
           loadMore()
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.1 },
     )
 
     observer.observe(currentRef)

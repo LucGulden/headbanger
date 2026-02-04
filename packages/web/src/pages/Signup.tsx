@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import Input from '../components/Input'
 import Button from '../components/Button'
-import { validateUsername, isUsernameAvailable } from '../lib/user'
+import { validateUsername, checkUsernameAvailability } from '../lib/api/users'
 
 export default function SignupPage() {
   const navigate = useNavigate()
@@ -39,7 +39,7 @@ export default function SignupPage() {
       // Vérifier la disponibilité
       try {
         setCheckingUsername(true)
-        const available = await isUsernameAvailable(formData.username)
+        const available = await checkUsernameAvailability(formData.username)
         if (!available) {
           newErrors.username = "Ce nom d'utilisateur est déjà pris"
         }

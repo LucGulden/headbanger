@@ -1,5 +1,5 @@
 import VinylImage from './VinylImage'
-import type { Album } from '../types/vinyl'
+import type { Album } from '@fillcrate/shared'
 
 interface AlbumCardProps {
   album: Album;
@@ -23,7 +23,7 @@ export default function AlbumCard({ album, onClick }: AlbumCardProps) {
         {album.title}
       </h3>
       <p className="truncate text-sm text-[var(--foreground-muted)]">
-        {album.artist}
+        {album.artists.map((artist) => artist.name).join(', ')}
       </p>
       {album.year && (
         <p className="text-xs text-[var(--foreground-muted)]">{album.year}</p>

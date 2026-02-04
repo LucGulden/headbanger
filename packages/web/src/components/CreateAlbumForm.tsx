@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { Album } from '../types/vinyl'
+import type { Album } from '@fillcrate/shared'
 import SpotifyAlbumImport from './SpotifyAlbumImport'
 import ManualAlbumForm from './ManualAlbumForm'
 import ModeChoice from './ModeChoice'

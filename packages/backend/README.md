@@ -6,6 +6,25 @@ API REST pour FillCrate, réseau social pour passionnés de vinyles. Backend Nes
 
 **Stack** : NestJS + Fastify + TypeScript + Supabase + Class Validator
 
+## Architecture
+
+### Approche hybride : Backend API + Supabase
+
+Le backend utilise **`SUPABASE_ANON_KEY`** (pas service_role) pour bénéficier de l'authentification JWT tout en centralisant la logique métier.
+
+**Ce que le backend gère** :
+- ✅ Validation des JWT Supabase (AuthGuard)
+- ✅ Logique métier (posts, likes, comments, follows, notifications)
+- ✅ Transformations de données (snake_case → camelCase)
+- ✅ Actions dérivées asynchrones (notifications, posts automatiques)
+- ✅ API propre pour web + mobile
+
+**Ce que Supabase gère directement** :
+- ✅ Authentification (signup, login, JWT generation)
+- ✅ Realtime (WebSocket pour likes, comments, notifications)
+- ✅ Storage (avatars, covers avec RLS policies)
+- ✅ Row Level Security pour requêtes directes
+
 ## Structure du projet
 ```
 src/
@@ -31,66 +50,13 @@ src/
 └── main.ts              # Bootstrap Fastify
 ```
 
-## Architecture
-
-### Modules
-
-Chaque fonctionnalité est organisée en module NestJS (controller + service + module).
-
-| Module | Description |
-|--------|-------------|
-| `AlbumsModule` | Gestion des albums (métadonnées musicales) |
-| `ArtistsModule` | Gestion des artistes (recherche, récupération) |
-| `VinylsModule` | Gestion des vinyles (pressings physiques) |
-| `UserVinylsModule` | Collections et wishlists des utilisateurs |
-| `UsersModule` | Profils utilisateurs (CRUD, recherche) |
-| `FollowsModule` | Relations sociales (follow/unfollow) |
-| `PostsModule` | Posts sociaux (feed global et profil) |
-| `PostLikesModule` | Likes sur les posts |
-| `CommentsModule` | Commentaires sur les posts |
-| `NotificationsModule` | Système de notifications |
-
-### Services centralisés
-
-| Service | Rôle |
-|---------|------|
-| `SupabaseService` | Client Supabase centralisé, gère l'auth JWT + RLS |
-
-### Guards
-
-| Guard | Rôle |
-|-------|------|
-| `AuthGuard` | Valide le JWT Supabase, à utiliser avec `@UseGuards(AuthGuard)` |
-
-### Decorators
-
-| Decorator | Rôle |
-|-----------|------|
-| `@CurrentUser()` | Récupère l'utilisateur authentifié dans un controller |
-
-### Logique métier et actions dérivées
-
-**Architecture basée sur les services** : Toute la logique métier est gérée dans les services NestJS, pas dans des triggers SQL. Cela permet :
-- ✅ **Testabilité** : Chaque comportement est testable unitairement
-- ✅ **Visibilité** : La logique est explicite dans le code
-- ✅ **Flexibilité** : Facile d'ajouter des conditions, du throttling, des préférences utilisateur
-- ✅ **Débogage** : Logs, gestion d'erreur, monitoring
-
-**Actions dérivées automatiques** :
-- **Notifications** : Créées/supprimées automatiquement par les services lors des interactions sociales
-- **Posts automatiques** : Créés lors de l'ajout d'un vinyl en collection/wishlist
-- **Logging asynchrone** : Les actions non-critiques ne bloquent pas les opérations principales
-
-**Trigger SQL restant** :
-- `update_users_updated_at` : Mise à jour automatique du champ `updated_at` (housekeeping)
-
 ## Configuration
 
 ### Variables d'environnement
 
 Créer un fichier `.env` à la racine de `packages/backend/` :
 ```bash
-# Supabase
+# Supabase - IMPORTANT : Utiliser ANON_KEY, pas SERVICE_ROLE
 SUPABASE_URL=https://ton-projet.supabase.co
 SUPABASE_ANON_KEY=ta-anon-key
 
@@ -101,6 +67,8 @@ NODE_ENV=development
 # CORS (optionnel, pour prod)
 FRONTEND_URL=http://localhost:5173
 ```
+
+⚠️ **Important** : Le backend utilise `SUPABASE_ANON_KEY` pour bénéficier de l'authentification JWT. Ne pas utiliser `service_role` sauf besoins spécifiques.
 
 ### CORS
 
@@ -135,6 +103,75 @@ pnpm lint
 pnpm lint:fix
 ```
 
+## Authentification
+
+### Flow d'authentification
+
+1. **Frontend** : Login via Supabase Auth → Reçoit JWT
+2. **Frontend** : Envoie requête avec `Authorization: Bearer <JWT>`
+3. **Backend** : `AuthGuard` valide le JWT via Supabase
+4. **Backend** : Extrait `userId` du JWT automatiquement
+5. **Backend** : Exécute la logique métier avec `userId`
+
+### Utilisation dans les controllers
+```typescript
+import { Controller, Get, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '../common/guards/auth.guard';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import type { AuthenticatedUser } from '../common/decorators/current-user.decorator';
+
+@Controller('posts')
+@UseGuards(AuthGuard) // Protège toutes les routes
+export class PostsController {
+  
+  @Get('feed')
+  async getFeed(@CurrentUser() user: AuthenticatedUser) {
+    // user.id contient l'UID récupéré du JWT
+    return this.postsService.getGlobalFeed(user.id);
+  }
+}
+```
+
+**Avantages** :
+- ✅ Pas de `userId` dans les body/params (sécurité)
+- ✅ Validation JWT automatique
+- ✅ Code plus propre et moins d'erreurs
+
+## Modules
+
+Chaque fonctionnalité est organisée en module NestJS (controller + service + module).
+
+| Module | Description |
+|--------|-------------|
+| `AlbumsModule` | Gestion des albums (métadonnées musicales) |
+| `ArtistsModule` | Gestion des artistes (recherche, récupération) |
+| `VinylsModule` | Gestion des vinyles (pressings physiques) |
+| `UserVinylsModule` | Collections et wishlists des utilisateurs + posts automatiques |
+| `UsersModule` | Profils utilisateurs (CRUD, recherche) |
+| `FollowsModule` | Relations sociales (follow/unfollow) + notifications automatiques |
+| `PostsModule` | Posts sociaux (feed global et profil) |
+| `PostLikesModule` | Likes sur les posts + notifications automatiques |
+| `CommentsModule` | Commentaires sur les posts + notifications automatiques |
+| `NotificationsModule` | Système de notifications |
+
+### Services centralisés
+
+| Service | Rôle |
+|---------|------|
+| `SupabaseService` | Client Supabase centralisé avec support JWT |
+
+### Guards
+
+| Guard | Rôle |
+|-------|------|
+| `AuthGuard` | Valide le JWT Supabase, à utiliser avec `@UseGuards(AuthGuard)` |
+
+### Decorators
+
+| Decorator | Rôle |
+|-----------|------|
+| `@CurrentUser()` | Récupère l'utilisateur authentifié (uid + token) dans un controller |
+
 ## Endpoints
 
 ### Albums
@@ -160,20 +197,20 @@ pnpm lint:fix
 
 | Méthode | Route | Auth | Description |
 |---------|-------|------|-------------|
-| `GET` | `/user-vinyls?type=...&limit=...&lastAddedAt=...` | ✅ | Liste des vinyles de l'utilisateur |
+| `GET` | `/user-vinyls?type=...&limit=...&lastAddedAt=...` | ✅ | Liste des vinyles (userId du JWT) |
 | `GET` | `/user-vinyls/count?type=...` | ✅ | Compte total de vinyles |
 | `GET` | `/user-vinyls/stats` | ✅ | Statistiques (collection + wishlist) |
-| `GET` | `/user-vinyls/check/:vinylId?type=...` | ✅ | Vérifie si vinyl dans collection/wishlist |
-| `POST` | `/user-vinyls` | ✅ | Ajoute un vinyl (body: vinylId, type) + crée post automatiquement |
+| `GET` | `/user-vinyls/check/:vinylId?type=...` | ✅ | Vérifie si vinyl possédé |
+| `POST` | `/user-vinyls` | ✅ | Ajoute un vinyl (body: vinylId, type) + post auto |
 | `DELETE` | `/user-vinyls/:vinylId?type=...` | ✅ | Retire un vinyl |
-| `POST` | `/user-vinyls/:vinylId/move-to-collection` | ✅ | Déplace de wishlist → collection |
+| `POST` | `/user-vinyls/:vinylId/move-to-collection` | ✅ | Déplace wishlist → collection |
 
 ### Users (Profils)
 
 | Méthode | Route | Auth | Description |
 |---------|-------|------|-------------|
-| `GET` | `/users/me` | ✅ | Profil de l'utilisateur connecté |
-| `PUT` | `/users/me` | ✅ | Mise à jour du profil |
+| `GET` | `/users/me` | ✅ | Profil de l'utilisateur connecté (userId du JWT) |
+| `PUT` | `/users/me` | ✅ | Mise à jour du profil (userId du JWT) |
 | `GET` | `/users/:uid` | Public | Profil par UID |
 | `GET` | `/users/username/:username` | Public | Profil par username |
 | `GET` | `/users/search?query=...&limit=...&offset=...` | Public | Recherche d'utilisateurs |
@@ -184,9 +221,9 @@ pnpm lint:fix
 | Méthode | Route | Auth | Description |
 |---------|-------|------|-------------|
 | `GET` | `/follows/stats/:userId` | Public | Statistiques follow (followers/following count) |
-| `GET` | `/follows/check/:userId` | ✅ | Vérifie si on suit un utilisateur |
-| `POST` | `/follows/:userId` | ✅ | Suivre un utilisateur + notification automatique |
-| `DELETE` | `/follows/:userId` | ✅ | Ne plus suivre + supprime notification |
+| `GET` | `/follows/check/:userId` | ✅ | Vérifie si on suit (userId du JWT) |
+| `POST` | `/follows/:userId` | ✅ | Suivre (userId du JWT) + notification auto |
+| `DELETE` | `/follows/:userId` | ✅ | Ne plus suivre (userId du JWT) + supprime notif |
 | `GET` | `/follows/followers/:userId` | Public | Liste des followers |
 | `GET` | `/follows/following/:userId` | Public | Liste des following |
 
@@ -194,37 +231,37 @@ pnpm lint:fix
 
 | Méthode | Route | Auth | Description |
 |---------|-------|------|-------------|
-| `GET` | `/posts/feed?userId=...&profileFeed=...&limit=...&lastCreatedAt=...` | ✅ | Feed (global ou profil) |
+| `GET` | `/posts/feed?limit=...&lastCreatedAt=...` | ✅ | Feed global (userId du JWT) |
+| `GET` | `/posts/profile/:userId?limit=...&lastCreatedAt=...` | Public | Feed profil |
 | `GET` | `/posts/:id` | Public | Post par ID |
-| `POST` | `/posts` | ✅ | Crée un post (body: vinylId, type) |
-| `DELETE` | `/posts/:id` | ✅ | Supprime un post |
+| `POST` | `/posts` | ✅ | Crée un post (userId du JWT) |
+| `DELETE` | `/posts/:id` | ✅ | Supprime un post (userId du JWT) |
 
 ### PostLikes
 
 | Méthode | Route | Auth | Description |
 |---------|-------|------|-------------|
-| `POST` | `/post-likes/:postId` | ✅ | Like un post + notification automatique |
-| `DELETE` | `/post-likes/:postId` | ✅ | Unlike un post + supprime notification |
-| `GET` | `/post-likes/check/:postId` | ✅ | Vérifie si on a liké |
+| `POST` | `/post-likes/:postId` | ✅ | Like (userId du JWT) + notification auto |
+| `DELETE` | `/post-likes/:postId` | ✅ | Unlike (userId du JWT) + supprime notif |
+| `GET` | `/post-likes/check/:postId` | ✅ | Vérifie si on a liké (userId du JWT) |
 | `GET` | `/post-likes/count/:postId` | Public | Nombre de likes |
 
 ### Comments
 
 | Méthode | Route | Auth | Description |
 |---------|-------|------|-------------|
-| `GET` | `/comments/post/:postId` | Public | Liste des commentaires d'un post |
+| `GET` | `/comments/post/:postId` | Public | Liste des commentaires |
 | `GET` | `/comments/post/:postId/count` | Public | Nombre de commentaires |
-| `POST` | `/comments` | ✅ | Ajoute un commentaire (body: postId, content) + notification automatique |
-| `DELETE` | `/comments/:id` | ✅ | Supprime un commentaire + supprime notification |
+| `POST` | `/comments` | ✅ | Ajoute (userId du JWT) + notification auto |
+| `DELETE` | `/comments/:id` | ✅ | Supprime (userId du JWT) + supprime notif |
 
 ### Notifications
 
 | Méthode | Route | Auth | Description |
 |---------|-------|------|-------------|
-| `GET` | `/notifications?limit=...&lastCreatedAt=...` | ✅ | Liste des notifications |
-| `GET` | `/notifications/unread-count` | ✅ | Nombre de non lues |
-| `PUT` | `/notifications/mark-all-read` | ✅ | Marque toutes comme lues |
-| `PUT` | `/notifications/:id/read` | ✅ | Marque une notification comme lue |
+| `GET` | `/notifications?limit=...&lastCreatedAt=...` | ✅ | Liste (userId du JWT) |
+| `GET` | `/notifications/unread-count` | ✅ | Nombre de non lues (userId du JWT) |
+| `PUT` | `/notifications/mark-all-read` | ✅ | Marque toutes comme lues (userId du JWT) |
 
 ### Healthcheck
 
@@ -252,26 +289,6 @@ import {
 } from '@fillcrate/shared';
 ```
 
-Pour ajouter un nouveau type, l'ajouter dans `packages/shared/src/types/index.ts`.
-
-### Types principaux
-
-| Type | Description |
-|------|-------------|
-| `Album` | Album complet avec artistes |
-| `Artist` | Artiste complet |
-| `ArtistLight` | Artiste minimal (id, name, imageUrl) |
-| `Vinyl` | Vinyl avec artistes (array) |
-| `User` | Utilisateur complet |
-| `UserLight` | Utilisateur minimal (uid, username, photoUrl) |
-| `UserVinyl` | Relation user-vinyl avec vinyl complet |
-| `AlbumLight` | Album minimal (id, title, artists, coverUrl) |
-| `PostWithDetails` | Post avec user, album, likes/comments count |
-| `Comment` | Commentaire avec user |
-| `Notification` | Notification avec actor, post, comment |
-| `FollowStats` | Statistiques follow (followersCount, followingCount) |
-| `VinylStats` | Statistiques vinyl (collectionCount, wishlistCount) |
-
 ## Patterns et conventions
 
 ### Transformation DB → camelCase
@@ -293,7 +310,6 @@ private transformVinylData(data: any): Vinyl {
     title: data.title,
     artists: artists,
     coverUrl: data.cover_url,
-    year: data.year,
     // ...
   };
 }
@@ -349,9 +365,9 @@ if (lastCreatedAt) {
 
 Frontend utilise `lastCreatedAt` du dernier item pour charger la page suivante.
 
-### Gestion des notifications et actions dérivées
+### Gestion des actions dérivées
 
-Les actions dérivées (notifications, posts automatiques) sont gérées dans les services de manière asynchrone et non-bloquante :
+Les actions dérivées (notifications, posts automatiques) sont gérées de manière asynchrone et non-bloquante :
 ```typescript
 // Exemple : PostLikesService
 async likePost(userId: string, postId: string): Promise<void> {
@@ -364,13 +380,9 @@ async likePost(userId: string, postId: string): Promise<void> {
 
 private async createLikeNotification(userId: string, postId: string): Promise<void> {
   try {
-    // Récupérer l'auteur du post
     const post = await this.getPost(postId);
+    if (userId === post.userId) return; // Pas de self-notification
     
-    // Ne pas notifier si on like son propre post
-    if (userId === post.userId) return;
-    
-    // Créer la notification
     await this.notificationsService.createNotification(
       post.userId,
       'post_like',
@@ -379,7 +391,7 @@ private async createLikeNotification(userId: string, postId: string): Promise<vo
     );
   } catch (error) {
     this.logger.error('Failed to create notification', error);
-    // Ne pas faire échouer le like si la notification échoue
+    // Ne pas faire échouer le like
   }
 }
 ```
@@ -388,7 +400,7 @@ private async createLikeNotification(userId: string, postId: string): Promise<vo
 - ✅ Actions principales = synchrones et bloquantes
 - ✅ Actions dérivées = asynchrones et non-bloquantes
 - ✅ Logging des erreurs sur actions dérivées
-- ✅ Ne jamais faire échouer l'action principale si l'action dérivée échoue
+- ✅ Ne jamais faire échouer l'action principale
 
 ### Injection de dépendances entre services
 
@@ -399,64 +411,23 @@ Les services utilisent l'injection de dépendances NestJS pour communiquer :
 export class PostLikesService {
   constructor(
     private readonly supabaseService: SupabaseService,
-    private readonly notificationsService: NotificationsService, // Injection
+    private readonly notificationsService: NotificationsService,
   ) {}
-}
-```
-
-**Modules à configurer** :
-```typescript
-// post-likes.module.ts
-@Module({
-  imports: [NotificationsModule], // Importer le module
-  providers: [PostLikesService],
-  exports: [PostLikesService],
-})
-export class PostLikesModule {}
-
-// notifications.module.ts
-@Module({
-  providers: [NotificationsService],
-  exports: [NotificationsService], // Exporter le service
-})
-export class NotificationsModule {}
-```
-
-## Supabase RLS
-
-Le backend utilise `SUPABASE_ANON_KEY` + JWT user pour respecter les Row Level Security policies.
-
-### Mode anonyme (requêtes publiques)
-```typescript
-const supabase = this.supabaseService.getClient();
-const { data } = await supabase.from('albums').select('*');
-```
-
-### Mode authentifié (requêtes avec RLS)
-```typescript
-@UseGuards(AuthGuard)
-@Get('my-data')
-myData(@CurrentUser() user: AuthenticatedUser) {
-  const supabase = this.supabaseService.getClientWithAuth(user.token);
-  const { data } = await supabase.from('user_data').select('*');
-  // RLS policies s'appliquent avec le token user
 }
 ```
 
 ## Points d'attention
 
-1. **Fastify vs Express** : Ce projet utilise Fastify (plus performant), adapter les middlewares si nécessaire
-2. **Validation globale** : Les erreurs de validation retournent des messages génériques au client, logs détaillés côté serveur
-3. **JWT Supabase** : Toujours vérifier via `supabase.auth.getUser(token)`, ne pas parser manuellement
-4. **CORS** : Mettre à jour l'origin en production
-5. **Healthcheck** : Railway/Render utilisent `/health` pour vérifier que l'app est up
-6. **Types partagés** : Ne jamais dupliquer les types, toujours importer depuis `@fillcrate/shared`
-7. **Artistes** : Toujours triés par `position` avant affichage (pour collaborations)
-8. **Pagination** : Utiliser cursor-based avec `lastCreatedAt` ou `lastAddedAt` pour infinite scroll
-9. **Logique métier** : Toujours dans les services NestJS, jamais dans des triggers SQL (sauf housekeeping automatique)
-10. **Actions dérivées** : Toujours asynchrones et non-bloquantes pour ne pas impacter l'action principale
-11. **Notifications** : Gérées automatiquement par les services lors des interactions sociales
-12. **Posts automatiques** : Créés automatiquement lors de l'ajout d'un vinyl en collection/wishlist
+1. **SUPABASE_ANON_KEY** : Ne pas utiliser service_role, le backend a besoin de l'auth JWT
+2. **Fastify vs Express** : Ce projet utilise Fastify (plus performant)
+3. **Validation globale** : Les erreurs de validation retournent des messages génériques
+4. **JWT Supabase** : Toujours vérifier via `supabase.auth.getUser(token)`
+5. **CORS** : Mettre à jour l'origin en production
+6. **Types partagés** : Ne jamais dupliquer, toujours importer depuis `@fillcrate/shared`
+7. **Pagination** : Cursor-based avec `lastCreatedAt` ou `lastAddedAt`
+8. **Logique métier** : Dans les services NestJS, pas dans les triggers SQL
+9. **Actions dérivées** : Toujours asynchrones et non-bloquantes
+10. **userId du JWT** : Jamais dans les params/body, toujours via `@CurrentUser()`
 
 ## Déploiement
 
@@ -466,75 +437,46 @@ Le projet est configuré pour Railway avec `railway.toml` et `nixpacks.toml`.
 
 Variables d'environnement à configurer :
 - `SUPABASE_URL`
-- `SUPABASE_ANON_KEY`
+- `SUPABASE_ANON_KEY` (pas service_role !)
 - `PORT` (3001 recommandé)
 - `FRONTEND_URL` (URL Vercel en prod)
 - `NODE_ENV=production`
 
-### Render
-
-Build command : `cd ../.. && pnpm install && pnpm build:backend`  
-Start command : `cd packages/backend && node dist/main.js`
-
-## Style d'interaction préféré
-
-- ✅ Un module = un dossier (controller + service + module)
-- ✅ Services pour la logique métier, controllers minimalistes
-- ✅ Transformation DB → camelCase dans les services
-- ✅ Imports depuis `@fillcrate/shared` pour les types
-- ✅ DTOs pour validation des inputs
-- ✅ Pagination cursor-based pour infinite scroll
-- ✅ Types Light (User, Artist, Album) pour optimiser les réponses
-- ✅ Logique métier dans les services, pas dans les triggers SQL
-- ✅ Actions dérivées asynchrones et non-bloquantes
-- ✅ Injection de dépendances pour communication inter-services
-
 ## Décisions architecturales
 
-### Pourquoi la logique est dans les services et pas dans les triggers SQL ?
+### Pourquoi ANON_KEY et pas SERVICE_ROLE ?
 
-**Avantages de la logique dans les services** :
-- ✅ **Testabilité** : Chaque comportement peut être testé unitairement
-- ✅ **Visibilité** : La logique métier est explicite et documentée dans le code
-- ✅ **Flexibilité** : Facile d'ajouter des conditions (préférences utilisateur, throttling, etc.)
-- ✅ **Gestion d'erreur** : Logs détaillés, retry, monitoring
-- ✅ **Évolutivité** : Ajout facile de webhooks, emails, push notifications
-- ✅ **API centralisée** : Logique partagée pour web + mobile + futures plateformes
+**ANON_KEY permet** :
+- ✅ Valider les JWT Supabase (AuthGuard)
+- ✅ RLS fonctionnel si besoin
+- ✅ Sécurité via guards et logique métier
+- ✅ Traçabilité des actions utilisateur
 
-**Quand utiliser des triggers SQL** :
-- ✅ Housekeeping automatique (`updated_at`, `created_at`)
-- ✅ Contraintes de données strictes
-- ✅ Cascades de suppression (safety net)
+**SERVICE_ROLE serait nécessaire pour** :
+- ❌ Bypasser complètement RLS (pas notre besoin)
+- ❌ Actions admin sans contexte utilisateur (pas notre cas)
 
-**Triggers SQL actuels** :
-- `update_users_updated_at` : Mise à jour automatique du timestamp `updated_at`
+### Pourquoi la logique est dans les services ?
+
+**Avantages** :
+- ✅ Testabilité unitaire
+- ✅ Visibilité et documentation du code
+- ✅ Flexibilité (throttling, préférences, etc.)
+- ✅ Gestion d'erreur et monitoring
+- ✅ API centralisée pour web + mobile
+
+**Triggers SQL** :
+- ✅ Seulement pour housekeeping (`updated_at`)
 
 ## Fonctionnalités futures
 
-- [ ] WebSocket avec Socket.IO pour realtime (likes, comments, notifications)
+- [ ] WebSocket avec Socket.IO pour realtime complet
 - [ ] Rate limiting par utilisateur
-- [ ] Cache Redis pour les requêtes fréquentes
+- [ ] Cache Redis pour requêtes fréquentes
 - [ ] Image upload/resize pour avatars
-- [ ] Recherche full-text avec ElasticSearch
 - [ ] Analytics et metrics (Prometheus)
 - [ ] Groupement de notifications (throttling)
-- [ ] Préférences utilisateur pour notifications
 
-### Gestion des posts et vinyles
-
-**Règle importante** : Les posts ne sont jamais supprimés automatiquement, même si le vinyl est retiré de la collection/wishlist.
-
-**Pourquoi ?**
-- Les posts sont des **événements historiques** (journal d'activité), pas des **états actuels**
-- Les likes et commentaires associés sont préservés
-- La timeline reste cohérente
-
-**Cas d'usage** :
-- Retirer un vinyl → Le post reste visible
-- Déplacer wishlist → collection → 2 posts (wishlist_add + collection_add)
-- Racheter un vinyl vendu → Nouveau post, l'ancien reste visible
-
-**Pour supprimer un post** : L'utilisateur doit utiliser l'endpoint `DELETE /posts/:id` manuellement.
 ---
 
-**Dernière mise à jour** : 2 février 2026
+**Dernière mise à jour** : 4 février 2026

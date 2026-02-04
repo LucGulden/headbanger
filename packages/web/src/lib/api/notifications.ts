@@ -75,16 +75,12 @@ export function subscribeToNotifications(
       },
     )
     .subscribe((status, err) => {
-      if (status === 'SUBSCRIBED') {
-        console.log('✅ Subscribed to notifications')
-      } else if (status === 'CHANNEL_ERROR') {
+      if (status === 'CHANNEL_ERROR') {
         console.error('❌ Channel error:', err)
         onError?.(new Error(`Error subscribing to notifications: ${err?.message || 'Unknown error'}`))
       } else if (status === 'TIMED_OUT') {
         console.error('❌ Subscription timed out')
         onError?.(new Error('Subscription timed out'))
-      } else if (status === 'CLOSED') {
-        console.log('🔌 Channel closed')
       }
     })
 
