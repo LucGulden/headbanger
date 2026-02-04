@@ -17,6 +17,9 @@ import Notifications from './pages/Notifications'
 import Search from './pages/Search'
 import Settings from './pages/Settings'
 import HomeRoute from './guards/HomeRoute'
+import VinylPage from './pages/Vinyl'
+import AlbumPage from './pages/Album'
+import ArtistPage from './pages/Artist'
 
 function App() {
   const { user } = useAuth()
@@ -37,7 +40,7 @@ function App() {
         // Connexion
         initializeNotifications(currentUserId)
         initializeUser()
-        initializeVinylStats(currentUserId)
+        initializeVinylStats()
       } else {
         // Déconnexion
         cleanupNotifications()
@@ -74,6 +77,9 @@ function App() {
           <Route path="/profile/:username/followers" element={<Followers />} />
           <Route path="/profile/:username/following" element={<Following />} />
           <Route path="/profile/:username" element={<Profile />} />
+          <Route path="/vinyl/:id" element={<VinylPage />} />
+          <Route path="/album/:id" element={<AlbumPage />} />
+          <Route path="/artist/:id" element={<ArtistPage />} />
           
           <Route path="*" element={<NotFound />} />
         </Route>

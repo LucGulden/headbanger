@@ -1,8 +1,8 @@
+import { Link } from 'react-router-dom'
 import type { Artist } from '@fillcrate/shared'
 
 interface ArtistCardProps {
   artist: Artist;
-  onClick: (artist: Artist) => void;
 }
 
 // Placeholder SVG pour artiste sans photo
@@ -69,11 +69,11 @@ const ArtistPlaceholder = () => (
   </svg>
 )
 
-export default function ArtistCard({ artist, onClick }: ArtistCardProps) {
+export default function ArtistCard({ artist }: ArtistCardProps) {
   return (
-    <button
-      onClick={() => onClick(artist)}
-      className="group text-left transition-transform hover:scale-105"
+    <Link
+      to={`/artist/${artist.id}`}
+      className="group block text-left transition-transform hover:scale-105"
     >
       <div className="relative aspect-square w-full overflow-hidden rounded-lg border border-[var(--background-lighter)] bg-[var(--background-lighter)]">
         {artist.imageUrl ? (
@@ -90,6 +90,6 @@ export default function ArtistCard({ artist, onClick }: ArtistCardProps) {
       <h3 className="mt-3 truncate font-semibold text-[var(--foreground)]">
         {artist.name}
       </h3>
-    </button>
+    </Link>
   )
 }

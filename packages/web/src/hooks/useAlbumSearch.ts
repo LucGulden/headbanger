@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { searchAlbums } from '../lib/api/albums'
-import type { Album } from '@fillcrate/shared'
+import type { AlbumLight } from '@fillcrate/shared'
 
 interface UseAlbumSearchParams {
   query: string;
@@ -8,7 +8,7 @@ interface UseAlbumSearchParams {
 }
 
 interface UseAlbumSearchReturn {
-  albums: Album[];
+  albums: AlbumLight[];
   loading: boolean;
   loadingMore: boolean;
   hasMore: boolean;
@@ -20,7 +20,7 @@ export function useAlbumSearch({
   query,
   pageSize = 20,
 }: UseAlbumSearchParams): UseAlbumSearchReturn {
-  const [albums, setAlbums] = useState<Album[]>([])
+  const [albums, setAlbums] = useState<AlbumLight[]>([])
   const [loading, setLoading] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(false)

@@ -228,25 +228,25 @@ export class PostsService {
     likesCountMap: Map<string, number>,
     commentsCountMap: Map<string, number>,
   ): PostWithDetails {
-    // Extraire les artistes de l'album
-    const albumArtists: ArtistLight[] = (data.vinyl?.album?.album_artists || [])
+    // Extraire les artistes du vinyle
+    const vinylArtists: ArtistLight[] = (data.vinyl?.vinyl_artists || [])
       .sort((a: any, b: any) => a.position - b.position)
-      .map((aa: any) => ({
-        id: aa.artist?.id,
-        name: aa.artist?.name,
-        imageUrl: aa.artist?.image_url,
+      .map((va: any) => ({
+        id: va.artist?.id,
+        name: va.artist?.name,
+        imageUrl: va.artist?.image_url,
       }))
       .filter((artist: ArtistLight) => artist.id && artist.name);
 
-    // Fallback : si pas d'artistes d'album, utiliser les artistes du vinyl
-    let artists = albumArtists;
+    // Fallback : si pas d'artistes de vinyle, utiliser les artistes de l'album
+    let artists = vinylArtists;
     if (artists.length === 0) {
-      artists = (data.vinyl?.vinyl_artists || [])
+      artists = (data.vinyl?.album?.album_artists || [])
         .sort((a: any, b: any) => a.position - b.position)
-        .map((va: any) => ({
-          id: va.artist?.id,
-          name: va.artist?.name,
-          imageUrl: va.artist?.image_url,
+        .map((aa: any) => ({
+          id: aa.artist?.id,
+          name: aa.artist?.name,
+          imageUrl: aa.artist?.image_url,
         }))
         .filter((artist: ArtistLight) => artist.id && artist.name);
     }
@@ -255,13 +255,6 @@ export class PostsService {
     if (artists.length === 0) {
       artists = [{ id: '', name: 'Artiste inconnu', imageUrl: null }];
     }
-
-    // Infos de l'album
-    const albumInfo = data.vinyl?.album || {
-      id: data.vinyl?.album_id || '',
-      title: data.vinyl?.title || 'Album inconnu',
-      cover_url: data.vinyl?.cover_url,
-    };
 
     return {
       id: data.id,
@@ -275,11 +268,11 @@ export class PostsService {
         username: data.user?.username || 'Unknown',
         photoUrl: data.user?.photo_url,
       },
-      album: {
-        id: albumInfo.id,
-        title: albumInfo.title,
+      vinyl: {
+        id: data.vinyl?.id || '',
+        title: data.vinyl?.title || 'Vinyle inconnu',
         artists: artists,
-        coverUrl: albumInfo.cover_url,
+        coverUrl: data.vinyl?.cover_url || data.vinyl?.album?.cover_url,
       },
     };
   }

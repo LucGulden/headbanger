@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { getVinylStats } from '../lib/vinyls'
+import { getVinylStats } from '../lib/api/userVinyls'
 
 interface VinylStats {
   collectionCount: number
@@ -11,12 +11,12 @@ interface VinylStatsStore {
   isInitialized: boolean
   
   // Actions
-  initialize: (userId: string) => Promise<void>
+  initialize: () => Promise<void>
   incrementCollection: () => void
   decrementCollection: () => void
   incrementWishlist: () => void
   decrementWishlist: () => void
-  refresh: (userId: string) => Promise<void>
+  refresh: () => Promise<void>
   cleanup: () => void
 }
 
@@ -27,14 +27,14 @@ export const useVinylStatsStore = create<VinylStatsStore>((set, get) => ({
   },
   isInitialized: false,
 
-  initialize: async (userId: string) => {
+  initialize: async () => {
     // Éviter les doubles initialisations
     if (get().isInitialized) {
       return
     }
 
     try {
-      const stats = await getVinylStats(userId)
+      const stats = await getVinylStats()
       set({ 
         stats: {
           collectionCount: stats.collectionCount,
@@ -83,9 +83,9 @@ export const useVinylStatsStore = create<VinylStatsStore>((set, get) => ({
     }))
   },
 
-  refresh: async (userId: string) => {
+  refresh: async () => {
     try {
-      const stats = await getVinylStats(userId)
+      const stats = await getVinylStats()
       set({ 
         stats: {
           collectionCount: stats.collectionCount,

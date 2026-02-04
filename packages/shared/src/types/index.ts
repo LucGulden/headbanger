@@ -12,17 +12,14 @@ export interface AlbumLight {
   title: string;
   artists: ArtistLight[];
   coverUrl: string;
+  year: number;
 }
 
 /**
  * Album complet
  */
 export interface Album extends AlbumLight {
-  spotifyId: string | null;
-  spotifyUrl: string | null;
-  year: number;
-  createdBy: string | null;
-  createdAt: string;
+    vinyls: VinylLight[];
 }
 
 // ============================================
@@ -39,16 +36,20 @@ export interface ArtistLight {
 // Artist complet (pour getById)
 export interface Artist extends ArtistLight {
   spotifyId?: string | null;
+  albums: AlbumLight[];
 }
 
 // ============================================
 // VINYLS
 // ============================================
-export interface Vinyl {
+export interface VinylLight {
   id: string;
   title: string;
   artists: ArtistLight[];
   coverUrl: string;
+}
+
+export interface Vinyl extends VinylLight {
   year: number;
   label: string;
   catalogNumber: string;
@@ -65,7 +66,6 @@ export interface UserVinyl {
   id: string;
   addedAt: string;
   vinyl: Vinyl;
-  album: Album;
 }
 
 export interface VinylStats {
@@ -112,7 +112,7 @@ export interface PostWithDetails {
   likesCount: number;
   commentsCount: number;
   user: UserLight;
-  album: AlbumLight;
+  vinyl: VinylLight;
 }
 
 // ============================================

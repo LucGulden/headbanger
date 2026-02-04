@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import type { Vinyl } from '@fillcrate/shared'
 import VinylImage from './VinylImage'
 
@@ -5,7 +6,6 @@ interface VinylCardProps {
   vinyl: Vinyl;
   inCollection?: boolean;
   inWishlist?: boolean;
-  onClick: () => void;
   variant?: 'full' | 'compact';
 }
 
@@ -13,13 +13,12 @@ export default function VinylCard({
   vinyl,
   inCollection = false,
   inWishlist = false,
-  onClick,
   variant = 'full',
 }: VinylCardProps) {
   return (
-    <button
-      onClick={onClick}
-      className="group relative text-left transition-transform hover:scale-105"
+    <Link
+      to={`/vinyl/${vinyl.id}`}
+      className="group relative block text-left transition-transform hover:scale-105"
     >
       {/* Badges en haut - uniquement en mode full */}
       {variant === 'full' && (
@@ -63,7 +62,7 @@ export default function VinylCard({
             {vinyl.title}
           </h4>
           <div className="mt-1 flex flex-wrap items-center gap-1">
-            <span className="inline-block rounded bg-[var(--primary-20)] px-2 py-0.5 text-xs font-medium text-[var(--primary)]">
+            <span className="inline-block rounded bg-[var(--primary)]/20 px-2 py-0.5 text-xs font-medium text-[var(--primary)]">
               {vinyl.year}
             </span>
             <span className="inline-block rounded bg-[var(--background-lighter)] px-2 py-0.5 text-xs text-[var(--foreground-muted)]">
@@ -87,9 +86,9 @@ export default function VinylCard({
           </p>
           <p className="text-xs text-[var(--foreground-muted)]">
             {vinyl.year}
-            </p>
+          </p>
         </div>
       )}
-    </button>
+    </Link>
   )
 }

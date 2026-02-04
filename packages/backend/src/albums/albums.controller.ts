@@ -1,18 +1,35 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { AlbumsService } from './albums.service';
-import { Album } from '@fillcrate/shared';
+import { Album, AlbumLight } from '@fillcrate/shared';
 
 @Controller('albums')
 export class AlbumsController {
   constructor(private readonly albumsService: AlbumsService) {}
 
   /**
+   * GET /albums/search?query=abbey&limit=20&offset=0
+   * Recherche d'albums par titre
+   * Retourne AlbumLight[] (sans les vinyles)
+   */
+  @Get('search')
+  async search(
+    @Query('query') query: string,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+  ): Promise<AlbumLight[]> {
+    const limitNum = limit ? parseInt(limit, 10) : 20;
+    const offsetNum = offset ? parseInt(offset, 10) : 0;
+
+    return this.albumsService.searchAlbums(query, limitNum, offsetNum);
+  }
+
+  /**
    * GET /albums/:id
    * Récupère un album par son ID
-   * Route publique (pas de @UseGuards(AuthGuard))
+   * Retourne Album (avec les vinyles)
    */
   @Get(':id')
-  async getAlbumById(@Param('id') id: string): Promise<Album> {
+  async getById(@Param('id') id: string): Promise<Album> {
     return this.albumsService.findById(id);
   }
 }

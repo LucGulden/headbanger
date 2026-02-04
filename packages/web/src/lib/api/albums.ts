@@ -1,65 +1,42 @@
 import { apiClient } from './apiClient'
 import { supabase } from '../../supabaseClient'
 import { toCamelCase } from '../../utils/caseConverter'
-import type { Album } from '@fillcrate/shared'
-
-// ============================================================================
-// ROUTES BACKEND DISPONIBLES
-// ============================================================================
+import type { Album, AlbumLight } from '@fillcrate/shared'
 
 /**
- * Récupère un album par son ID (backend)
+ * Récupère un album par son ID avec tous ses vinyles
  */
-export async function getAlbumById(albumId: string): Promise<Album> {
-  return apiClient.get<Album>(`/albums/${albumId}`)
+export async function getAlbumById(albumId: string): Promise<Album | null> {
+  try {
+    const album = await apiClient.get<Album>(`/albums/${albumId}`);
+    return album;
+  } catch (error) {
+    console.error('Error fetching album:', error);
+    return null;
+  }
 }
-
-// ============================================================================
-// FONCTIONS SANS BACKEND - Supabase direct
-// ============================================================================
 
 /**
  * Recherche d'albums par titre
- * ⚠️ Pas encore de route backend, utilise Supabase directement
  */
 export async function searchAlbums(
   query: string,
   limit: number = 20,
   offset: number = 0,
-): Promise<Album[]> {
+): Promise<AlbumLight[]> {
   if (!query || query.trim().length < 2) {
-    return []
+    return [];
   }
 
-  const searchTerm = `%${query.trim()}%`
-
-  const { data, error } = await supabase
-    .from('albums')
-    .select(`
-      *,
-      album_artists(
-        artist:artists(name)
-      )
-    `)
-    .ilike('title', searchTerm)
-    .order('title', { ascending: true })
-    .range(offset, offset + limit - 1)
-
-  if (error) {
-    throw new Error(`Erreur lors de la recherche: ${error.message}`)
+  try {
+    const albums = await apiClient.get<Album[]>(
+      `/albums/search?query=${encodeURIComponent(query)}&limit=${limit}&offset=${offset}`
+    );
+    return albums;
+  } catch (error) {
+    console.error('Error searching albums:', error);
+    return [];
   }
-
-  // Transformer pour extraire le nom de l'artiste
-  const transformedAlbums = (data || []).map((album: any) => {
-    const artists = album.album_artists?.map((aa: any) => aa.artist?.name).filter(Boolean) || []
-    return {
-      ...album,
-      artist: artists.join(', ') || 'Artiste inconnu',
-      album_artists: undefined,
-    }
-  })
-
-  return transformedAlbums.map(album => toCamelCase<Album>(album))
 }
 
 /**

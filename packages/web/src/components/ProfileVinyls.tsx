@@ -47,12 +47,6 @@ export default function ProfileVinyls({
     }
   }, [vinylStatsStore.stats.collectionCount, vinylStatsStore.stats.wishlistCount, isOwnProfile, refresh])
 
-  const handleVinylClick = (vinyl: Vinyl, album: Album) => {
-    setSelectedVinyl(vinyl)
-    setSelectedAlbum(album)
-    setIsModalOpen(true)
-  }
-
   const handleModalClose = () => {
     setIsModalOpen(false)
     setSelectedVinyl(null)
@@ -136,7 +130,6 @@ export default function ProfileVinyls({
         type={type}
         onLoadMore={loadMore}
         onRefresh={refresh}
-        onVinylClick={handleVinylClick}
       />
 
       {/* Modal détail vinyle */}

@@ -12,7 +12,6 @@ interface VinylGridProps {
   total: number;
   onLoadMore: () => void;
   onRefresh: () => void;
-  onVinylClick: (vinyl: Vinyl, album: Album) => void;  // Nouveau callback
   emptyMessage?: string;
   emptyIcon?: string;
   type: UserVinylType;
@@ -26,7 +25,6 @@ export default function VinylGrid({
   error,
   onLoadMore,
   onRefresh,
-  onVinylClick,
   emptyMessage = 'Aucun vinyle pour le moment',
   emptyIcon = '💿',
   type,
@@ -107,7 +105,6 @@ export default function VinylGrid({
           <VinylCard
             key={userVinyl.id}
             vinyl={userVinyl.vinyl}
-            onClick={() => onVinylClick(userVinyl.vinyl, userVinyl.album)}
             variant="compact"
           />
         ))}

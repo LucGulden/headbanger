@@ -211,15 +211,15 @@ export default function PostCard({
           <p className="mt-1 text-[var(--foreground-muted)]">
             {postTypeText}{' '}
             <span className="font-semibold text-[var(--foreground)]">
-              {post.album.title}
+              {post.vinyl.title}
             </span>{' '}
             de{' '}
-            {post.album.artists.map((artist, index) => (
+            {post.vinyl.artists.map((artist, index) => (
               <span key={artist.id}>
                 <span className="font-semibold text-[var(--foreground)]">
                   {artist.name}
                 </span>
-                {index < post.album.artists.length - 1 && ', '}
+                {index < post.vinyl.artists.length - 1 && ', '}
               </span>
             ))}
             {' '}à {collectionText}
@@ -227,15 +227,40 @@ export default function PostCard({
         </div>
       </div>
 
-      {/* Album Cover */}
-      <div className="mb-4 relative w-full max-w-md mx-auto aspect-square">
+      {/* Album Cover - LIEN VERS LA PAGE VINYLE */}
+      <Link 
+        to={`/vinyl/${post.vinyl.id}`}
+        className="block mb-4 relative w-full max-w-md mx-auto aspect-square group"
+      >
         <img
-          src={post.album.coverUrl}
-          alt={`${post.album.title} - ${post.album.artists.map(a => a.name).join(', ')}`}
-          className="rounded-xl shadow-md object-cover w-full h-full"
+          src={post.vinyl.coverUrl}
+          alt={`${post.vinyl.title} - ${post.vinyl.artists.map(a => a.name).join(', ')}`}
+          className="rounded-xl shadow-md object-cover w-full h-full transition-transform group-hover:scale-[1.02]"
           loading={priority ? 'eager' : 'lazy'}
         />
-      </div>
+        {/* Overlay au hover pour indiquer que c'est cliquable */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100">
+          <svg 
+            className="w-12 h-12 text-white drop-shadow-lg" 
+            fill="none" 
+            viewBox="0 0 24 24" 
+            stroke="currentColor"
+          >
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={2} 
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" 
+            />
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={2} 
+              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" 
+            />
+          </svg>
+        </div>
+      </Link>
 
       {/* Actions (Like, Comment) */}
       <div className="flex items-center gap-6 mb-4 pt-2 border-t border-[var(--background-lighter)]">

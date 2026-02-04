@@ -134,13 +134,13 @@ export default function AlbumSearch({ onAlbumSelect, onCreateAlbum, artist }: Al
             {filteredAlbums.length > 1 ? 's' : ''}
           </p>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-            {filteredAlbums.map((album) => (
-              <AlbumCard
-                key={album.id}
-                album={album}
-                onClick={onAlbumSelect}
-              />
-            ))}
+            {/* {filteredAlbums.map((album) => (
+              // <AlbumCard
+              //   key={album.id}
+              //   album={album}
+              //   onClick={onAlbumSelect}
+              // />
+            ))} */}
           </div>
         </>
       )}

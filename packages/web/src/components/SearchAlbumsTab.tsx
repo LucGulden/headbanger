@@ -44,12 +44,6 @@ export default function SearchAlbumsTab({ query }: SearchAlbumsTabProps) {
     }
   }, [hasMore, loadingMore, loadMore])
 
-  const handleAlbumClick = (album: Album) => {
-    setSelectedAlbum(album)
-    setIsCreateMode(false)
-    setIsModalOpen(true)
-  }
-
   return (
     <div className="w-full">
       {/* Erreur */}
@@ -106,7 +100,7 @@ export default function SearchAlbumsTab({ query }: SearchAlbumsTabProps) {
           </p>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
             {albums.map((album) => (
-              <AlbumCard key={album.id} album={album} onClick={handleAlbumClick} />
+              <AlbumCard key={album.id} album={album} />
             ))}
           </div>
 
