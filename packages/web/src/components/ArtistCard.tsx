@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom'
-import type { Artist } from '@fillcrate/shared'
+import type { ArtistLight } from '@fillcrate/shared'
 
 interface ArtistCardProps {
-  artist: Artist;
+  artist: ArtistLight;
 }
 
 // Placeholder SVG pour artiste sans photo

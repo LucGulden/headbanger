@@ -1,20 +1,13 @@
 import { useRef, useEffect } from 'react'
-import { useAuth } from '../hooks/useAuth'
 import { useArtistSearch } from '../hooks/useArtistSearch'
 import ArtistCard from './ArtistCard'
-import AddVinylModal from './AddVinylModal'
-import type { Artist } from '@fillcrate/shared'
-import { useState } from 'react'
 
 interface SearchArtistsTabProps {
   query: string;
 }
 
 export default function SearchArtistsTab({ query }: SearchArtistsTabProps) {
-  const { user } = useAuth()
   const { artists, loading, loadingMore, hasMore, error, loadMore } = useArtistSearch({ query })
-  const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
   const loadMoreRef = useRef<HTMLDivElement>(null)
 
   const hasSearched = query.trim().length > 0
@@ -41,11 +34,6 @@ export default function SearchArtistsTab({ query }: SearchArtistsTabProps) {
       }
     }
   }, [hasMore, loadingMore, loadMore])
-
-  const handleArtistClick = async (artist: Artist) => {
-    setSelectedArtist(artist)
-    setIsModalOpen(true)
-  }
 
   return (
     <div className="w-full">
@@ -89,7 +77,6 @@ export default function SearchArtistsTab({ query }: SearchArtistsTabProps) {
               <ArtistCard
                 key={artist.id}
                 artist={artist}
-                onClick={handleArtistClick}
               />
             ))}
           </div>
@@ -132,24 +119,6 @@ export default function SearchArtistsTab({ query }: SearchArtistsTabProps) {
             Tapez le nom d'un artiste pour commencer
           </p>
         </div>
-      )}
-
-      {/* Modal - uniquement si user connecté */}
-      {user && selectedArtist && (
-        <AddVinylModal
-          key={isModalOpen ? 'modal-open' : 'modal-closed'}
-          isOpen={isModalOpen}
-          onClose={() => {
-            setIsModalOpen(false)
-            setSelectedArtist(null)
-          }}
-          onSuccess={() => {
-            setIsModalOpen(false)
-            setSelectedArtist(null)
-          }}
-          userId={user.id}
-          artist={selectedArtist}
-        />
       )}
     </div>
   )

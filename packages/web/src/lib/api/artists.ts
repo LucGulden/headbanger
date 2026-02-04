@@ -1,5 +1,5 @@
 import { apiClient } from './apiClient'
-import type { Artist } from '@fillcrate/shared'
+import type { Artist, ArtistLight } from '@fillcrate/shared'
 
 // ============================================================================
 // ROUTES BACKEND DISPONIBLES
@@ -19,7 +19,7 @@ export async function searchArtists(
   query: string,
   limit: number = 20,
   offset: number = 0,
-): Promise<Artist[]> {
+): Promise<ArtistLight[]> {
   if (!query || query.trim().length < 2) {
     return []
   }

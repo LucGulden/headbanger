@@ -77,6 +77,9 @@ export class PostsService {
           id,
           title,
           cover_url,
+          year,
+          country,
+          catalog_number,
           album_id,
           vinyl_artists(
             position,
@@ -183,6 +186,9 @@ export class PostsService {
           id,
           title,
           cover_url,
+          year,
+          country,
+          catalog_number,
           album_id,
           vinyl_artists(
             position,
@@ -273,6 +279,9 @@ export class PostsService {
         title: data.vinyl?.title || 'Vinyle inconnu',
         artists: artists,
         coverUrl: data.vinyl?.cover_url || data.vinyl?.album?.cover_url,
+        year: data.vinyl?.year ||  0,
+        country: data.vinyl?.country || '',
+        catalogNumber: data.vinyl?.catalog_number || '',
       },
     };
   }

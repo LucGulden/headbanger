@@ -132,27 +132,11 @@ export default function AlbumPage() {
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 {album.vinyls.map((vinyl) => (
-                  <Link 
+                  <VinylCard
                     key={vinyl.id}
-                    to={`/vinyl/${vinyl.id}`}
-                    className="group"
-                  >
-                    <div className="aspect-square relative overflow-hidden rounded-lg border border-[var(--background-lighter)] bg-[var(--background-lighter)]">
-                      <img
-                        src={vinyl.coverUrl}
-                        alt={vinyl.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                      />
-                    </div>
-                    <div className="mt-2">
-                      <h3 className="text-sm font-medium text-[var(--foreground)] truncate">
-                        {vinyl.title}
-                      </h3>
-                      <p className="text-xs text-[var(--foreground-muted)] truncate">
-                        {vinyl.artists.map(a => a.name).join(', ')}
-                      </p>
-                    </div>
-                  </Link>
+                    vinyl={vinyl}
+                    variant="full"
+                  />
                 ))}
               </div>
             )}

@@ -9,7 +9,6 @@ import Feed from '../components/Feed'
 import { getFollowStats } from '../lib/api/follows'
 import { getVinylStats } from '../lib/api/userVinyls'
 import type { User } from '@fillcrate/shared'
-import AddVinylModal from '../components/AddVinylModal'
 import LoadingSpinner from '../components/LoadingSpinner'
 import { getUserByUsername } from '../lib/api/users'
 
@@ -36,7 +35,6 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [activeTab, setActiveTab] = useState<'feed' | 'collection' | 'wishlist'>('feed')
-  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const isOwnProfile = currentUser?.id === profileUser?.uid
 
@@ -135,12 +133,6 @@ export default function ProfilePage() {
     }
   }
 
-  // Callback après succès du modal
-  const handleModalSuccess = () => {
-    setIsModalOpen(false)
-    // Les stats sont déjà à jour via le store, plus besoin de rafraîchir manuellement
-  }
-
   // Rediriger vers 404 si profil non trouvé
   if (notFound) {
     return <Navigate to="/404" replace />
@@ -190,7 +182,7 @@ export default function ProfilePage() {
                   : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
               }`}
             >
-              Collection
+              Collection{}
               {activeTab === 'collection' && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--primary)]" />
               )}
@@ -239,18 +231,6 @@ export default function ProfilePage() {
           />
         )}
       </div>
-
-      {/* Modal d'ajout de vinyle */}
-      {isOwnProfile && currentUser && (
-        <AddVinylModal
-          key={isModalOpen ? 'modal-open' : 'modal-closed'}
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onSuccess={handleModalSuccess}
-          userId={currentUser.id}
-          targetType={activeTab === 'wishlist' ? 'wishlist' : 'collection'}
-        />
-      )}
     </div>
   )
 }

@@ -1,22 +1,13 @@
 import { useRef, useEffect } from 'react'
-import { useAuth } from '../hooks/useAuth'
 import { useAlbumSearch } from '../hooks/useAlbumSearch'
 import AlbumCard from './AlbumCard'
-import AddVinylModal from './AddVinylModal'
-import type { Album } from '@fillcrate/shared'
-import Button from './Button'
-import { useState } from 'react'
 
 interface SearchAlbumsTabProps {
   query: string;
 }
 
 export default function SearchAlbumsTab({ query }: SearchAlbumsTabProps) {
-  const { user } = useAuth()
   const { albums, loading, loadingMore, hasMore, error, loadMore } = useAlbumSearch({ query })
-  const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isCreateMode, setIsCreateMode] = useState(false)
   const loadMoreRef = useRef<HTMLDivElement>(null)
 
   const hasSearched = query.trim().length > 0
@@ -61,22 +52,6 @@ export default function SearchAlbumsTab({ query }: SearchAlbumsTabProps) {
           </div>
         </div>
       )}
-
-      {/* Bouton créer un album */}
-      <Button 
-        onClick={() => {
-          setSelectedAlbum(null)
-          setIsCreateMode(true)
-          setIsModalOpen(true)
-        }} 
-        variant="outline"
-        className="mb-6 w-full"
-      >
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-        </svg>
-        Vous ne trouvez pas ? Créer un album
-      </Button>
 
       {/* Loading skeletons */}
       {loading && albums.length === 0 && (
@@ -142,25 +117,6 @@ export default function SearchAlbumsTab({ query }: SearchAlbumsTabProps) {
             Tapez le nom d'un album ou d'un artiste pour commencer
           </p>
         </div>
-      )}
-
-      {/* Modal - uniquement si user connecté */}
-      {user && (
-        <AddVinylModal
-          key={isModalOpen ? 'modal-open' : 'modal-closed'}
-          isOpen={isModalOpen}
-          onClose={() => {
-            setIsModalOpen(false)
-            setIsCreateMode(false)
-          }}
-          onSuccess={() => {
-            setIsModalOpen(false)
-            setIsCreateMode(false)
-          }}
-          userId={user.id}
-          initialAlbum={selectedAlbum ?? undefined}
-          initialStep={isCreateMode ? 'createAlbum' : undefined}
-        />
       )}
     </div>
   )

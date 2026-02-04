@@ -1,7 +1,7 @@
 import { useRef, useEffect } from 'react'
 import VinylCard from './VinylCard'
 import Button from './Button'
-import type { UserVinylType, UserVinyl, Vinyl, Album } from '@fillcrate/shared'
+import type { UserVinylType, UserVinyl } from '@fillcrate/shared'
 
 interface VinylGridProps {
   vinyls: UserVinyl[];

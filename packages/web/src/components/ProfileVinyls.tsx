@@ -1,10 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import VinylGrid from './VinylGrid'
-import AddVinylModal from './AddVinylModal'
 import { useVinylsPagination } from '../hooks/useVinylsPagination'
 import { useVinylStatsStore } from '../stores/vinylStatsStore'
-import { useAuth } from '../hooks/useAuth'
-import type { UserVinylType, Vinyl, Album } from '@fillcrate/shared'
+import type { UserVinylType } from '@fillcrate/shared'
 import Button from './Button'
 import { Link } from 'react-router-dom'
 
@@ -21,7 +19,6 @@ export default function ProfileVinyls({
   isOwnProfile,
   username,
 }: ProfileVinylsProps) {
-  const { user } = useAuth()
   const {
     vinyls,
     loading,
@@ -36,10 +33,6 @@ export default function ProfileVinyls({
   // ✨ Store Zustand pour observer les changements
   const vinylStatsStore = useVinylStatsStore()
 
-  const [selectedVinyl, setSelectedVinyl] = useState<Vinyl | null>(null)
-  const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-
   // ✨ Rafraîchir quand les stats changent
   useEffect(() => {
     if (isOwnProfile) {
@@ -47,17 +40,6 @@ export default function ProfileVinyls({
     }
   }, [vinylStatsStore.stats.collectionCount, vinylStatsStore.stats.wishlistCount, isOwnProfile, refresh])
 
-  const handleModalClose = () => {
-    setIsModalOpen(false)
-    setSelectedVinyl(null)
-    setSelectedAlbum(null)
-  }
-
-  const handleModalSuccess = () => {
-    handleModalClose()
-    refresh()
-    // ✨ Plus besoin de dispatchEvent, le store s'en occupe
-  }
 
   // Empty state
   if (!loading && vinyls.length === 0) {
@@ -131,21 +113,6 @@ export default function ProfileVinyls({
         onLoadMore={loadMore}
         onRefresh={refresh}
       />
-
-      {/* Modal détail vinyle */}
-      {user && selectedVinyl && selectedAlbum && (
-        <AddVinylModal
-          key={isModalOpen ? 'modal-open' : 'modal-closed'}
-          isOpen={isModalOpen}
-          onClose={handleModalClose}
-          onSuccess={handleModalSuccess}
-          userId={user.id}
-          initialAlbum={selectedAlbum}
-          initialVinyl={selectedVinyl}
-          targetType={type}
-          isOwnProfile={isOwnProfile}
-        />
-      )}
     </div>
   )
 }

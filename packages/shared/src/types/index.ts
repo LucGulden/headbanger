@@ -47,13 +47,13 @@ export interface VinylLight {
   title: string;
   artists: ArtistLight[];
   coverUrl: string;
+  year: number;
+  country: string;
+  catalogNumber: string;
 }
 
 export interface Vinyl extends VinylLight {
-  year: number;
   label: string;
-  catalogNumber: string;
-  country: string;
   format: string;
 }
 

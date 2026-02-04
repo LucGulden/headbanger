@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { searchArtists } from '../lib/api/artists'
-import type { Artist } from '@fillcrate/shared'
+import type { ArtistLight } from '@fillcrate/shared'
 
 interface UseArtistSearchParams {
   query: string;
@@ -8,7 +8,7 @@ interface UseArtistSearchParams {
 }
 
 interface UseArtistSearchReturn {
-  artists: Artist[];
+  artists: ArtistLight[];
   loading: boolean;
   loadingMore: boolean;
   hasMore: boolean;
@@ -20,7 +20,7 @@ export function useArtistSearch({
   query,
   pageSize = 20,
 }: UseArtistSearchParams): UseArtistSearchReturn {
-  const [artists, setArtists] = useState<Artist[]>([])
+  const [artists, setArtists] = useState<ArtistLight[]>([])
   const [loading, setLoading] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(false)

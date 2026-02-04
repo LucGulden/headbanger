@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom'
-import type { Vinyl } from '@fillcrate/shared'
+import type { VinylLight } from '@fillcrate/shared'
 import VinylImage from './VinylImage'
 
 interface VinylCardProps {
-  vinyl: Vinyl;
+  vinyl: VinylLight;
   inCollection?: boolean;
   inWishlist?: boolean;
   variant?: 'full' | 'compact';
@@ -61,19 +61,8 @@ export default function VinylCard({
           <h4 className="truncate font-medium text-[var(--foreground)]">
             {vinyl.title}
           </h4>
-          <div className="mt-1 flex flex-wrap items-center gap-1">
-            <span className="inline-block rounded bg-[var(--primary)]/20 px-2 py-0.5 text-xs font-medium text-[var(--primary)]">
-              {vinyl.year}
-            </span>
-            <span className="inline-block rounded bg-[var(--background-lighter)] px-2 py-0.5 text-xs text-[var(--foreground-muted)]">
-              {vinyl.country}
-            </span>
-            <span className="inline-block rounded bg-[var(--background-lighter)] px-2 py-0.5 text-xs text-[var(--foreground-muted)]">
-              {vinyl.format}
-            </span>
-          </div>
           <p className="mt-1 truncate text-xs text-[var(--foreground-muted)]">
-            {vinyl.label} – {vinyl.catalogNumber}
+            {vinyl.country}{' (' + vinyl.year + ')'} – {vinyl.catalogNumber}
           </p>
         </div>
       ) : (

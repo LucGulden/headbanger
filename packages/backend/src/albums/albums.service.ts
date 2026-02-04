@@ -47,6 +47,9 @@ export class AlbumsService {
         id,
         title,
         cover_url,
+        year,
+        country,
+        catalog_number,
         vinyl_artists (
           position,
           artists (
@@ -148,6 +151,9 @@ export class AlbumsService {
         title: vinyl.title,
         artists: vinylArtists.length > 0 ? vinylArtists : artists, // Fallback sur les artistes de l'album
         coverUrl: vinyl.cover_url,
+        year: vinyl.year,
+        country: vinyl.country,
+        catalogNumber: vinyl.catalog_number,
       };
     });
 
