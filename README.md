@@ -78,6 +78,10 @@ fillcrate/
 │       │   │       └── users.ts
 │       │   ├── components/
 │       │   ├── pages/
+│       │   │   ├── VinylPage.tsx     # Page dédiée vinyle
+│       │   │   ├── AlbumPage.tsx     # Page dédiée album
+│       │   │   ├── ArtistPage.tsx    # Page dédiée artiste
+│       │   │   └── ...
 │       │   └── stores/
 │       ├── package.json
 │       └── README.md
@@ -165,7 +169,7 @@ Package de types TypeScript partagés entre frontend et backend. C'est la **sing
 
 **Types disponibles** :
 - `Album`, `AlbumLight` : Structures d'albums avec artistes
-- `Vinyl` : Pressages vinyles avec artistes
+- `Vinyl`, `VinylLight` : Pressages vinyles avec artistes
 - `Artist`, `ArtistLight` : Artistes musicaux
 - `User`, `UserLight` : Utilisateurs et profils
 - `UserVinyl` : Relations user-vinyl (collection/wishlist)
@@ -174,9 +178,13 @@ Package de types TypeScript partagés entre frontend et backend. C'est la **sing
 - `Notification` : Notifications
 - `FollowStats`, `VinylStats` : Statistiques
 
+**Pattern Light vs Complet** :
+- Types `Light` (ex: `AlbumLight`, `VinylLight`) : Sans relations, pour listes/recherche
+- Types complets (ex: `Album`, `Artist`) : Avec relations, pour pages détaillées
+
 **Utilisation** :
 ```typescript
-import { Album, User, PostWithDetails } from '@fillcrate/shared';
+import { Album, AlbumLight, User, PostWithDetails } from '@fillcrate/shared';
 ```
 
 ### @fillcrate/backend
@@ -190,6 +198,10 @@ API REST NestJS avec Fastify. Centralise la logique métier et expose des endpoi
 - Follows (relations sociales)
 - Posts, PostLikes, Comments
 - Notifications
+
+**Pattern d'optimisation** :
+- `findById()` : Retourne type complet avec relations (ex: `Album` avec `vinyls[]`)
+- `searchXxx()` : Retourne type Light sans relations (ex: `AlbumLight[]`)
 
 **Authentification** :
 - Valide JWT Supabase via `AuthGuard`
@@ -211,18 +223,24 @@ src/lib/api/
 ├── comments.ts       # Endpoints commentaires
 ├── notifications.ts  # Endpoints notifications
 ├── follows.ts        # Endpoints follows
-├── albums.ts         # Endpoints albums
-├── vinyls.ts         # Endpoints vinyls
-├── artists.ts        # Endpoints artistes
+├── albums.ts         # getAlbumById + searchAlbums
+├── vinyls.ts         # getVinylById
+├── artists.ts        # getArtistById + searchArtists
 ├── userVinyls.ts     # Endpoints collections/wishlists
 └── users.ts          # Endpoints profils
 ```
+
+**Pages dédiées** :
+- `/vinyl/:id` - Page vinyle (détails + actions collection/wishlist)
+- `/album/:id` - Page album (détails + liste des vinyles)
+- `/artist/:id` - Page artiste (bio + discographie)
 
 **Features** :
 - Gestion collection/wishlist (via backend)
 - Feed social avec posts, likes, commentaires (via backend)
 - Realtime pour likes/comments (via Supabase WebSocket)
 - Recherche d'albums/artistes/utilisateurs
+- Pages dédiées pour vinyles, albums et artistes
 - Profils utilisateurs
 - Notifications temps réel
 - Infinite scroll
@@ -253,10 +271,14 @@ src/lib/api/
 ```typescript
 // packages/web/src/lib/api/albums.ts
 import { apiClient } from './apiClient'
-import type { Album } from '@fillcrate/shared'
+import type { Album, AlbumLight } from '@fillcrate/shared'
 
 export async function getAlbumById(albumId: string): Promise<Album> {
   return apiClient.get<Album>(`/albums/${albumId}`)
+}
+
+export async function searchAlbums(query: string): Promise<AlbumLight[]> {
+  return apiClient.get<AlbumLight[]>(`/albums/search?query=${query}`)
 }
 ```
 
@@ -364,4 +386,4 @@ Privé - Tous droits réservés
 
 ---
 
-**Dernière mise à jour** : 4 février 2026
+**Dernière mise à jour** : 5 février 2026

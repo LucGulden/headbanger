@@ -143,7 +143,7 @@ Chaque fonctionnalité est organisée en module NestJS (controller + service + m
 
 | Module | Description |
 |--------|-------------|
-| `AlbumsModule` | Gestion des albums (métadonnées musicales) |
+| `AlbumsModule` | Gestion des albums (métadonnées musicales) + recherche |
 | `ArtistsModule` | Gestion des artistes (recherche, récupération) |
 | `VinylsModule` | Gestion des vinyles (pressings physiques) |
 | `UserVinylsModule` | Collections et wishlists des utilisateurs + posts automatiques |
@@ -172,26 +172,56 @@ Chaque fonctionnalité est organisée en module NestJS (controller + service + m
 |-----------|------|
 | `@CurrentUser()` | Récupère l'utilisateur authentifié (uid + token) dans un controller |
 
+## Pattern Light vs Complet
+
+Les services suivent un pattern d'optimisation pour les performances :
+
+| Méthode | Type retourné | Usage |
+|---------|---------------|-------|
+| `findById()` | Type complet avec relations | Page détaillée |
+| `searchXxx()` | Type Light sans relations | Recherche, listes |
+
+**Exemples** :
+```typescript
+// Albums
+findById(id) → Album (avec vinyls: VinylLight[])
+searchAlbums(query) → AlbumLight[] (sans vinyls)
+
+// Artists  
+findById(id) → Artist (avec albums: AlbumLight[])
+searchArtists(query) → ArtistLight[] (sans albums)
+```
+
+**Gain de performance** :
+- Recherche : 1 requête au lieu de 20+
+- Transfert de données : 4x moins
+- UX : Résultats instantanés
+
 ## Endpoints
 
 ### Albums
 
 | Méthode | Route | Auth | Description |
 |---------|-------|------|-------------|
-| `GET` | `/albums/:id` | Public | Récupère un album avec artistes |
+| `GET` | `/albums/search?query=...&limit=...&offset=...` | Public | Recherche d'albums → `AlbumLight[]` |
+| `GET` | `/albums/:id` | Public | Récupère un album → `Album` (avec vinyls) |
+
+⚠️ **Important** : Route `/search` AVANT route `/:id` dans le controller.
 
 ### Artists
 
 | Méthode | Route | Auth | Description |
 |---------|-------|------|-------------|
-| `GET` | `/artists/:id` | Public | Récupère un artiste par ID |
-| `GET` | `/artists?query=...&limit=...&offset=...` | Public | Recherche d'artistes |
+| `GET` | `/artists/search?query=...&limit=...&offset=...` | Public | Recherche d'artistes → `ArtistLight[]` |
+| `GET` | `/artists/:id` | Public | Récupère un artiste → `Artist` (avec albums) |
+
+⚠️ **Important** : Route `/search` AVANT route `/:id` dans le controller.
 
 ### Vinyls
 
 | Méthode | Route | Auth | Description |
 |---------|-------|------|-------------|
-| `GET` | `/vinyls/:id` | Public | Récupère un vinyl avec artistes |
+| `GET` | `/vinyls/:id` | Public | Récupère un vinyl → `Vinyl` |
 
 ### UserVinyls (Collections/Wishlists)
 
@@ -275,9 +305,11 @@ Les types sont importés depuis `@fillcrate/shared` :
 ```typescript
 import { 
   Album, 
+  AlbumLight,
   Artist, 
   ArtistLight, 
-  Vinyl, 
+  Vinyl,
+  VinylLight,
   User, 
   UserLight,
   UserVinyl,
@@ -287,6 +319,28 @@ import {
   FollowStats,
   VinylStats
 } from '@fillcrate/shared';
+```
+
+**Pattern Light vs Complet** :
+```typescript
+// Album
+interface AlbumLight {
+  id, title, artists, coverUrl, year
+}
+
+interface Album extends AlbumLight {
+  vinyls: VinylLight[]  // ← Relation ajoutée
+}
+
+// Artist
+interface ArtistLight {
+  id, name, imageUrl
+}
+
+interface Artist extends ArtistLight {
+  spotifyId?: string | null;
+  albums: AlbumLight[]  // ← Relation ajoutée
+}
 ```
 
 ## Patterns et conventions
@@ -365,6 +419,20 @@ if (lastCreatedAt) {
 
 Frontend utilise `lastCreatedAt` du dernier item pour charger la page suivante.
 
+### Pagination offset-based
+
+Pour la recherche (albums, artistes) :
+```typescript
+const { data, error } = await supabase
+  .from('albums')
+  .select('*')
+  .ilike('title', searchTerm)
+  .order('title', { ascending: true })
+  .range(offset, offset + limit - 1);
+```
+
+Frontend utilise `offset` incrémental (0, 20, 40...).
+
 ### Gestion des actions dérivées
 
 Les actions dérivées (notifications, posts automatiques) sont gérées de manière asynchrone et non-bloquante :
@@ -416,6 +484,25 @@ export class PostLikesService {
 }
 ```
 
+### Ordre des routes dans les controllers
+
+⚠️ **Critique** : Les routes spécifiques doivent être AVANT les routes génériques :
+
+```typescript
+@Controller('albums')
+export class AlbumsController {
+  // ✅ CORRECT : /search AVANT /:id
+  @Get('search')
+  async search() { ... }
+
+  @Get(':id')
+  async getById() { ... }
+}
+
+// ❌ INCORRECT : /:id AVANT /search
+// NestJS interprèterait "search" comme un ID !
+```
+
 ## Points d'attention
 
 1. **SUPABASE_ANON_KEY** : Ne pas utiliser service_role, le backend a besoin de l'auth JWT
@@ -424,10 +511,12 @@ export class PostLikesService {
 4. **JWT Supabase** : Toujours vérifier via `supabase.auth.getUser(token)`
 5. **CORS** : Mettre à jour l'origin en production
 6. **Types partagés** : Ne jamais dupliquer, toujours importer depuis `@fillcrate/shared`
-7. **Pagination** : Cursor-based avec `lastCreatedAt` ou `lastAddedAt`
+7. **Pagination** : Cursor-based pour posts, offset-based pour recherche
 8. **Logique métier** : Dans les services NestJS, pas dans les triggers SQL
 9. **Actions dérivées** : Toujours asynchrones et non-bloquantes
 10. **userId du JWT** : Jamais dans les params/body, toujours via `@CurrentUser()`
+11. **Ordre des routes** : `/search` AVANT `/:id`
+12. **Pattern Light/Complet** : `findById()` retourne complet, `searchXxx()` retourne Light
 
 ## Déploiement
 
@@ -468,6 +557,18 @@ Variables d'environnement à configurer :
 **Triggers SQL** :
 - ✅ Seulement pour housekeeping (`updated_at`)
 
+### Pourquoi le pattern Light/Complet ?
+
+**Problème** :
+- Recherche de 20 albums avec tous les vinyles = 21+ requêtes
+- Trop de données transférées
+- UX lente
+
+**Solution** :
+- `searchAlbums()` → `AlbumLight[]` (sans vinyles) = 1 requête
+- `findById()` → `Album` (avec vinyles) = 2 requêtes
+- Recherche 20x plus rapide, 4x moins de données
+
 ## Fonctionnalités futures
 
 - [ ] WebSocket avec Socket.IO pour realtime complet
@@ -479,4 +580,4 @@ Variables d'environnement à configurer :
 
 ---
 
-**Dernière mise à jour** : 4 février 2026
+**Dernière mise à jour** : 5 février 2026

@@ -36,7 +36,15 @@ FillCrate utilise une architecture hybride qui combine le meilleur des deux mond
 ```
 src/
 ├── components/          # Composants UI réutilisables
+│   ├── VinylCard.tsx
+│   ├── AlbumCard.tsx
+│   ├── ArtistCard.tsx
+│   └── ...
 ├── pages/               # Pages de l'application
+│   ├── VinylPage.tsx    # Page dédiée vinyle (/vinyl/:id)
+│   ├── AlbumPage.tsx    # Page dédiée album (/album/:id)
+│   ├── ArtistPage.tsx   # Page dédiée artiste (/artist/:id)
+│   └── ...
 ├── guards/              # Route guards (ProtectedRoute, PublicOnlyRoute, HomeRoute)
 ├── hooks/               # Hooks personnalisés
 │   ├── useAuth.ts       # Auth Supabase (signup, login, logout)
@@ -52,9 +60,9 @@ src/
 │   │   ├── comments.ts       # Endpoints commentaires
 │   │   ├── notifications.ts  # Endpoints notifications
 │   │   ├── follows.ts        # Endpoints follows
-│   │   ├── albums.ts         # Endpoints albums
-│   │   ├── vinyls.ts         # Endpoints vinyls
-│   │   ├── artists.ts        # Endpoints artistes
+│   │   ├── albums.ts         # getAlbumById + searchAlbums
+│   │   ├── vinyls.ts         # getVinylById
+│   │   ├── artists.ts        # getArtistById + searchArtists
 │   │   ├── userVinyls.ts     # Endpoints collections/wishlists
 │   │   └── users.ts          # Endpoints profils
 │   ├── spotify.ts       # API Spotify direct
@@ -121,9 +129,9 @@ Tous les appels au backend NestJS passent par des services typés :
 | `comments.ts` | CRUD commentaires, compteur | ✅ |
 | `notifications.ts` | Liste, compteur non lues, mark as read | ✅ |
 | `follows.ts` | Follow/unfollow, listes, statistiques | ✅ |
-| `albums.ts` | Récupération albums (+ Supabase direct pour search) | Public |
-| `vinyls.ts` | Récupération vinyls (+ Supabase direct pour RPC) | Public |
-| `artists.ts` | Récupération/recherche artistes | Public |
+| `albums.ts` | `getAlbumById(id)` → `Album`, `searchAlbums(query)` → `AlbumLight[]` | Public |
+| `vinyls.ts` | `getVinylById(id)` → `Vinyl` | Public |
+| `artists.ts` | `getArtistById(id)` → `Artist`, `searchArtists(query)` → `ArtistLight[]` | Public |
 | `userVinyls.ts` | Collections/wishlists, ajout, suppression, déplacement | ✅ |
 | `users.ts` | Profils, recherche, update profil | ✅/Public |
 
@@ -151,7 +159,7 @@ const post = await apiClient.post<PostWithDetails>('/posts', {
 await apiClient.delete(`/posts/${postId}`)
 ```
 
-### Pattern d'utilisation
+### Pattern d'usage
 
 **Avant (ancien pattern Supabase direct)** :
 ```typescript
@@ -176,6 +184,28 @@ await getFollowStats(userId)
 await getUserByUsername(username)
 await getAlbumById(albumId)
 ```
+
+### Pattern Light vs Complet
+
+Les services API suivent un pattern d'optimisation pour les performances :
+
+| Type | Usage | Exemple |
+|------|-------|---------|
+| **Light** | Recherche, listes, cartes | `searchAlbums()` → `AlbumLight[]` |
+| **Complet** | Pages détaillées | `getAlbumById()` → `Album` (avec `vinyls[]`) |
+
+```typescript
+// Recherche rapide (sans relations)
+const albums = await searchAlbums('abbey')  // → AlbumLight[]
+
+// Page détaillée (avec relations)
+const album = await getAlbumById('abc123')  // → Album (avec vinyls)
+```
+
+**Avantages** :
+- ⚡ Recherche 20x plus rapide (1 requête vs 21)
+- 📉 4x moins de données transférées
+- 🚀 Meilleure UX (résultats instantanés)
 
 ## State Management
 
@@ -285,32 +315,80 @@ const {
 | `LoadingSpinner` | Spinner de chargement centralisé avec options fullScreen et taille |
 | `Avatar` | Avatar utilisateur avec fallback |
 | `Button` | Bouton réutilisable avec variants |
-| `AlbumCard` | Carte album (titre, artiste, année) |
+| `AlbumCard` | Carte album (titre, artiste, année) - cliquable vers `/album/:id` |
+| `ArtistCard` | Carte artiste (nom, photo) - cliquable vers `/artist/:id` |
 
 ## Routes
 
 ### Routes publiques (accessibles déconnecté ET connecté)
 ```
-/search                     Recherche albums (par titre), artistes, utilisateurs
-/profile/:username          Profil (3 onglets : feed/collection/wishlist)
+/vinyl/:id                      Page vinyle avec détails et actions
+/album/:id                      Page album avec liste des vinyles
+/artist/:id                     Page artiste avec discographie
+/search                         Recherche albums (par titre), artistes, utilisateurs
+/profile/:username              Profil (3 onglets : feed/collection/wishlist)
 /profile/:username/followers|following
 ```
 
 ### Route dynamique selon auth
 ```
-/                           Landing si déconnecté, Feed si connecté
+/                               Landing si déconnecté, Feed si connecté
 ```
 
 ### Routes "public only" (bloquées si connecté)
 ```
-/signup, /login             Auth
+/signup, /login                 Auth
 ```
 
 ### Routes protégées (bloquées si déconnecté)
 ```
 /notifications              
-/settings                   Modification profil
+/settings                       Modification profil
 ```
+
+## Pages dédiées
+
+### VinylPage (`/vinyl/:id`)
+
+Page dédiée pour un vinyle spécifique :
+- Affiche tous les détails du pressage (label, année, pays, format, catalogue)
+- Actions contextuelles :
+  - Non connecté : Prompt login/signup
+  - En collection : Badge vert + bouton "Retirer"
+  - En wishlist : Badge bleu + "J'ai acheté !" + "Retirer"
+  - Non possédé : Boutons "Ajouter à ma collection" et "Ajouter à ma wishlist"
+- Route publique (accessible à tous)
+
+### AlbumPage (`/album/:id`)
+
+Page dédiée pour un album :
+- En-tête : Cover, titre, artistes (cliquables vers `/artist/:id`), année
+- Statistiques : Nombre de pressages disponibles
+- Grid des vinyles : Tous les pressages vinyles de cet album
+- Chaque vinyle cliquable vers `/vinyl/:id`
+- Route publique
+
+### ArtistPage (`/artist/:id`)
+
+Page dédiée pour un artiste :
+- En-tête : Photo (ronde), nom, nombre d'albums
+- Discographie : Grid des albums (`AlbumCard`)
+- Chaque album cliquable vers `/album/:id`
+- Route publique
+
+### Navigation entre les pages
+
+```
+ArtistPage (/artist/:id)
+  ↓ Clic sur AlbumCard
+AlbumPage (/album/:id)
+  ↓ Clic sur vinyle
+VinylPage (/vinyl/:id)
+```
+
+Retours :
+- VinylPage → Breadcrumb ou lien vers AlbumPage
+- AlbumPage → Liens vers ArtistPage (sur les noms d'artistes)
 
 ## Logique contextuelle AddVinylModal
 
@@ -391,6 +469,26 @@ const handleLike = async () => {
 }
 ```
 
+### Navigation entre pages
+
+Les liens utilisent les routes React Router en dur :
+
+```typescript
+import { Link } from 'react-router-dom'
+
+// Lien vers page vinyle
+<Link to={`/vinyl/${vinyl.id}`}>Voir le vinyle</Link>
+
+// Lien vers page album
+<Link to={`/album/${album.id}`}>Voir l'album</Link>
+
+// Lien vers page artiste
+<Link to={`/artist/${artist.id}`}>Voir l'artiste</Link>
+
+// Lien vers profil
+<Link to={`/profile/${username}`}>Voir le profil</Link>
+```
+
 ## Variables CSS
 ```css
 --background: #1A1A1A
@@ -415,9 +513,9 @@ const handleLike = async () => {
 | `follows.ts` | followUser, unfollowUser, isFollowing, getFollowers | userId du JWT pour actions |
 | `userVinyls.ts` | getUserVinyls, addVinylToUser, removeVinylFromUser, moveToCollection | userId du JWT |
 | `users.ts` | getCurrentUser, updateUserProfile, searchUsers, getUserByUsername | userId du JWT pour /me |
-| `albums.ts` | getAlbumById, searchAlbums (Supabase), createAlbum (Supabase RPC) | Public + Supabase |
-| `vinyls.ts` | getVinylById, getVinylsByAlbum (Supabase), createVinyl (Supabase RPC) | Public + Supabase |
-| `artists.ts` | getArtistById, searchArtists | Public |
+| `albums.ts` | getAlbumById → `Album`, searchAlbums → `AlbumLight[]` | Public |
+| `vinyls.ts` | getVinylById → `Vinyl` | Public |
+| `artists.ts` | getArtistById → `Artist`, searchArtists → `ArtistLight[]` | Public |
 
 ### Autres services
 
@@ -441,6 +539,8 @@ const handleLike = async () => {
 10. **API calls** : Ne jamais passer `userId` dans les appels backend protégés
 11. **useAuth** : Source unique d'authentification (Supabase Auth)
 12. **Types partagés** : Toujours importer depuis `@fillcrate/shared`
+13. **Pattern Light/Complet** : Light pour listes, Complet pour détails
+14. **Navigation** : Routes en dur (`/vinyl/:id`, `/album/:id`, `/artist/:id`)
 
 ## Style d'interaction préféré
 
@@ -520,4 +620,4 @@ pnpm install
 
 ---
 
-**Dernière mise à jour** : 4 février 2026
+**Dernière mise à jour** : 5 février 2026
