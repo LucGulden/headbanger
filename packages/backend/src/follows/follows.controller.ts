@@ -1,9 +1,9 @@
 import { Controller, Get, Post, Delete, Param, UseGuards } from '@nestjs/common';
 import { User, FollowStats } from '@fillcrate/shared';
 import { FollowsService } from './follows.service';
-import { AuthGuard } from '../common/guards/auth.guard';
-import { CurrentUser } from '../common/decorators/current-user.decorator';
-import type { AuthenticatedUser } from '../common/decorators/current-user.decorator';
+import { AuthGuard } from '../auth/guards/auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
 
 @Controller('follows')
 export class FollowsController {

@@ -1,8 +1,8 @@
 import { Controller, Post, Delete, Get, Param, UseGuards } from '@nestjs/common';
 import { PostLikesService } from './post-likes.service';
-import { AuthGuard } from '../common/guards/auth.guard';
-import { CurrentUser } from '../common/decorators/current-user.decorator';
-import type { AuthenticatedUser } from '../common/decorators/current-user.decorator';
+import { AuthGuard } from '../auth/guards/auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
 
 @Controller('post-likes')
 export class PostLikesController {

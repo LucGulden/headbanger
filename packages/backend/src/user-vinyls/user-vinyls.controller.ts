@@ -2,9 +2,9 @@ import { Controller, Get, Post, Delete, Param, Query, Body, UseGuards } from '@n
 import { UserVinyl, VinylStats } from '@fillcrate/shared';
 import type { UserVinylType } from '@fillcrate/shared';
 import { UserVinylsService } from './user-vinyls.service';
-import { AuthGuard } from '../common/guards/auth.guard';
-import { CurrentUser } from '../common/decorators/current-user.decorator';
-import type { AuthenticatedUser } from '../common/decorators/current-user.decorator';
+import { AuthGuard } from '../auth/guards/auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
 
 @Controller('user-vinyls')
 @UseGuards(AuthGuard) // Tous les endpoints sont protégés

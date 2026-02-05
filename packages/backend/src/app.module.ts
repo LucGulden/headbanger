@@ -11,6 +11,8 @@ import { PostLikesModule } from './post-likes/post-likes.module';
 import { CommentsModule } from './comments/comments.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { CommonModule } from './common/common.module';
+import { RedisModule } from './redis/redis.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -19,6 +21,8 @@ import { CommonModule } from './common/common.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
+    RedisModule,
+    AuthModule,
     // Services communs (SupabaseService, etc.)
     CommonModule,
     // Modules métier

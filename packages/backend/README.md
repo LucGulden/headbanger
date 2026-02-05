@@ -116,9 +116,9 @@ pnpm lint:fix
 ### Utilisation dans les controllers
 ```typescript
 import { Controller, Get, UseGuards } from '@nestjs/common';
-import { AuthGuard } from '../common/guards/auth.guard';
-import { CurrentUser } from '../common/decorators/current-user.decorator';
-import type { AuthenticatedUser } from '../common/decorators/current-user.decorator';
+import { AuthGuard } from '../auth/guards/auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
 
 @Controller('posts')
 @UseGuards(AuthGuard) // Protège toutes les routes

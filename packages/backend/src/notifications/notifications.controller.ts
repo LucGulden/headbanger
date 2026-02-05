@@ -1,9 +1,9 @@
 import { Controller, Get, Put, Param, Query, UseGuards } from '@nestjs/common';
 import { Notification } from '@fillcrate/shared';
 import { NotificationsService } from './notifications.service';
-import { AuthGuard } from '../common/guards/auth.guard';
-import { CurrentUser } from '../common/decorators/current-user.decorator';
-import type { AuthenticatedUser } from '../common/decorators/current-user.decorator';
+import { AuthGuard } from '../auth/guards/auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
 
 @Controller('notifications')
 @UseGuards(AuthGuard) // Toutes les routes sont protégées
