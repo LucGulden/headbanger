@@ -83,13 +83,13 @@ export default function AlbumPage() {
                 {album.title}
               </h1>
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                {album.artists.map((artist, index) => (
-                  <span key={artist.id} className="flex items-center gap-2">
-                    <span className="text-xl font-medium text-[var(--foreground-muted)]">
-                      {artist.name}
-                    </span>
+                {album.artists.map((a, index) => (
+                  <span key={a.id} className="flex items-center gap-2">
+                    <Link key={a.id} className="text-xl font-medium text-[var(--foreground-muted)] transition-opacity hover:opacity-70" to={`/artist/${a.id}`}>
+                      {a.name}
+                    </Link>
                     {index < album.artists.length - 1 && (
-                      <span className="text-[var(--foreground-muted)]">•</span>
+                      <span className="text-[var(--foreground-muted)]">, </span>
                     )}
                   </span>
                 ))}

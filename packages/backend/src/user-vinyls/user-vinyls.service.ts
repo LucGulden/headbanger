@@ -259,8 +259,8 @@ export class UserVinylsService {
           artists.length > 0 ? artists : [{ id: '', name: 'Artiste inconnu', imageUrl: null }],
         coverUrl: vinylData.cover_url,
         year: vinylData.year,
-        catalogNumber: vinylData.catalog_number,
         country: vinylData.country,
+        catalogNumber: vinylData.catalog_number,
       },
     };
   }

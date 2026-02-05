@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { getVinylById } from '../lib/api/vinyls'
 import { hasVinyl, moveToCollection, removeVinylFromUser, addVinylToUser } from '../lib/api/userVinyls'
@@ -215,18 +215,6 @@ export default function VinylPage() {
     if (inCollection) {
       return (
         <div className="space-y-3">
-          <div className="rounded-lg border border-green-500/20 bg-green-500/10 p-4">
-            <p className="flex items-center gap-2 text-sm text-green-400">
-              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              Ce vinyle est dans votre collection
-            </p>
-          </div>
           <div className="flex justify-end">
             <Button
               onClick={handleRemoveFromCollection}
@@ -398,8 +386,20 @@ export default function VinylPage() {
           <div className="space-y-4">
             <div>
               <h1 className="text-2xl font-bold text-[var(--foreground)]">{vinyl.title}</h1>
+              <Link key={vinyl.album.id} className="text-xl font-medium text-[var(--foreground-muted)] transition-opacity hover:opacity-70" to={`/album/${vinyl.album.id}`}>
+                Voir l'album &rarr;
+              </Link>
               <p className="mt-1 text-lg font-medium text-[var(--foreground-muted)]">
-                {vinyl.artists.map(a => a.name).join(', ')}
+                {vinyl.artists.map((a, index) => (
+                  <span key={a.id} className="flex items-center gap-2">
+                    <Link key={a.id} className="text-xl font-medium text-[var(--foreground-muted)] transition-opacity hover:opacity-70" to={`/artist/${a.id}`}>
+                      {a.name}
+                    </Link>
+                    {index < vinyl.artists.length - 1 && (
+                      <span className="text-[var(--foreground-muted)]">, </span>
+                    )}
+                  </span>
+                ))}
               </p>
               <p className="mt-1 text-sm text-[var(--foreground-muted)]">
                 {vinyl.year}

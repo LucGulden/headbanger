@@ -55,6 +55,7 @@ export interface VinylLight {
 export interface Vinyl extends VinylLight {
   label: string;
   format: string;
+  album: AlbumLight;
 }
 
 // ============================================
