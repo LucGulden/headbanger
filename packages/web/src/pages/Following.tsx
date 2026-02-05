@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, Navigate } from 'react-router-dom'
-import { supabase } from '../supabaseClient'
 import { getFollowing } from '../lib/api/follows'
 import UserListItem from '../components/UserListItem'
 import type { User } from '@fillcrate/shared'
 import LoadingSpinner from '../components/LoadingSpinner'
+import { getUserByUsername } from '../lib/api/users'
 
 export default function Following() {
   const { username } = useParams<{ username: string }>()
@@ -22,18 +22,8 @@ export default function Following() {
       }
 
       try {
-        const { data, error } = await supabase
-          .from('users')
-          .select('*')
-          .eq('username', username)
-          .single()
-
-        if (error || !data) {
-          setNotFound(true)
-          return
-        }
-
-        setProfileUser(data)
+        const user = await getUserByUsername(username)
+        setProfileUser(user)
       } catch (error) {
         console.error('Erreur lors du chargement du profil:', error)
         setNotFound(true)

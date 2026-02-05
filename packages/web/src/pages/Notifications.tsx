@@ -14,10 +14,10 @@ export default function Notifications() {
     return null
   }
 
-  return <NotificationsContent userId={user.id} />
+  return <NotificationsContent />
 }
 
-function NotificationsContent({ userId }: { userId: string }) {
+function NotificationsContent() {
   const {
     notifications,
     loading,
@@ -25,7 +25,7 @@ function NotificationsContent({ userId }: { userId: string }) {
     hasMore,
     loadMore,
     handleMarkAllAsRead,
-  } = useNotifications(userId)
+  } = useNotifications()
 
   const { reset } = useNotificationsStore()
   const observerRef = useRef<IntersectionObserver | null>(null)

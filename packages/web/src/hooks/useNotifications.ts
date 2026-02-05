@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { 
   getNotifications, 
   markAllAsRead,
@@ -23,31 +23,37 @@ export function useNotifications(): UseNotificationsReturn {
   const [hasMore, setHasMore] = useState(true)
   const [error, setError] = useState<Error | null>(null)
   
+  // ✅ Ref pour le cursor de pagination (évite les dépendances instables)
+  const cursorRef = useRef<string | undefined>(undefined)
+  
   const LIMIT = 20
 
-  // Charger les notifications initiales
+  // ✅ Plus de dépendance à notifications
   const loadNotifications = useCallback(async (reset: boolean = false) => {
     try {
       if (reset) {
         setLoading(true)
         setNotifications([])
         setHasMore(true)
+        cursorRef.current = undefined
       } else {
         setLoadingMore(true)
       }
 
-      const lastNotification = reset ? undefined : notifications[notifications.length - 1]
-      
-      // ✅ Plus besoin de userId
       const data = await getNotifications({
         limit: LIMIT,
-        lastCreatedAt: lastNotification?.createdAt,
+        lastCreatedAt: cursorRef.current,
       })
 
       if (reset) {
         setNotifications(data)
       } else {
         setNotifications(prev => [...prev, ...data])
+      }
+
+      // Mettre à jour le cursor pour la prochaine page
+      if (data.length > 0) {
+        cursorRef.current = data[data.length - 1].createdAt
       }
 
       setHasMore(data.length === LIMIT)
@@ -59,7 +65,7 @@ export function useNotifications(): UseNotificationsReturn {
       setLoading(false)
       setLoadingMore(false)
     }
-  }, [notifications])
+  }, []) // ✅ Aucune dépendance instable
 
   // Charger plus de notifications (infinite scroll)
   const loadMore = useCallback(async () => {
@@ -75,12 +81,12 @@ export function useNotifications(): UseNotificationsReturn {
   // Marquer toutes les notifications comme lues
   const handleMarkAllAsRead = useCallback(async () => {
     try {
-      // Optimistic update
+      // ✅ Optimistic update avec "read" (pas "isRead")
       setNotifications(prev =>
-        prev.map(notif => ({ ...notif, isRead: true })), // ✅ isRead au lieu de read
+        prev.map(notif => ({ ...notif, read: true }))
       )
 
-      await markAllAsRead() // ✅ Plus besoin de userId
+      await markAllAsRead()
     } catch (err) {
       console.error('Error marking all as read:', err)
       // Revert on error
@@ -91,7 +97,7 @@ export function useNotifications(): UseNotificationsReturn {
   // Chargement initial
   useEffect(() => {
     loadNotifications(true)
-  }, []) // ✅ Pas de dépendance userId, le backend le récupère du JWT
+  }, [loadNotifications]) // ✅ Maintenant on peut l'ajouter dans les deps
 
   return {
     notifications,
