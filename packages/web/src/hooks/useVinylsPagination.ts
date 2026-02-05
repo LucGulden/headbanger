@@ -17,7 +17,6 @@ interface UseVinylsPaginationReturn {
   total: number;
   loadMore: () => Promise<void>;
   refresh: () => Promise<void>;
-  removeVinylFromList: (vinylId: string) => void;
 }
 
 export function useVinylsPagination({
@@ -82,12 +81,6 @@ export function useVinylsPagination({
     await loadInitial()
   }, [loadInitial])
 
-  // Retirer un vinyle de la liste (optimistic update)
-  const removeVinylFromList = useCallback((vinylId: string) => {
-    setVinyls((prev) => prev.filter((v) => v.id !== vinylId))
-    setTotal((prev) => Math.max(0, prev - 1))
-  }, [])
-
   // Chargement initial au mount
   useEffect(() => {
     loadInitial()
@@ -102,6 +95,5 @@ export function useVinylsPagination({
     total,
     loadMore,
     refresh,
-    removeVinylFromList,
   }
 }
