@@ -86,7 +86,7 @@ export default function ProfilePage() {
       if (!profileUser) return
 
       try {
-        const vinylStats = await getVinylStats()
+        const vinylStats = await getVinylStats(profileUser.uid)
         const followStats = await getFollowStats(profileUser.uid)
 
         setStats({

@@ -12,18 +12,18 @@ export class UserVinylsController {
   constructor(private readonly userVinylsService: UserVinylsService) {}
 
   /**
-   * GET /user-vinyls?type=collection&limit=20&lastAddedAt=...
-   * Récupère les vinyles de l'utilisateur connecté
+   * GET /user-vinyls/user/:userId?type=collection&limit=20&lastAddedAt=...
+   * Récupère les vinyles d'un utilisateur spécifique (PUBLIC)
    */
-  @Get()
-  async getUserVinyls(
-    @CurrentUser() user: AuthenticatedUser,
+  @Get('user/:userId')
+  async getUserVinylsByUserId(
+    @Param('userId') userId: string,
     @Query('type') type: UserVinylType,
     @Query('limit') limit?: number,
     @Query('lastAddedAt') lastAddedAt?: string,
   ): Promise<UserVinyl[]> {
     return this.userVinylsService.getUserVinyls(
-      user.id,
+      userId,
       type,
       limit ? Number(limit) : 20,
       lastAddedAt,
@@ -31,25 +31,25 @@ export class UserVinylsController {
   }
 
   /**
-   * GET /user-vinyls/count?type=collection
-   * Compte les vinyles de l'utilisateur
+   * GET /user-vinyls/user/:userId/count?type=collection
+   * Compte les vinyles d'un utilisateur spécifique (PUBLIC)
    */
-  @Get('count')
-  async getUserVinylsCount(
-    @CurrentUser() user: AuthenticatedUser,
+  @Get('user/:userId/count')
+  async getUserVinylsCountByUserId(
+    @Param('userId') userId: string,
     @Query('type') type: UserVinylType,
   ): Promise<{ count: number }> {
-    const count = await this.userVinylsService.getUserVinylsCount(user.id, type);
+    const count = await this.userVinylsService.getUserVinylsCount(userId, type);
     return { count };
   }
 
   /**
-   * GET /user-vinyls/stats
-   * Statistiques globales de l'utilisateur
+   * GET /user-vinyls/user/:userId/stats
+   * Statistiques d'un utilisateur spécifique (PUBLIC)
    */
-  @Get('stats')
-  async getVinylStats(@CurrentUser() user: AuthenticatedUser): Promise<VinylStats> {
-    return this.userVinylsService.getVinylStats(user.id);
+  @Get('user/:userId/stats')
+  async getVinylStatsByUserId(@Param('userId') userId: string): Promise<VinylStats> {
+    return this.userVinylsService.getVinylStats(userId);
   }
 
   /**

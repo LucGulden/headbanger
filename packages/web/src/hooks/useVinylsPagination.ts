@@ -40,8 +40,8 @@ export function useVinylsPagination({
 
     try {
       const [vinylsData, count] = await Promise.all([
-        getUserVinyls(type, pageSize),
-        getUserVinylsCount(type),
+        getUserVinyls(userId, type, pageSize),
+        getUserVinylsCount(userId, type),
       ])
 
       setVinyls(vinylsData)
@@ -65,7 +65,7 @@ export function useVinylsPagination({
       const lastVinyl = vinyls[vinyls.length - 1]
       const lastAddedAt = lastVinyl?.addedAt
 
-      const moreVinyls = await getUserVinyls(type, pageSize, lastAddedAt)
+      const moreVinyls = await getUserVinyls(userId, type, pageSize, lastAddedAt)
 
       setVinyls((prev) => [...prev, ...moreVinyls])
       setHasMore(moreVinyls.length >= pageSize)

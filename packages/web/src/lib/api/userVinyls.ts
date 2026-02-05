@@ -3,15 +3,16 @@ import type { UserVinyl, UserVinylType, VinylStats } from '@fillcrate/shared'
 
 const ITEMS_PER_PAGE = 20
 
+
 // ============================================================================
-// ROUTES BACKEND DISPONIBLES (Auth required)
+// ROUTES BACKEND DISPONIBLES Public
 // ============================================================================
 
 /**
- * Récupère les vinyles de l'utilisateur connecté avec pagination
- * Note: userId récupéré automatiquement via le JWT
+ * Récupère les vinyles d'un utilisateur spécifique avec pagination (PUBLIC)
  */
 export async function getUserVinyls(
+  userId: string,
   type: UserVinylType,
   limit: number = ITEMS_PER_PAGE,
   lastAddedAt?: string,
@@ -21,28 +22,30 @@ export async function getUserVinyls(
   params.append('limit', String(limit))
   if (lastAddedAt) params.append('lastAddedAt', lastAddedAt)
 
-  return apiClient.get<UserVinyl[]>(`/user-vinyls?${params.toString()}`)
+  return apiClient.get<UserVinyl[]>(`/user-vinyls/user/${userId}?${params.toString()}`)
 }
 
 /**
- * Compte le nombre total de vinyles de l'utilisateur connecté
- * Note: userId récupéré automatiquement via le JWT
+ * Compte le nombre total de vinyles d'un utilisateur spécifique (PUBLIC)
  */
-export async function getUserVinylsCount(type: UserVinylType): Promise<number> {
+export async function getUserVinylsCount(userId: string, type: UserVinylType): Promise<number> {
   const params = new URLSearchParams()
   params.append('type', type)
   
-  const result = await apiClient.get<{ count: number }>(`/user-vinyls/count?${params.toString()}`)
+  const result = await apiClient.get<{ count: number }>(`/user-vinyls/user/${userId}/count?${params.toString()}`)
   return result.count
 }
 
 /**
- * Obtient les statistiques des vinyles de l'utilisateur connecté
- * Note: userId récupéré automatiquement via le JWT
+ * Obtient les statistiques d'un utilisateur spécifique (PUBLIC)
  */
-export async function getVinylStats(): Promise<VinylStats> {
-  return apiClient.get<VinylStats>('/user-vinyls/stats')
+export async function getVinylStats(userId: string): Promise<VinylStats> {
+  return apiClient.get<VinylStats>(`/user-vinyls/user/${userId}/stats`)
 }
+
+// ============================================================================
+// ROUTES BACKEND DISPONIBLES Auth required
+// ============================================================================
 
 /**
  * Vérifie si un vinyle existe dans la collection/wishlist de l'utilisateur connecté
