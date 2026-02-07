@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { Notification } from '@fillcrate/shared';
 import { SupabaseService } from '../common/database/supabase.service';
+import { EventsService } from '../events/events.service';
 
 @Injectable()
 export class NotificationsService {
-  constructor(private readonly supabaseService: SupabaseService) {}
+  constructor(
+    private readonly supabaseService: SupabaseService,
+    private readonly eventsService: EventsService,
+  ) {}
 
   /**
    * Récupère les notifications d'un utilisateur avec pagination
@@ -107,6 +111,9 @@ export class NotificationsService {
     if (error) {
       throw new Error(`Error marking notifications as read: ${error.message}`);
     }
+
+    // 🆕 Émettre l'événement Socket.IO
+    this.eventsService.emitToUser(userId, 'notification:read-all', { userId });
   }
 
   /**
@@ -180,17 +187,43 @@ export class NotificationsService {
   ): Promise<void> {
     const supabase = this.supabaseService.getClient();
 
-    const { error } = await supabase.from('notifications').insert({
+    const { data, error } = await supabase.from('notifications').insert({
       user_id: userId,
       type,
       actor_id: actorId,
       post_id: postId || null,
       comment_id: commentId || null,
-    });
+    }).select(`
+      id,
+      type,
+      read,
+      created_at,
+      actor:users!notifications_actor_id_fkey (
+        uid,
+        username,
+        first_name,
+        last_name,
+        photo_url
+      ),
+      post:posts!notifications_post_id_fkey (
+        id,
+        vinyl_id
+      ),
+      comment:comments!notifications_comment_id_fkey (
+        id,
+        content
+      )
+    `).single();
 
     if (error && error.code !== '23505') {
       // 23505 = duplicate, on ignore (ON CONFLICT DO NOTHING)
       throw new Error(`Error creating notification: ${error.message}`);
+    }
+
+    // 🆕 Émettre l'événement Socket.IO
+    if (data) {
+      const notification = this.transformNotificationData(data);
+      this.eventsService.emitToUser(userId, 'notification:new', notification);
     }
   }
 

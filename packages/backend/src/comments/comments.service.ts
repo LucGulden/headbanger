@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, Logger } from '@nes
 import { Comment } from '@fillcrate/shared';
 import { SupabaseService } from '../common/database/supabase.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { EventsService } from 'src/events/events.service';
 
 @Injectable()
 export class CommentsService {
@@ -10,6 +11,7 @@ export class CommentsService {
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly notificationsService: NotificationsService,
+    private readonly eventsService: EventsService,
   ) {}
 
   /**
@@ -87,10 +89,18 @@ export class CommentsService {
       throw new Error(`Error adding comment: ${error.message}`);
     }
 
-    // 2. Créer la notification (async, non-bloquant)
+    const comment = this.transformCommentData(data);
+
+    // 2. Émettre l'événement Socket.IO
+    this.eventsService.emitToPost(postId, 'post:comment:added', {
+      postId,
+      comment,
+    });
+
+    // 3. Créer la notification (async, non-bloquant)
     this.createCommentNotification(userId, postId, data.id);
 
-    return this.transformCommentData(data);
+    return comment;
   }
 
   /**
@@ -102,7 +112,7 @@ export class CommentsService {
     // Vérifier que le commentaire appartient à l'utilisateur
     const { data: comment, error: fetchError } = await supabase
       .from('comments')
-      .select('user_id')
+      .select('user_id, post_id')
       .eq('id', commentId)
       .single();
 
@@ -114,6 +124,8 @@ export class CommentsService {
       throw new BadRequestException('You can only delete your own comments');
     }
 
+    const postId = comment.post_id;
+
     // 1. Supprimer la notification AVANT de supprimer le commentaire
     await this.notificationsService.deleteByComment(commentId);
 
@@ -123,6 +135,12 @@ export class CommentsService {
     if (error) {
       throw new Error(`Error deleting comment: ${error.message}`);
     }
+
+    // 3. Émettre l'événement Socket.IO
+    this.eventsService.emitToPost(postId, 'post:comment:deleted', {
+      postId,
+      commentId,
+    });
   }
 
   /**

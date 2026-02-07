@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { SupabaseService } from '../common/database/supabase.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { EventsService } from 'src/events/events.service';
 
 @Injectable()
 export class PostLikesService {
@@ -9,6 +10,7 @@ export class PostLikesService {
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly notificationsService: NotificationsService,
+    private readonly eventsService: EventsService,
   ) {}
 
   /**
@@ -30,7 +32,17 @@ export class PostLikesService {
       throw new Error(`Error liking post: ${error.message}`);
     }
 
-    // 2. Créer la notification (async, non-bloquant)
+    // 2. Récupérer le nouveau compteur de likes
+    const likesCount = await this.getLikesCount(postId);
+
+    // 3. Émettre l'événement Socket.IO
+    this.eventsService.emitToPost(postId, 'post:like:added', {
+      postId,
+      userId,
+      likesCount,
+    });
+
+    // 4. Créer la notification (async, non-bloquant)
     this.createLikeNotification(userId, postId);
   }
 
@@ -53,6 +65,16 @@ export class PostLikesService {
     if (error) {
       throw new Error(`Error unliking post: ${error.message}`);
     }
+
+    // 3. Récupérer le nouveau compteur de likes
+    const likesCount = await this.getLikesCount(postId);
+
+    // 4. Émettre l'événement Socket.IO
+    this.eventsService.emitToPost(postId, 'post:like:removed', {
+      postId,
+      userId,
+      likesCount,
+    });
   }
 
   /**

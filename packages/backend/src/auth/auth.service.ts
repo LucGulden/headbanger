@@ -194,4 +194,35 @@ export class AuthService {
   private generateJwt(sessionId: string, userId: string): string {
     return this.jwtService.sign({ sessionId, userId });
   }
+
+  /**
+   * Valider un JWT et retourner la session
+   * (utilisé par WebSocket Gateway)
+   */
+  async validateSession(token: string): Promise<Session | null> {
+    try {
+      // 1. Décoder le JWT
+      const payload = this.jwtService.verify(token);
+      const sessionId = payload.sessionId;
+
+      if (!sessionId) {
+        return null;
+      }
+
+      // 2. Récupérer la session depuis Redis
+      const session = await this.redisService.getSession(sessionId);
+      if (!session) {
+        return null;
+      }
+
+      // 3. Mettre à jour lastActivity
+      session.lastActivity = new Date();
+      await this.redisService.setSession(sessionId, session);
+
+      return session;
+    } catch (error) {
+      this.logger.error('JWT validation failed:', error.message);
+      return null;
+    }
+  }
 }

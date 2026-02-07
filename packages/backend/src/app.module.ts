@@ -13,6 +13,8 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { CommonModule } from './common/common.module';
 import { RedisModule } from './redis/redis.module';
 import { AuthModule } from './auth/auth.module';
+import { EventsModule } from './events/events.module';
+import { WebsocketsModule } from './websockets/websockets.module';
 
 @Module({
   imports: [
@@ -23,6 +25,8 @@ import { AuthModule } from './auth/auth.module';
     }),
     RedisModule,
     AuthModule,
+    EventsModule,
+    WebsocketsModule,
     // Services communs (SupabaseService, etc.)
     CommonModule,
     // Modules métier
