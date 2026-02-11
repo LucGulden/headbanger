@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
-import { ValidationPipe, BadRequestException } from '@nestjs/common'; // ← AJOUTER BadRequestException
+import { ValidationPipe, BadRequestException, ValidationError } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import fastifyCookie from '@fastify/cookie';
 import { AppModule } from './app.module';
@@ -13,7 +13,7 @@ async function bootstrap() {
   const port = configService.get('PORT') || 3001;
 
   // Plugin cookies Fastify
-  await app.register(fastifyCookie as any, {
+  await app.register(fastifyCookie, {
     secret: configService.get<string>('JWT_SECRET'),
   });
 
@@ -26,7 +26,7 @@ async function bootstrap() {
   });
 
   // Support multipart/form-data pour uploads
-  await app.register(multipart as any, {
+  await app.register(multipart, {
     limits: {
       fileSize: 5 * 1024 * 1024, // 5MB max
       files: 1, // 1 fichier à la fois
@@ -40,7 +40,7 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
       transform: true,
       disableErrorMessages: false,
-      exceptionFactory: (errors) => {
+      exceptionFactory: (errors: ValidationError[]) => {
         // ✅ Logger SEULEMENT les contraintes, pas les valeurs
         const sanitizedErrors = errors.map((err) => ({
           property: err.property,
@@ -55,7 +55,6 @@ async function bootstrap() {
   );
 
   await app.listen(port, '0.0.0.0');
-  console.log(`🚀 Backend running on http://localhost:${port}`);
 }
 
 bootstrap();

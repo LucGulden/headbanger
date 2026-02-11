@@ -1,6 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Vinyl, ArtistLight, AlbumLight } from '@headbanger/shared';
 import { SupabaseService } from '../common/database/supabase.service';
+import {
+  DbVinylWithRelations,
+  DbVinylArtist,
+  DbAlbumArtist,
+} from 'src/common/database/database.types';
 
 @Injectable()
 export class VinylsService {
@@ -48,17 +53,18 @@ export class VinylsService {
       throw new NotFoundException(`Vinyl with ID ${id} not found`);
     }
 
-    return this.transformVinylData(data);
+    // ✅ Cast explicite vers le type attendu
+    return this.transformVinylData(data as DbVinylWithRelations);
   }
 
   /**
    * Transformation DB → Vinyl (camelCase)
    */
-  private transformVinylData(data: any): Vinyl {
+  private transformVinylData(data: DbVinylWithRelations): Vinyl {
     // Extraire et trier les artistes du vinyl par position
     const vinylArtists: ArtistLight[] = (data.vinyl_artists || [])
-      .sort((a: any, b: any) => a.position - b.position)
-      .map((va: any) => ({
+      .sort((a: DbVinylArtist, b: DbVinylArtist) => a.position - b.position)
+      .map((va: DbVinylArtist) => ({
         id: va.artist?.id,
         name: va.artist?.name,
         imageUrl: va.artist?.image_url,
@@ -68,8 +74,8 @@ export class VinylsService {
     // Extraire et trier les artistes de l'album par position
     const albumData = data.albums;
     const albumArtists: ArtistLight[] = (albumData?.album_artists || [])
-      .sort((a: any, b: any) => a.position - b.position)
-      .map((aa: any) => ({
+      .sort((a: DbAlbumArtist, b: DbAlbumArtist) => a.position - b.position)
+      .map((aa: DbAlbumArtist) => ({
         id: aa.artist?.id,
         name: aa.artist?.name,
         imageUrl: aa.artist?.image_url,

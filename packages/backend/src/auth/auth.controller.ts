@@ -17,6 +17,7 @@ import { CurrentUser } from './decorators/current-user.decorator';
 import { CurrentSession } from './decorators/current-session.decorator';
 import { SignUpDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
+import { Session, AuthenticatedUser } from '../common/database/database.types';
 
 // Options cookies communes
 const getCookieOptions = (isProduction: boolean) => ({
@@ -48,19 +49,19 @@ export class AuthController {
     const isProduction = process.env.NODE_ENV === 'production';
 
     // Cookie auth_token (httpOnly)
-    (reply as any).setCookie('auth_token', jwt, {
+    reply.setCookie('auth_token', jwt, {
       ...getCookieOptions(isProduction),
       maxAge: 15 * 60, // 15 minutes (en secondes)
     });
 
     // Cookie csrf_token (lisible en JS)
-    (reply as any).setCookie('csrf_token', csrfToken, {
+    reply.setCookie('csrf_token', csrfToken, {
       ...getCookieOptions(isProduction),
       httpOnly: false, // Accessible côté client
       maxAge: 24 * 60 * 60, // 24 heures
     });
 
-    return reply.send({ id: userId }); // ✅ Retourner "id" au lieu de "userId" pour cohérence
+    return reply.send({ id: userId });
   }
 
   @Post('login')
@@ -79,13 +80,13 @@ export class AuthController {
     const isProduction = process.env.NODE_ENV === 'production';
 
     // Cookie auth_token (httpOnly)
-    (reply as any).setCookie('auth_token', jwt, {
+    reply.setCookie('auth_token', jwt, {
       ...getCookieOptions(isProduction),
       maxAge: 15 * 60, // 15 minutes
     });
 
     // Cookie csrf_token (lisible en JS)
-    (reply as any).setCookie('csrf_token', csrfToken, {
+    reply.setCookie('csrf_token', csrfToken, {
       ...getCookieOptions(isProduction),
       httpOnly: false,
       maxAge: 24 * 60 * 60, // 24 heures
@@ -97,15 +98,15 @@ export class AuthController {
   @Post('logout')
   @UseGuards(AuthGuard)
   @HttpCode(HttpStatus.OK)
-  async logout(@CurrentSession() session: any, @Res() reply: FastifyReply) {
+  async logout(@CurrentSession() session: Session, @Res() reply: FastifyReply) {
     await this.authService.logout(session.id);
 
     // Clear cookies
-    (reply as any).clearCookie('auth_token', {
+    reply.clearCookie('auth_token', {
       path: '/',
       domain: process.env.COOKIE_DOMAIN || undefined,
     });
-    (reply as any).clearCookie('csrf_token', {
+    reply.clearCookie('csrf_token', {
       path: '/',
       domain: process.env.COOKIE_DOMAIN || undefined,
     });
@@ -115,7 +116,7 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(AuthGuard)
-  async me(@CurrentUser() user: any) {
+  async me(@CurrentUser() user: AuthenticatedUser) {
     // Retourne juste l'ID pour l'instant
     // Le frontend fera un appel à /users/:id pour les détails complets
     return { id: user.id };
@@ -124,13 +125,13 @@ export class AuthController {
   @Post('refresh')
   @UseGuards(RefreshGuard)
   @HttpCode(HttpStatus.OK)
-  async refresh(@CurrentSession() session: any, @Res() reply: FastifyReply) {
+  async refresh(@CurrentSession() session: Session, @Res() reply: FastifyReply) {
     const jwt = await this.authService.refresh(session.id);
 
     const isProduction = process.env.NODE_ENV === 'production';
 
     // Nouveau cookie auth_token
-    (reply as any).setCookie('auth_token', jwt, {
+    reply.setCookie('auth_token', jwt, {
       ...getCookieOptions(isProduction),
       maxAge: 15 * 60, // 15 minutes
     });

@@ -1,6 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PostWithDetails, PostType, ArtistLight } from '@headbanger/shared';
 import { SupabaseService } from '../common/database/supabase.service';
+import {
+  DbPostWithRelations,
+  DbVinylArtist,
+  DbAlbumArtist,
+  DbLike,
+  DbCommentCount,
+} from '../common/database/database.types';
 
 @Injectable()
 export class PostsService {
@@ -141,15 +148,17 @@ export class PostsService {
     const likesCountMap = new Map<string, number>();
     const commentsCountMap = new Map<string, number>();
 
-    likesData?.forEach((like) => {
+    (likesData as DbLike[])?.forEach((like: DbLike) => {
       likesCountMap.set(like.post_id, (likesCountMap.get(like.post_id) || 0) + 1);
     });
 
-    commentsData?.forEach((comment) => {
+    (commentsData as DbCommentCount[])?.forEach((comment: DbCommentCount) => {
       commentsCountMap.set(comment.post_id, (commentsCountMap.get(comment.post_id) || 0) + 1);
     });
 
-    return data.map((post: any) => this.transformPostData(post, likesCountMap, commentsCountMap));
+    return data.map((post) =>
+      this.transformPostData(post as DbPostWithRelations, likesCountMap, commentsCountMap),
+    );
   }
 
   /**
@@ -218,24 +227,24 @@ export class PostsService {
     const likesCountMap = new Map<string, number>([[data.id, 0]]);
     const commentsCountMap = new Map<string, number>([[data.id, 0]]);
 
-    return this.transformPostData(data, likesCountMap, commentsCountMap);
+    return this.transformPostData(data as DbPostWithRelations, likesCountMap, commentsCountMap);
   }
 
   /**
    * Transformation DB → PostWithDetails (camelCase)
    */
   private transformPostData(
-    data: any,
+    data: DbPostWithRelations,
     likesCountMap: Map<string, number>,
     commentsCountMap: Map<string, number>,
   ): PostWithDetails {
     // Extraire les artistes du vinyle
     const vinylArtists: ArtistLight[] = (data.vinyl?.vinyl_artists || [])
-      .sort((a: any, b: any) => a.position - b.position)
-      .map((va: any) => ({
-        id: va.artist?.id,
-        name: va.artist?.name,
-        imageUrl: va.artist?.image_url,
+      .sort((a: DbVinylArtist, b: DbVinylArtist) => a.position - b.position)
+      .map((va: DbVinylArtist) => ({
+        id: va.artist?.id || '',
+        name: va.artist?.name || '',
+        imageUrl: va.artist?.image_url || null,
       }))
       .filter((artist: ArtistLight) => artist.id && artist.name);
 
@@ -243,11 +252,11 @@ export class PostsService {
     let artists = vinylArtists;
     if (artists.length === 0) {
       artists = (data.vinyl?.album?.album_artists || [])
-        .sort((a: any, b: any) => a.position - b.position)
-        .map((aa: any) => ({
-          id: aa.artist?.id,
-          name: aa.artist?.name,
-          imageUrl: aa.artist?.image_url,
+        .sort((a: DbAlbumArtist, b: DbAlbumArtist) => a.position - b.position)
+        .map((aa: DbAlbumArtist) => ({
+          id: aa.artist?.id || aa.artists?.id || '',
+          name: aa.artist?.name || aa.artists?.name || '',
+          imageUrl: aa.artist?.image_url || aa.artists?.image_url || null,
         }))
         .filter((artist: ArtistLight) => artist.id && artist.name);
     }
@@ -267,13 +276,13 @@ export class PostsService {
       user: {
         uid: data.user?.uid || data.user_id,
         username: data.user?.username || 'Unknown',
-        photoUrl: data.user?.photo_url,
+        photoUrl: data.user?.photo_url || null,
       },
       vinyl: {
         id: data.vinyl?.id || '',
         title: data.vinyl?.title || 'Vinyle inconnu',
         artists: artists,
-        coverUrl: data.vinyl?.cover_url || data.vinyl?.album?.cover_url,
+        coverUrl: data.vinyl?.cover_url || data.vinyl?.album?.cover_url || null,
         year: data.vinyl?.year || 0,
         country: data.vinyl?.country || '',
         catalogNumber: data.vinyl?.catalog_number || '',

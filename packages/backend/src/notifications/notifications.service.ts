@@ -2,6 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { Notification } from '@headbanger/shared';
 import { SupabaseService } from '../common/database/supabase.service';
 import { EventsService } from '../events/events.service';
+import {
+  DbNotificationWithRelations,
+  DbVinylArtist,
+  DbAlbumArtist,
+} from '../common/database/database.types';
 
 @Injectable()
 export class NotificationsService {
@@ -75,7 +80,9 @@ export class NotificationsService {
       throw new Error(`Error fetching notifications: ${error.message}`);
     }
 
-    return (data || []).map((notif) => this.transformNotificationData(notif));
+    return (data || []).map((notif) =>
+      this.transformNotificationData(notif as DbNotificationWithRelations),
+    );
   }
 
   /**
@@ -120,7 +127,7 @@ export class NotificationsService {
   /**
    * Transformation DB → Notification (camelCase)
    */
-  private transformNotificationData(data: any): Notification {
+  private transformNotificationData(data: DbNotificationWithRelations): Notification {
     const notification: Notification = {
       id: data.id,
       type: data.type,
@@ -141,14 +148,14 @@ export class NotificationsService {
 
       // Extraire les artistes du vinyl
       const vinylArtists = (vinyl?.vinyl_artists || [])
-        .sort((a: any, b: any) => a.position - b.position)
-        .map((va: any) => va.artist?.name)
+        .sort((a: DbVinylArtist, b: DbVinylArtist) => a.position - b.position)
+        .map((va: DbVinylArtist) => va.artist?.name)
         .filter(Boolean);
 
       // Extraire les artistes de l'album (fallback)
       const albumArtists = (vinyl?.album?.album_artists || [])
-        .sort((a: any, b: any) => a.position - b.position)
-        .map((aa: any) => aa.artist?.name)
+        .sort((a: DbAlbumArtist, b: DbAlbumArtist) => a.position - b.position)
+        .map((aa: DbAlbumArtist) => aa.artist?.name || aa.artists?.name)
         .filter(Boolean);
 
       const artist = vinylArtists.join(', ') || albumArtists.join(', ') || 'Artiste inconnu';
@@ -230,7 +237,7 @@ export class NotificationsService {
 
     // 🆕 Émettre l'événement Socket.IO
     if (data) {
-      const notification = this.transformNotificationData(data);
+      const notification = this.transformNotificationData(data as DbNotificationWithRelations);
       this.eventsService.emitToUser(userId, 'notification:new', notification);
     }
   }

@@ -1,9 +1,10 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { Logger } from '@nestjs/common';
-import { UserVinyl, UserVinylType, VinylStats } from '@headbanger/shared';
+import { UserVinyl, UserVinylType, VinylStats, ArtistLight } from '@headbanger/shared';
 import { SupabaseService } from '../common/database/supabase.service';
 import { VinylsService } from '../vinyls/vinyls.service';
 import { PostsService } from 'src/posts/posts.service';
+import { DbUserVinylData, DbVinylArtist } from '../common/database/database.types';
 
 @Injectable()
 export class UserVinylsService {
@@ -62,7 +63,7 @@ export class UserVinylsService {
       throw new Error(`Error fetching user vinyls: ${error.message}`);
     }
 
-    return (data || []).map((item: any) => this.transformUserVinylData(item));
+    return (data || []).map((item) => this.transformUserVinylData(item as DbUserVinylData));
   }
 
   /**
@@ -158,7 +159,7 @@ export class UserVinylsService {
     // 2. Créer le post automatiquement (async, non-bloquant)
     this.createVinylPost(userId, vinylId, type);
 
-    return this.transformUserVinylData(data);
+    return this.transformUserVinylData(data as DbUserVinylData);
   }
 
   /**
@@ -236,18 +237,18 @@ export class UserVinylsService {
   /**
    * Transformation DB → UserVinyl (camelCase)
    */
-  private transformUserVinylData(data: any): UserVinyl {
+  private transformUserVinylData(data: DbUserVinylData): UserVinyl {
     const vinylData = data.vinyls;
 
     // Extraire et trier les artistes par position
-    const artists = (vinylData.vinyl_artists || [])
-      .sort((a: any, b: any) => a.position - b.position)
-      .map((va: any) => ({
-        id: va.artist?.id,
-        name: va.artist?.name,
-        imageUrl: va.artist?.image_url,
+    const artists: ArtistLight[] = (vinylData.vinyl_artists || [])
+      .sort((a: DbVinylArtist, b: DbVinylArtist) => a.position - b.position)
+      .map((va: DbVinylArtist) => ({
+        id: va.artist?.id || '',
+        name: va.artist?.name || '',
+        imageUrl: va.artist?.image_url || null,
       }))
-      .filter((artist: any) => artist.id && artist.name);
+      .filter((artist: ArtistLight) => artist.id && artist.name);
 
     return {
       id: data.id,

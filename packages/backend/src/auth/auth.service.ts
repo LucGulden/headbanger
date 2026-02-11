@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { SupabaseService } from '../common/database/supabase.service';
 import { RedisService } from '../redis/redis.service';
-import { Session } from '../common/interfaces/session.interface';
+import { Session, SupabaseSession } from '../common/database/database.types';
 import { v4 as uuidv4 } from 'uuid';
 import * as crypto from 'crypto';
 
@@ -165,7 +165,7 @@ export class AuthService {
    */
   private async createSessionAndToken(
     userId: string,
-    supabaseSession: any,
+    supabaseSession: SupabaseSession,
     ip?: string,
     userAgent?: string,
   ) {
@@ -228,8 +228,8 @@ export class AuthService {
       await this.redisService.setSession(sessionId, session);
 
       return session;
-    } catch (error) {
-      this.logger.error('JWT validation failed:', error.message);
+    } catch (_error) {
+      this.logger.error('JWT validation failed');
       return null;
     }
   }

@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Put, Query, UseGuards } from '@nestjs/common';
 import { Notification } from '@headbanger/shared';
 import { NotificationsService } from './notifications.service';
 import { AuthGuard } from '../auth/guards/auth.guard';

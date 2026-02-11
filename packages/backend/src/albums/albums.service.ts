@@ -1,6 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../common/database/supabase.service';
 import { Album, AlbumLight, ArtistLight, VinylLight } from '@headbanger/shared';
+import {
+  DbAlbumWithRelations,
+  DbVinylLight,
+  DbAlbumArtist,
+  DbVinylArtist,
+} from '../common/database/database.types';
 
 @Injectable()
 export class AlbumsService {
@@ -67,7 +73,10 @@ export class AlbumsService {
     }
 
     // Transforme les données DB en interface Album
-    return this.transformAlbumData(data, vinylsData || []);
+    return this.transformAlbumData(
+      data as DbAlbumWithRelations,
+      (vinylsData || []) as DbVinylLight[],
+    );
   }
 
   /**
@@ -113,32 +122,32 @@ export class AlbumsService {
     }
 
     // Transformer en AlbumLight (sans charger les vinyles)
-    return data.map((albumData) => this.transformAlbumLightData(albumData));
+    return data.map((albumData) => this.transformAlbumLightData(albumData as DbAlbumWithRelations));
   }
 
   /**
    * Transforme les données de la DB en interface Album (avec vinyles)
    */
-  private transformAlbumData(data: any, vinylsData: any[]): Album {
+  private transformAlbumData(data: DbAlbumWithRelations, vinylsData: DbVinylLight[]): Album {
     // Récupère et trie les artistes de l'album par position
     const artists: ArtistLight[] = (data.album_artists || [])
-      .sort((a: any, b: any) => a.position - b.position)
-      .map((aa: any) => ({
-        id: aa.artists?.id,
-        name: aa.artists?.name,
-        imageUrl: aa.artists?.image_url,
+      .sort((a: DbAlbumArtist, b: DbAlbumArtist) => a.position - b.position)
+      .map((aa: DbAlbumArtist) => ({
+        id: aa.artists?.id || aa.artist?.id || '',
+        name: aa.artists?.name || aa.artist?.name || '',
+        imageUrl: aa.artists?.image_url || aa.artist?.image_url || null,
       }))
       .filter((artist: ArtistLight) => artist.id && artist.name);
 
     // Transformer les vinyles
-    const vinyls: VinylLight[] = vinylsData.map((vinyl: any) => {
+    const vinyls: VinylLight[] = vinylsData.map((vinyl: DbVinylLight) => {
       // Récupère les artistes du vinyle
       const vinylArtists: ArtistLight[] = (vinyl.vinyl_artists || [])
-        .sort((a: any, b: any) => a.position - b.position)
-        .map((va: any) => ({
-          id: va.artists?.id,
-          name: va.artists?.name,
-          imageUrl: va.artists?.image_url,
+        .sort((a: DbVinylArtist, b: DbVinylArtist) => a.position - b.position)
+        .map((va: DbVinylArtist) => ({
+          id: va.artist?.id || '',
+          name: va.artist?.name || '',
+          imageUrl: va.artist?.image_url || null,
         }))
         .filter((artist: ArtistLight) => artist.id && artist.name);
 
@@ -166,14 +175,14 @@ export class AlbumsService {
   /**
    * Transforme les données de la DB en interface AlbumLight (sans vinyles)
    */
-  private transformAlbumLightData(data: any): AlbumLight {
+  private transformAlbumLightData(data: DbAlbumWithRelations): AlbumLight {
     // Récupère et trie les artistes de l'album par position
     const artists: ArtistLight[] = (data.album_artists || [])
-      .sort((a: any, b: any) => a.position - b.position)
-      .map((aa: any) => ({
-        id: aa.artists?.id,
-        name: aa.artists?.name,
-        imageUrl: aa.artists?.image_url,
+      .sort((a: DbAlbumArtist, b: DbAlbumArtist) => a.position - b.position)
+      .map((aa: DbAlbumArtist) => ({
+        id: aa.artists?.id || aa.artist?.id || '',
+        name: aa.artists?.name || aa.artist?.name || '',
+        imageUrl: aa.artists?.image_url || aa.artist?.image_url || null,
       }))
       .filter((artist: ArtistLight) => artist.id && artist.name);
 

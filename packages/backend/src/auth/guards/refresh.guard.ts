@@ -21,6 +21,13 @@ function getCookie(request: FastifyRequest, name: string): string | undefined {
   return cookies[name];
 }
 
+interface JwtPayload {
+  sessionId: string;
+  userId: string;
+  iat?: number;
+  exp?: number;
+}
+
 @Injectable()
 export class RefreshGuard implements CanActivate {
   constructor(
@@ -41,7 +48,7 @@ export class RefreshGuard implements CanActivate {
 
     try {
       // On décode sans vérifier l'expiration pour le refresh
-      const payload = this.jwtService.decode(token) as any;
+      const payload = this.jwtService.decode(token) as JwtPayload;
 
       if (!payload || !payload.sessionId) {
         throw new UnauthorizedException('Invalid token');
@@ -58,7 +65,7 @@ export class RefreshGuard implements CanActivate {
       request['session'] = session;
 
       return true;
-    } catch (error) {
+    } catch (_error) {
       throw new UnauthorizedException('Invalid refresh token');
     }
   }

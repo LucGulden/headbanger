@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, Logger } from '@nes
 import { Comment } from '@headbanger/shared';
 import { SupabaseService } from '../common/database/supabase.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { DbCommentWithUser } from '../common/database/database.types';
 
 @Injectable()
 export class CommentsService {
@@ -41,7 +42,7 @@ export class CommentsService {
       throw new Error(`Error fetching comments: ${error.message}`);
     }
 
-    return (data || []).map((comment) => this.transformCommentData(comment));
+    return (data || []).map((comment) => this.transformCommentData(comment as DbCommentWithUser));
   }
 
   /**
@@ -92,7 +93,7 @@ export class CommentsService {
       throw new Error(`Error adding comment: ${error.message}`);
     }
 
-    const comment = this.transformCommentData(data);
+    const comment = this.transformCommentData(data as DbCommentWithUser);
 
     // 3. Créer la notification (async, non-bloquant)
     await this.createCommentNotification(token, userId, postId, data.id);
@@ -120,8 +121,6 @@ export class CommentsService {
     if (comment.user_id !== userId) {
       throw new BadRequestException('You can only delete your own comments');
     }
-
-    const postId = comment.post_id;
 
     // 1. Supprimer la notification AVANT de supprimer le commentaire
     await this.notificationsService.deleteByComment(token, commentId);
@@ -199,7 +198,7 @@ export class CommentsService {
   /**
    * Transformation DB → Comment (camelCase)
    */
-  private transformCommentData(data: any): Comment {
+  private transformCommentData(data: DbCommentWithUser): Comment {
     return {
       id: data.id,
       postId: data.post_id,
@@ -208,7 +207,7 @@ export class CommentsService {
       user: {
         uid: data.user?.uid || data.user_id,
         username: data.user?.username || 'Unknown',
-        photoUrl: data.user?.photo_url,
+        photoUrl: data.user?.photo_url || null,
       },
     };
   }

@@ -62,12 +62,12 @@ export class AuthGuard implements CanActivate {
       request['token'] = session.supabaseAccessToken; // Pour compatibilité avec l'ancien code
 
       // 5. Mettre à jour lastActivity (async, non-bloquant)
-      this.redisService.updateLastActivity(session.id).catch((err) => {
-        console.error('Failed to update last activity:', err);
+      this.redisService.updateLastActivity(session.id).catch((_err) => {
+        console.error('Failed to update last activity');
       });
 
       return true;
-    } catch (error) {
+    } catch (_error) {
       throw new UnauthorizedException('Invalid or expired token');
     }
   }

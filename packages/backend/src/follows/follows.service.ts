@@ -3,6 +3,7 @@ import { User, FollowStats } from '@headbanger/shared';
 import { SupabaseService } from '../common/database/supabase.service';
 import { UsersService } from '../users/users.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { DbUser } from 'src/common/database/database.types';
 
 @Injectable()
 export class FollowsService {
@@ -206,14 +207,15 @@ export class FollowsService {
   /**
    * Transformation DB → User (camelCase)
    */
-  private transformUserData(data: any): User {
+  private transformUserData(data: DbUser): User {
+    // 👈 any → DbUser
     return {
       uid: data.uid,
       username: data.username,
       firstName: data.first_name,
       lastName: data.last_name,
       photoUrl: data.photo_url,
-      bio: data.bio,
+      bio: data.bio || null, // 👈 Ajouter || null pour cohérence
     };
   }
 }

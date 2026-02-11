@@ -15,7 +15,8 @@ export class EventsService {
   /**
    * Émet un événement vers une room spécifique
    */
-  emitToRoom(room: string, event: string, data: any) {
+  emitToRoom(room: string, event: string, data: unknown) {
+    // 👈 any → unknown
     if (!this.server) {
       console.warn('[EventsService] Server not initialized yet');
       return;
@@ -26,7 +27,8 @@ export class EventsService {
   /**
    * Émet un événement vers un utilisateur spécifique (room: user:${userId})
    */
-  emitToUser(userId: string, event: string, data: any) {
+  emitToUser(userId: string, event: string, data: unknown) {
+    // 👈 any → unknown
     this.emitToRoom(`user:${userId}`, event, data);
   }
 }

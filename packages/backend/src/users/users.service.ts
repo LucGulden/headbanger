@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { User } from '@headbanger/shared';
 import { SupabaseService } from '../common/database/supabase.service';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { DbUser } from '../common/database/database.types';
 
 @Injectable()
 export class UsersService {
@@ -19,7 +20,7 @@ export class UsersService {
       throw new NotFoundException(`User with UID ${uid} not found`);
     }
 
-    return this.transformUserData(data);
+    return this.transformUserData(data as DbUser);
   }
 
   /**
@@ -38,7 +39,7 @@ export class UsersService {
       throw new NotFoundException(`User with username ${username} not found`);
     }
 
-    return this.transformUserData(data);
+    return this.transformUserData(data as DbUser);
   }
 
   /**
@@ -65,7 +66,7 @@ export class UsersService {
       throw new Error(`Error searching users: ${error.message}`);
     }
 
-    return (data || []).map((user) => this.transformUserData(user));
+    return (data || []).map((user) => this.transformUserData(user as DbUser));
   }
 
   /**
@@ -112,7 +113,7 @@ export class UsersService {
     const supabase = this.supabaseService.getClientWithAuth(token);
 
     // Convertir en snake_case pour la BDD
-    const dbData: any = {};
+    const dbData: Partial<DbUser> = {};
     if (updateDto.username !== undefined) dbData.username = updateDto.username;
     if (updateDto.firstName !== undefined) dbData.first_name = updateDto.firstName;
     if (updateDto.lastName !== undefined) dbData.last_name = updateDto.lastName;
@@ -130,20 +131,20 @@ export class UsersService {
       throw new Error(`Error updating user profile: ${error.message}`);
     }
 
-    return this.transformUserData(data);
+    return this.transformUserData(data as DbUser);
   }
 
   /**
    * Transformation DB → User (camelCase)
    */
-  private transformUserData(data: any): User {
+  private transformUserData(data: DbUser): User {
     return {
       uid: data.uid,
       username: data.username,
       firstName: data.first_name,
       lastName: data.last_name,
       photoUrl: data.photo_url,
-      bio: data.bio,
+      bio: data.bio || null,
     };
   }
 }
