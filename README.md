@@ -15,7 +15,7 @@ headbanger/
 ├── packages/
 │   ├── shared/          # Types partagés (@headbanger/shared)
 │   ├── backend/         # API NestJS + Socket.IO
-│   └── web/        # React app
+│   └── web/             # React app
 ├── pnpm-workspace.yaml
 └── package.json
 ```
@@ -49,6 +49,11 @@ pnpm dev
   - `notification:read-all`
 - ❌ **Likes/Comments** : Optimistic UI + refresh après action
 
+### Storage (Avatars)
+- ✅ Upload centralisé dans le backend
+- Backend → Supabase Storage (bucket `avatars`)
+- RLS : nom fichier = `userId.webp` (upsert écrase ancien)
+
 ### Pattern API
 ```typescript
 // ❌ AVANT (avec userId explicite)
@@ -77,11 +82,12 @@ JWT_SECRET=xxx
 REDIS_HOST=localhost
 REDIS_PORT=6379
 PORT=3001
-NODE_ENV=development
+FRONTEND_URL=http://localhost:5173
 ```
 
 **Web** (`packages/web/.env`) :
 ```bash
+VITE_API_URL=http://localhost:3001
 ```
 
 ## Base de données (Supabase)
@@ -91,19 +97,12 @@ NODE_ENV=development
 - `user_vinyls` (collections/wishlists)
 - `posts`, `post_likes`, `comments`, `follows`, `notifications`
 
+**Storage** :
+- Bucket `avatars` (public, RLS actif)
+
 **RLS (Row Level Security)** :
-- Web utilise Supabase avec RLS actif
-- Backend utilise token user pour respecter RLS
-
-## Déploiement
-
-**Web (Vercel)** :
-- Framework : Vite
-- Variables : `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_URL`
-
-**Backend (Railway)** :
-- Runtime : Node.js
-- Variables : `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `JWT_SECRET`, `REDIS_URL`, `PORT`
+- Backend utilise token user pour toutes les opérations RLS
+- Pattern : `getClientWithAuth(token)` au lieu de `getClient()`
 
 ## Troubleshooting
 
@@ -114,7 +113,7 @@ pnpm build:shared && pnpm install
 
 **Port déjà utilisé** : Changer dans `.env`
 
-**401 Unauthorized** : Vérifier JWT Supabase + `SUPABASE_ANON_KEY` backend
+**401 Unauthorized** : Vérifier cookies `auth_token` présents
 
 ---
 

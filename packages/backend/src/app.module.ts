@@ -15,6 +15,7 @@ import { RedisModule } from './redis/redis.module';
 import { AuthModule } from './auth/auth.module';
 import { EventsModule } from './events/events.module';
 import { WebsocketsModule } from './websockets/websockets.module';
+import { StorageModule } from './storage/storage.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { WebsocketsModule } from './websockets/websockets.module';
     AuthModule,
     EventsModule,
     WebsocketsModule,
+    StorageModule,
     // Services communs (SupabaseService, etc.)
     CommonModule,
     // Modules métier

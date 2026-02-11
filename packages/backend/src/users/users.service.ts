@@ -99,7 +99,7 @@ export class UsersService {
   /**
    * Met à jour le profil utilisateur
    */
-  async updateUserProfile(userId: string, updateDto: UpdateUserDto): Promise<User> {
+  async updateUserProfile(token: string, userId: string, updateDto: UpdateUserDto): Promise<User> {
     // Si le username change, vérifier sa disponibilité
     if (updateDto.username) {
       const isAvailable = await this.checkUsernameAvailability(updateDto.username, userId);
@@ -109,7 +109,7 @@ export class UsersService {
       }
     }
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getClientWithAuth(token);
 
     // Convertir en snake_case pour la BDD
     const dbData: any = {};

@@ -1,9 +1,5 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
-/**
- * Client API centralisé pour tous les appels au backend NestJS
- * Utilise les cookies httpOnly pour l'authentification (gérés automatiquement par le backend)
- */
 class ApiClient {
   private baseUrl: string
 
@@ -11,79 +7,81 @@ class ApiClient {
     this.baseUrl = baseUrl
   }
 
-  /**
-   * Effectue une requête HTTP avec authentification automatique via cookies
-   */
   private async request<T>(
-    endpoint: string,
-    options: RequestInit = {},
+    path: string,
+    options: RequestInit = {}
   ): Promise<T> {
-    const url = `${this.baseUrl}${endpoint}`
+    // ✅ Ne pas ajouter Content-Type si c'est un FormData
+    const isFormData = options.body instanceof FormData
+    
+    const headers = isFormData
+      ? {} // Pas de Content-Type, le browser le gère
+      : { 'Content-Type': 'application/json' } // JSON pour le reste
 
-    const headers: HeadersInit = {
-      ...options.headers,
-    }
-
-    // Ajouter Content-Type seulement si on a un body
-    if (options.body) {
-      headers['Content-Type'] = 'application/json'
-    }
-
-    const response = await fetch(url, {
+    const response = await fetch(`${this.baseUrl}${path}`, {
       ...options,
-      headers,
-      credentials: 'include', // ✅ Envoyer les cookies httpOnly automatiquement
+      credentials: 'include',
+      headers: {
+        ...headers,
+        ...options.headers, // Permet override si nécessaire
+      },
     })
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({
         message: response.statusText,
       }))
-      throw new Error(error.message || `HTTP ${response.status}`)
+      throw new Error(error.message || `Erreur HTTP ${response.status}`)
     }
 
-    // Si la réponse est vide (204 No Content), retourner null
-    if (response.status === 204) {
-      return null as T
+    // Si pas de contenu (204, DELETE), retourner vide
+    if (response.status === 204 || response.headers.get('content-length') === '0') {
+      return {} as T
     }
 
     return response.json()
   }
 
-  /**
-   * GET request
-   */
-  async get<T>(endpoint: string): Promise<T> {
-    return this.request<T>(endpoint, { method: 'GET' })
+  async get<T>(path: string): Promise<T> {
+    return this.request<T>(path, {
+      method: 'GET',
+    })
   }
 
-  /**
-   * POST request
-   */
-  async post<T>(endpoint: string, body?: unknown): Promise<T> {
-    return this.request<T>(endpoint, {
+  async post<T>(path: string, body?: any): Promise<T> {
+    return this.request<T>(path, {
       method: 'POST',
-      body: body ? JSON.stringify(body) : undefined,
+      body: JSON.stringify(body),
     })
   }
 
-  /**
-   * PUT request
-   */
-  async put<T>(endpoint: string, body?: unknown): Promise<T> {
-    return this.request<T>(endpoint, {
+  async put<T>(path: string, body?: any): Promise<T> {
+    return this.request<T>(path, {
       method: 'PUT',
-      body: body ? JSON.stringify(body) : undefined,
+      body: JSON.stringify(body),
     })
   }
 
-  /**
-   * DELETE request
-   */
-  async delete<T>(endpoint: string): Promise<T> {
-    return this.request<T>(endpoint, { method: 'DELETE' })
+  async patch<T>(path: string, body?: any): Promise<T> {
+    return this.request<T>(path, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    })
+  }
+
+  async delete<T>(path: string): Promise<T> {
+    return this.request<T>(path, {
+      method: 'DELETE',
+    })
+  }
+
+  async upload<T>(path: string, formData: FormData): Promise<T> {
+    return this.request<T>(path, {
+      method: 'POST',
+      body: formData,
+      // ⚠️ Ne pas mettre Content-Type, détecté automatiquement dans request()
+    })
   }
 }
 
-// Instance unique du client API
 export const apiClient = new ApiClient(API_URL)

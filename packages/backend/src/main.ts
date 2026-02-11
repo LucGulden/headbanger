@@ -1,9 +1,10 @@
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, BadRequestException } from '@nestjs/common'; // ← AJOUTER BadRequestException
 import { ConfigService } from '@nestjs/config';
 import fastifyCookie from '@fastify/cookie';
 import { AppModule } from './app.module';
+import multipart from '@fastify/multipart';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
@@ -24,6 +25,14 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
   });
 
+  // Support multipart/form-data pour uploads
+  await app.register(multipart as any, {
+    limits: {
+      fileSize: 5 * 1024 * 1024, // 5MB max
+      files: 1, // 1 fichier à la fois
+    },
+  });
+
   // Validation globale avec messages génériques
   app.useGlobalPipes(
     new ValidationPipe({
@@ -40,11 +49,7 @@ async function bootstrap() {
         }));
         
         console.error('Validation errors:', sanitizedErrors);
-        
-        return {
-          statusCode: 400,
-          message: 'Invalid request data',
-        };
+        return new BadRequestException('Invalid request data');
       },
     }),
   );

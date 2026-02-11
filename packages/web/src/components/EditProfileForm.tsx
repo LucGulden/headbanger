@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Avatar from './Avatar'
 import Input from './Input'
 import Button from './Button'
-import { uploadProfilePhoto, generateImagePreview } from '../lib/api/avatars'
+import { uploadProfilePhoto, generateImagePreview } from '../lib/api/storage'
 import {
   updateUserProfile,
   checkUsernameAvailability,
@@ -132,7 +132,7 @@ export default function EditProfileForm({ user, onSuccess }: EditProfileFormProp
 
       // Upload de la nouvelle photo si sélectionnée
       if (photoFile) {
-        photoUrl = await uploadProfilePhoto(user.uid, photoFile)
+        photoUrl = await uploadProfilePhoto(photoFile)
       }
 
       const updates = {

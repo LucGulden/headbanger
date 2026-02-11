@@ -6,7 +6,7 @@ API REST avec Socket.IO pour HeadBanger.
 - NestJS + Fastify
 - Socket.IO (notifications temps réel)
 - Redis (sessions + cache)
-- Supabase (DB + Auth)
+- Supabase (DB + Auth + Storage)
 
 ## Structure
 ```
@@ -18,6 +18,7 @@ src/
 ├── post-likes/        # Likes sur posts
 ├── comments/          # Commentaires
 ├── notifications/     # Notifications (CRUD + Socket.IO)
+├── storage/           # Upload avatars (Supabase Storage)
 ├── albums/            # Albums musicaux
 ├── vinyls/            # Pressages vinyles
 ├── artists/           # Artistes
@@ -44,11 +45,8 @@ SUPABASE_ANON_KEY=xxx          # PAS service_role !
 JWT_SECRET=xxx                  # Même que Supabase JWT secret
 REDIS_HOST=localhost
 REDIS_PORT=6379
-REDIS_PASSWORD=                 # Optionnel en dev
 PORT=3001
-NODE_ENV=development
 FRONTEND_URL=http://localhost:5173
-COOKIE_DOMAIN=localhost
 ```
 
 ## Authentification
@@ -83,24 +81,29 @@ async createPost(
 
 ## Socket.IO - Notifications temps réel
 
-### Architecture
-```typescript
-// EventsService émet les événements
-this.eventsService.emitToUser(userId, 'notification:new', notification)
-this.eventsService.emitToUser(userId, 'notification:deleted', { ... })
-this.eventsService.emitToUser(userId, 'notification:read-all', { ... })
-```
-
-### Rooms
-- Auto-join : `user:${userId}` (backend au connect)
-- Utilisé pour : notifications uniquement
-
 ### Événements émis
 | Événement | Données | Quand |
 |-----------|---------|-------|
 | `notification:new` | `Notification` | Like, comment, follow |
 | `notification:deleted` | `{ type, actorId, ... }` | Unlike, uncomment, unfollow (si non lue) |
 | `notification:read-all` | `{ userId }` | Mark all as read |
+
+## Storage - Avatars
+
+### Upload
+- Endpoint : `POST /storage/upload/avatar`
+- Compression côté frontend (WebP, 256x256, <500KB)
+- Stockage : Supabase Storage bucket `avatars`
+- Nom fichier : `userId.webp` (upsert écrase ancien)
+
+### RLS Supabase
+```sql
+-- Lecture publique
+bucket_id = 'avatars'
+
+-- Insert/Update/Delete : nom = userId.webp
+name = auth.uid()::text || '.webp'
+```
 
 ## Pattern RLS (Row Level Security)
 
@@ -110,7 +113,7 @@ Supabase RLS nécessite `auth.uid()` pour filtrer/autoriser.
 ### Solution
 Utiliser le token Supabase de l'utilisateur :
 ```typescript
-// ❌ Client anonyme (RLS bloque ou filtre silencieusement)
+// ❌ Client anonyme (RLS bloque)
 const supabase = this.supabaseService.getClient()
 
 // ✅ Client authentifié (RLS passe)
@@ -118,27 +121,12 @@ const supabase = this.supabaseService.getClientWithAuth(token)
 ```
 
 ### Services concernés
-- `NotificationsService` : READ (select), UPDATE (mark as read), DELETE
-- `FollowsService` : INSERT (follow), DELETE (unfollow)
-- `PostLikesService` : INSERT (like), DELETE (unlike)
-- `CommentsService` : INSERT (comment), DELETE (own comment)
-
-### Pattern type
-```typescript
-async likePost(userId: string, postId: string, token: string) {
-  const supabase = this.supabaseService.getClientWithAuth(token)
-  await supabase.from('post_likes').insert({ user_id: userId, post_id: postId })
-  
-  // Émettre notification si nécessaire
-  await this.notificationsService.createNotification(
-    postAuthorId,
-    'post_like',
-    userId,
-    token,  // ← Toujours passer le token
-    postId,
-  )
-}
-```
+- `NotificationsService`
+- `FollowsService`
+- `PostLikesService`
+- `CommentsService`
+- `StorageService`
+- `UsersService` (updateUserProfile)
 
 ## Endpoints principaux
 
@@ -147,6 +135,10 @@ async likePost(userId: string, postId: string, token: string) {
 - `POST /auth/login` - Connexion
 - `POST /auth/logout` - Déconnexion
 - `GET /auth/me` - User actuel
+
+### Storage
+- `POST /storage/upload/avatar` - Upload avatar
+- `DELETE /storage/avatar` - Supprimer avatar
 
 ### Posts
 - `GET /posts/feed` - Feed global
@@ -165,24 +157,16 @@ async likePost(userId: string, postId: string, token: string) {
 - `GET /notifications/unread-count` - Compteur non lues
 - `PUT /notifications/mark-all-read` - Marquer toutes lues
 
-### Follows
-- `POST /follows/:userId` - Follow
-- `DELETE /follows/:userId` - Unfollow
-- `GET /follows/check/:userId` - Vérifier si suit
-
-### Collections
-- `GET /user-vinyls` - Liste collection/wishlist
-- `POST /user-vinyls` - Ajouter vinyle
-- `DELETE /user-vinyls/:vinylId` - Retirer vinyle
-- `PATCH /user-vinyls/:vinylId/move-to-collection` - Déplacer wishlist → collection
+### Users
+- `GET /users/me` - Profil actuel
+- `PUT /users/profile` - Mettre à jour profil
+- `GET /users/search` - Rechercher users
 
 ## Scripts
 ```bash
 pnpm run start:dev     # Dev avec hot reload
 pnpm run build         # Build production
-pnpm run start:prod    # Lancer production
 pnpm run lint          # ESLint
-pnpm run test          # Tests unitaires
 ```
 
 ## Troubleshooting
@@ -197,7 +181,6 @@ pnpm run test          # Tests unitaires
 
 **Redis erreur** :
 - Vérifier Redis actif : `redis-cli ping`
-- Vérifier `REDIS_HOST` et `REDIS_PORT`
 
 ---
 

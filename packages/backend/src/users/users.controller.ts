@@ -5,6 +5,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
+import { CurrentToken } from 'src/auth/decorators/current-token.decorator';
 
 @Controller('users')
 export class UsersController {
@@ -27,10 +28,11 @@ export class UsersController {
   @Put('me')
   @UseGuards(AuthGuard)
   async updateCurrentUser(
+    @CurrentToken() token: string,
     @CurrentUser() user: AuthenticatedUser,
     @Body() updateDto: UpdateUserDto,
   ): Promise<User> {
-    return this.usersService.updateUserProfile(user.id, updateDto);
+    return this.usersService.updateUserProfile(token, user.id, updateDto);
   }
 
   /**
