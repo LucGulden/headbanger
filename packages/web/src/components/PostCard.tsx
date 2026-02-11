@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import Avatar from './Avatar'
-import { likePost, unlikePost, hasLikedPost } from '../lib/api/postLikes'
+import { likePost, unlikePost, hasLikedPost, getLikesCount } from '../lib/api/postLikes'
 import { addComment, getCommentsCount } from '../lib/api/comments'
-import { socketClient } from '../lib/socket'
 import type { Comment } from '@headbanger/shared'
 import { getRelativeTimeString } from '../utils/date-utils'
 import CommentItem from './CommentItem'
@@ -54,88 +53,6 @@ export default function PostCard({
     checkLike()
   }, [currentUserId, post.id])
 
-  // Charger le compteur de commentaires initial
-  useEffect(() => {
-    const loadCount = async () => {
-      try {
-        const count = await getCommentsCount(post.id)
-        setCommentsCount(count)
-      } catch (error) {
-        console.error('Erreur chargement compteur commentaires:', error)
-      }
-    }
-
-    loadCount()
-  }, [post.id])
-
-  // S'abonner aux événements Socket.IO quand le composant est monté
-  useEffect(() => {
-    if (!socketClient.isConnected()) return
-
-    const room = `post:${post.id}`
-
-    // Écouter les likes
-    const handleLikeAdded = (data: { postId: string; userId: string; likesCount: number }) => {
-      if (data.postId === post.id) {
-        setLikesCount(data.likesCount)
-      }
-    }
-
-    const handleLikeRemoved = (data: { postId: string; userId: string; likesCount: number }) => {
-      if (data.postId === post.id) {
-        setLikesCount(data.likesCount)
-      }
-    }
-
-    // Écouter les commentaires
-    const handleCommentAdded = (data: { postId: string; comment: Comment }) => {
-      if (data.postId === post.id) {
-        // Incrémenter le compteur
-        setCommentsCount(prev => prev + 1)
-
-        // Si la section commentaires est ouverte, ajouter le commentaire à la liste
-        if (showComments) {
-          setComments(prev => {
-            // Retirer le commentaire optimiste si c'est le même contenu
-            const withoutOptimistic = prev.filter(c => !c.isPending || c.content !== data.comment.content)
-            
-            return [...withoutOptimistic, {
-              ...data.comment,
-              isPending: false,
-              tempId: '',
-            }]
-          })
-        }
-      }
-    }
-
-    const handleCommentDeleted = (data: { postId: string; commentId: string }) => {
-      if (data.postId === post.id) {
-        // Décrémenter le compteur
-        setCommentsCount(prev => Math.max(0, prev - 1))
-
-        // Retirer le commentaire de la liste
-        setComments(prev => prev.filter(c => c.id !== data.commentId))
-      }
-    }
-
-    // Join la room et écouter les événements
-    socketClient.joinRoom(room)
-    socketClient.on('post:like:added', handleLikeAdded)
-    socketClient.on('post:like:removed', handleLikeRemoved)
-    socketClient.on('post:comment:added', handleCommentAdded)
-    socketClient.on('post:comment:deleted', handleCommentDeleted)
-
-    return () => {
-      // Cleanup
-      socketClient.off('post:like:added', handleLikeAdded)
-      socketClient.off('post:like:removed', handleLikeRemoved)
-      socketClient.off('post:comment:added', handleCommentAdded)
-      socketClient.off('post:comment:deleted', handleCommentDeleted)
-      socketClient.leaveRoom(room)
-    }
-  }, [post.id, showComments])
-
   // Charger les commentaires quand la section s'ouvre
   useEffect(() => {
     if (!showComments) return
@@ -163,22 +80,27 @@ export default function PostCard({
   const handleLike = async () => {
     if (!currentUserId || isLiking) return
 
-    // Optimistic UI update
     const wasLiked = isLiked
     const previousCount = likesCount
 
+    // 1. Optimistic UI
     setIsLiked(!wasLiked)
     setLikesCount(wasLiked ? previousCount - 1 : previousCount + 1)
     setIsLiking(true)
 
     try {
+      // 2. API call
       if (wasLiked) {
         await unlikePost(post.id)
       } else {
         await likePost(post.id)
       }
+
+      // 3. Refresh count réel
+      const realCount = await getLikesCount(post.id)
+      setLikesCount(realCount)
     } catch (error) {
-      // Revert on error
+      // Rollback on error
       setIsLiked(wasLiked)
       setLikesCount(previousCount)
       console.error('Erreur lors du like:', error)
@@ -195,7 +117,7 @@ export default function PostCard({
     const tempId = generateTempId()
     const commentContent = commentText.trim()
     
-    // Créer le commentaire optimiste
+    // 1. Créer le commentaire optimiste
     const optimisticComment: OptimisticComment = {
       id: tempId,
       postId: post.id,
@@ -210,23 +132,50 @@ export default function PostCard({
       tempId,
     }
 
-    // Ajout optimiste à la liste
+    // Ajout optimiste
     setComments(prev => [...prev, optimisticComment])
+    setCommentsCount(prev => prev + 1)
     setCommentText('')
     setIsCommenting(true)
 
     try {
-      await addComment(post.id, commentContent)
+      // 2. API call (récupère le vrai commentaire)
+      const newComment = await addComment(post.id, commentContent)
       
-      // Le vrai commentaire arrivera via Socket.IO dans < 500ms
-      // L'optimistic update sera remplacé dans handleCommentAdded
+      // 3. Remplacer l'optimiste par le vrai
+      setComments(prev => 
+        prev.map(c => 
+          c.tempId === tempId 
+            ? { ...newComment, isPending: false, tempId: '' }
+            : c
+        )
+      )
+
+      // 4. Refresh count réel
+      const realCount = await getCommentsCount(post.id)
+      setCommentsCount(realCount)
     } catch (error) {
-      // Revert on error : retirer le commentaire optimiste
+      // Rollback on error
       setComments(prev => prev.filter(c => c.tempId !== tempId))
+      setCommentsCount(prev => Math.max(0, prev - 1))
       console.error('Erreur lors de l\'ajout du commentaire:', error)
       alert('Impossible d\'ajouter le commentaire')
     } finally {
       setIsCommenting(false)
+    }
+  }
+
+  const handleDeleteComment = async (commentId: string) => {
+    // 1. Retirer de l'UI
+    setComments(prev => prev.filter(c => c.id !== commentId))
+    setCommentsCount(prev => Math.max(0, prev - 1))
+    
+    // 2. Refresh count réel (pour être cohérent avec le pattern)
+    try {
+      const realCount = await getCommentsCount(post.id)
+      setCommentsCount(realCount)
+    } catch (error) {
+      console.error('Erreur refresh count:', error)
     }
   }
 
@@ -369,7 +318,7 @@ export default function PostCard({
                   comment={comment}
                   currentUserId={currentUserId}
                   isPending={comment.isPending}
-                  onDelete={() => {}}
+                  onDelete={() => handleDeleteComment(comment.id)}
                 />
               ))}
             </div>

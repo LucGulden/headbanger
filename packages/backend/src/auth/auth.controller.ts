@@ -13,8 +13,10 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { AuthService } from './auth.service';
 import { AuthGuard } from './guards/auth.guard';
 import { RefreshGuard } from './guards/refresh.guard';
-import { CurrentUser, CurrentSession } from './decorators';
-import { SignUpDto, LoginDto } from './dto';
+import { CurrentUser } from './decorators/current-user.decorator';
+import { CurrentSession } from './decorators/current-session.decorator';
+import { SignUpDto } from './dto/signup.dto';
+import { LoginDto } from './dto/login.dto';
 
 // Options cookies communes
 const getCookieOptions = (isProduction: boolean) => ({
