@@ -38,9 +38,6 @@ pnpm dev
 
 ## Variables d'environnement
 ```bash
-VITE_SUPABASE_URL=https://xxx.supabase.co
-VITE_SUPABASE_ANON_KEY=xxx
-VITE_API_URL=http://localhost:3001
 ```
 
 ## Architecture

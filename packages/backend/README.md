@@ -54,10 +54,11 @@ COOKIE_DOMAIN=localhost
 ## Authentification
 
 ### Flow
-1. Web login via Supabase Auth → JWT
-2. Web envoie JWT dans cookie `auth_token` (httpOnly)
-3. `AuthGuard` valide JWT + vérifie session Redis
-4. `@CurrentUser()` decorator extrait `userId` automatiquement
+1. Frontend → POST /auth/login (email, password)
+2. Backend → Supabase Auth (signInWithPassword)
+3. Supabase → Backend (JWT Supabase)
+4. Backend → Redis (stocke JWT Supabase dans session)
+5. Backend → Frontend (JWT backend dans cookie httpOnly)
 
 ### Decorators disponibles
 ```typescript

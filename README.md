@@ -36,9 +36,11 @@ pnpm dev
 ## Architecture clé
 
 ### Authentification
-1. Web → Supabase Auth (signup/login) → JWT
-2. Backend valide JWT via `AuthGuard` + récupère `userId`
-3. Tous les endpoints protégés : `userId` auto-extrait du JWT
+1. Frontend → POST /auth/login (email, password)
+2. Backend → Supabase Auth (signInWithPassword)
+3. Supabase → Backend (JWT Supabase)
+4. Backend → Redis (stocke JWT Supabase dans session)
+5. Backend → Frontend (JWT backend dans cookie httpOnly)
 
 ### Temps réel (Socket.IO)
 - ✅ **Notifications** : Temps réel via Socket.IO
@@ -80,9 +82,6 @@ NODE_ENV=development
 
 **Web** (`packages/web/.env`) :
 ```bash
-VITE_SUPABASE_URL=https://xxx.supabase.co
-VITE_SUPABASE_ANON_KEY=xxx
-VITE_API_URL=http://localhost:3001
 ```
 
 ## Base de données (Supabase)
