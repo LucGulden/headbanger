@@ -1,10 +1,8 @@
-import { supabase } from '../../supabaseClient'
-
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
 /**
  * Client API centralisé pour tous les appels au backend NestJS
- * Gère automatiquement l'ajout du token JWT dans les headers
+ * Utilise les cookies httpOnly pour l'authentification (gérés automatiquement par le backend)
  */
 class ApiClient {
   private baseUrl: string
@@ -14,33 +12,19 @@ class ApiClient {
   }
 
   /**
-   * Récupère le token JWT Supabase de la session actuelle
-   */
-  private async getAuthToken(): Promise<string | null> {
-    const { data: { session } } = await supabase.auth.getSession()
-    return session?.access_token ?? null
-  }
-
-  /**
-   * Effectue une requête HTTP avec authentification automatique
+   * Effectue une requête HTTP avec authentification automatique via cookies
    */
   private async request<T>(
     endpoint: string,
     options: RequestInit = {},
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`
-    const token = await this.getAuthToken()
 
     const headers: HeadersInit = {
       ...options.headers,
     }
 
-    // Ajouter le token si disponible
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`
-    }
-
-    // ✅ Ajouter Content-Type seulement si on a un body
+    // Ajouter Content-Type seulement si on a un body
     if (options.body) {
       headers['Content-Type'] = 'application/json'
     }
@@ -48,6 +32,7 @@ class ApiClient {
     const response = await fetch(url, {
       ...options,
       headers,
+      credentials: 'include', // ✅ Envoyer les cookies httpOnly automatiquement
     })
 
     if (!response.ok) {
@@ -78,7 +63,7 @@ class ApiClient {
   async post<T>(endpoint: string, body?: unknown): Promise<T> {
     return this.request<T>(endpoint, {
       method: 'POST',
-      body: body ? JSON.stringify(body) : undefined, // ✅ Ne pas envoyer de body si undefined
+      body: body ? JSON.stringify(body) : undefined,
     })
   }
 
@@ -88,7 +73,7 @@ class ApiClient {
   async put<T>(endpoint: string, body?: unknown): Promise<T> {
     return this.request<T>(endpoint, {
       method: 'PUT',
-      body: body ? JSON.stringify(body) : undefined, // ✅ Ne pas envoyer de body si undefined
+      body: body ? JSON.stringify(body) : undefined,
     })
   }
 

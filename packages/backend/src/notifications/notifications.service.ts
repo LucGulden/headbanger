@@ -14,11 +14,12 @@ export class NotificationsService {
    * Récupère les notifications d'un utilisateur avec pagination
    */
   async getNotifications(
+    token: string,
     userId: string,
     limit: number = 20,
     lastCreatedAt?: string,
   ): Promise<Notification[]> {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getClientWithAuth(token);
 
     let query = supabase
       .from('notifications')
@@ -80,8 +81,8 @@ export class NotificationsService {
   /**
    * Compte le nombre de notifications non lues
    */
-  async getUnreadCount(userId: string): Promise<number> {
-    const supabase = this.supabaseService.getClient();
+  async getUnreadCount(token: string, userId: string): Promise<number> {
+    const supabase = this.supabaseService.getClientWithAuth(token);
 
     const { count, error } = await supabase
       .from('notifications')
@@ -99,8 +100,8 @@ export class NotificationsService {
   /**
    * Marque toutes les notifications comme lues
    */
-  async markAllAsRead(userId: string): Promise<void> {
-    const supabase = this.supabaseService.getClient();
+  async markAllAsRead(token: string, userId: string): Promise<void> {
+    const supabase = this.supabaseService.getClientWithAuth(token);
 
     const { error } = await supabase
       .from('notifications')
@@ -179,13 +180,14 @@ export class NotificationsService {
    * Crée une notification (utilisé par les autres services)
    */
   async createNotification(
+    token: string,
     userId: string,
     type: 'post_like' | 'post_comment' | 'new_follower',
     actorId: string,
     postId?: string,
     commentId?: string,
   ): Promise<void> {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getClientWithAuth(token);
 
     const { data, error } = await supabase.from('notifications').insert({
       user_id: userId,
@@ -230,9 +232,19 @@ export class NotificationsService {
   /**
    * Supprime les notifications liées à un like
    */
-  async deleteByLike(actorId: string, postId: string): Promise<void> {
-    const supabase = this.supabaseService.getClient();
+  async deleteByLike(token: string, actorId: string, postId: string): Promise<void> {
+    const supabase = this.supabaseService.getClientWithAuth(token);
 
+    // 1. Récupérer la notification AVANT de la supprimer
+    const { data: notification } = await supabase
+      .from('notifications')
+      .select('user_id, read')
+      .eq('type', 'post_like')
+      .eq('actor_id', actorId)
+      .eq('post_id', postId)
+      .single();
+
+    // 2. Supprimer la notification
     const { error } = await supabase
       .from('notifications')
       .delete()
@@ -243,14 +255,32 @@ export class NotificationsService {
     if (error) {
       throw new Error(`Error deleting like notification: ${error.message}`);
     }
+
+    // 3. Émettre l'événement SEULEMENT si la notification était non lue
+    if (notification && !notification.read) {
+      this.eventsService.emitToUser(notification.user_id, 'notification:deleted', {
+        type: 'post_like',
+        actorId,
+        postId,
+      });
+    }
   }
 
   /**
    * Supprime les notifications liées à un commentaire
    */
-  async deleteByComment(commentId: string): Promise<void> {
-    const supabase = this.supabaseService.getClient();
+  async deleteByComment(token: string, commentId: string): Promise<void> {
+    const supabase = this.supabaseService.getClientWithAuth(token);
 
+    // 1. Récupérer la notification AVANT de la supprimer
+    const { data: notification } = await supabase
+      .from('notifications')
+      .select('user_id, read')
+      .eq('type', 'post_comment')
+      .eq('comment_id', commentId)
+      .single();
+
+    // 2. Supprimer la notification
     const { error } = await supabase
       .from('notifications')
       .delete()
@@ -260,14 +290,32 @@ export class NotificationsService {
     if (error) {
       throw new Error(`Error deleting comment notification: ${error.message}`);
     }
+
+    // 3. Émettre l'événement SEULEMENT si la notification était non lue
+    if (notification && !notification.read) {
+      this.eventsService.emitToUser(notification.user_id, 'notification:deleted', {
+        type: 'post_comment',
+        commentId,
+      });
+    }
   }
 
   /**
    * Supprime les notifications liées à un follow
    */
-  async deleteByFollow(followerId: string, followedId: string): Promise<void> {
-    const supabase = this.supabaseService.getClient();
+  async deleteByFollow(token: string, followerId: string, followedId: string): Promise<void> {
+    const supabase = this.supabaseService.getClientWithAuth(token);
 
+    // 1. Récupérer la notification AVANT de la supprimer
+    const { data: notification } = await supabase
+      .from('notifications')
+      .select('user_id, read')
+      .eq('type', 'new_follower')
+      .eq('actor_id', followerId)
+      .eq('user_id', followedId)
+      .single();
+
+    // 2. Supprimer la notification
     const { error } = await supabase
       .from('notifications')
       .delete()
@@ -277,6 +325,15 @@ export class NotificationsService {
 
     if (error) {
       throw new Error(`Error deleting follow notification: ${error.message}`);
+    }
+
+    // 3. Émettre l'événement SEULEMENT si la notification était non lue
+    if (notification && !notification.read) {
+      this.eventsService.emitToUser(notification.user_id, 'notification:deleted', {
+        type: 'new_follower',
+        followerId,
+        followedId,
+      });
     }
   }
 }

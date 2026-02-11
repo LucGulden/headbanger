@@ -16,8 +16,8 @@ export class PostLikesService {
   /**
    * Ajoute un like à un post
    */
-  async likePost(userId: string, postId: string): Promise<void> {
-    const supabase = this.supabaseService.getClient();
+  async likePost(token: string, userId: string, postId: string): Promise<void> {
+    const supabase = this.supabaseService.getClientWithAuth(token);
 
     // 1. Créer le like
     const { error } = await supabase.from('post_likes').insert({
@@ -35,6 +35,8 @@ export class PostLikesService {
     // 2. Récupérer le nouveau compteur de likes
     const likesCount = await this.getLikesCount(postId);
 
+    this.logger.log(`📡 About to emit post:like:added for post ${postId}, count: ${likesCount}`);
+
     // 3. Émettre l'événement Socket.IO
     this.eventsService.emitToPost(postId, 'post:like:added', {
       postId,
@@ -42,19 +44,21 @@ export class PostLikesService {
       likesCount,
     });
 
+    this.logger.log(`✅ Event emitted`);
+
     // 4. Créer la notification (async, non-bloquant)
-    this.createLikeNotification(userId, postId);
+    await this.createLikeNotification(token, userId, postId);
   }
 
   /**
    * Retire un like d'un post
    */
-  async unlikePost(userId: string, postId: string): Promise<void> {
+  async unlikePost(token: string, userId: string, postId: string): Promise<void> {
     // 1. Supprimer la notification AVANT de supprimer le like
-    await this.notificationsService.deleteByLike(userId, postId);
+    await this.notificationsService.deleteByLike(token, userId, postId);
 
     // 2. Supprimer le like
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getClientWithAuth(token);
 
     const { error } = await supabase
       .from('post_likes')
@@ -118,9 +122,9 @@ export class PostLikesService {
   /**
    * Crée une notification de like (privée, async)
    */
-  private async createLikeNotification(userId: string, postId: string): Promise<void> {
+  private async createLikeNotification(token: string, userId: string, postId: string): Promise<void> {
     try {
-      const supabase = this.supabaseService.getClient();
+      const supabase = this.supabaseService.getClientWithAuth(token);
 
       // Récupérer l'auteur du post
       const { data: post, error } = await supabase
@@ -141,6 +145,7 @@ export class PostLikesService {
 
       // Créer la notification
       await this.notificationsService.createNotification(
+        token,
         post.user_id, // destinataire
         'post_like',
         userId, // acteur

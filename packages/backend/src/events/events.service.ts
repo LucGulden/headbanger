@@ -20,7 +20,9 @@ export class EventsService {
       console.warn('[EventsService] Server not initialized yet');
       return;
     }
+    console.log(`📡 [EventsService] Emitting to room "${room}" → event: "${event}"`, data);
     this.server.to(room).emit(event, data);
+    console.log(`✅ [EventsService] Event emitted`);
   }
 
   /**
@@ -34,6 +36,7 @@ export class EventsService {
    * Émet un événement vers un post spécifique (room: post:${postId})
    */
   emitToPost(postId: string, event: string, data: any) {
+    console.log(`📡 [EventsService] emitToPost called for post:${postId}`);
     this.emitToRoom(`post:${postId}`, event, data);
   }
 }

@@ -4,6 +4,7 @@ import { CommentsService } from './comments.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
+import { CurrentToken } from 'src/auth/decorators/current-token.decorator';
 
 @Controller('comments')
 export class CommentsController {
@@ -36,11 +37,12 @@ export class CommentsController {
   @Post()
   @UseGuards(AuthGuard)
   async addComment(
+    @CurrentToken() token: string,
     @CurrentUser() user: AuthenticatedUser,
     @Body('postId') postId: string,
     @Body('content') content: string,
   ): Promise<Comment> {
-    return this.commentsService.addComment(postId, user.id, content);
+    return this.commentsService.addComment(token, postId, user.id, content);
   }
 
   /**
@@ -50,10 +52,11 @@ export class CommentsController {
   @Delete(':id')
   @UseGuards(AuthGuard)
   async deleteComment(
+    @CurrentToken() token: string,
     @CurrentUser() user: AuthenticatedUser,
     @Param('id') id: string,
   ): Promise<{ success: boolean }> {
-    await this.commentsService.deleteComment(id, user.id);
+    await this.commentsService.deleteComment(token, id, user.id);
     return { success: true };
   }
 }

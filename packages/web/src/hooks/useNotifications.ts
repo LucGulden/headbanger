@@ -1,12 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { 
   getNotifications, 
+  getUnreadCount,
   markAllAsRead,
 } from '../lib/api/notifications'
+import { socketClient } from '../lib/socket'
 import type { Notification } from '@fillcrate/shared'
 
 interface UseNotificationsReturn {
   notifications: Notification[]
+  unreadCount: number
   loading: boolean
   loadingMore: boolean
   hasMore: boolean
@@ -18,17 +21,18 @@ interface UseNotificationsReturn {
 
 export function useNotifications(): UseNotificationsReturn {
   const [notifications, setNotifications] = useState<Notification[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [error, setError] = useState<Error | null>(null)
   
-  // ✅ Ref pour le cursor de pagination (évite les dépendances instables)
+  // Ref pour le cursor de pagination
   const cursorRef = useRef<string | undefined>(undefined)
   
   const LIMIT = 20
 
-  // ✅ Plus de dépendance à notifications
+  // Charger les notifications avec pagination
   const loadNotifications = useCallback(async (reset: boolean = false) => {
     try {
       if (reset) {
@@ -65,7 +69,17 @@ export function useNotifications(): UseNotificationsReturn {
       setLoading(false)
       setLoadingMore(false)
     }
-  }, []) // ✅ Aucune dépendance instable
+  }, [])
+
+  // Charger le compteur de non-lues
+  const loadUnreadCount = useCallback(async () => {
+    try {
+      const count = await getUnreadCount()
+      setUnreadCount(count)
+    } catch (err) {
+      console.error('Error loading unread count:', err)
+    }
+  }, [])
 
   // Charger plus de notifications (infinite scroll)
   const loadMore = useCallback(async () => {
@@ -75,32 +89,75 @@ export function useNotifications(): UseNotificationsReturn {
 
   // Rafraîchir les notifications
   const refresh = useCallback(async () => {
-    await loadNotifications(true)
-  }, [loadNotifications])
+    await Promise.all([
+      loadNotifications(true),
+      loadUnreadCount(),
+    ])
+  }, [loadNotifications, loadUnreadCount])
 
   // Marquer toutes les notifications comme lues
   const handleMarkAllAsRead = useCallback(async () => {
     try {
-      // ✅ Optimistic update avec "read" (pas "isRead")
+      // Optimistic update
       setNotifications(prev =>
-        prev.map(notif => ({ ...notif, read: true }))
+        prev.map(notif => ({ ...notif, read: true })),
       )
+      setUnreadCount(0)
 
       await markAllAsRead()
+      // L'événement 'notification:read-all' sera émis par le backend via Socket.IO
     } catch (err) {
       console.error('Error marking all as read:', err)
       // Revert on error
-      await loadNotifications(true)
+      await refresh()
     }
-  }, [loadNotifications])
+  }, [refresh])
 
   // Chargement initial
   useEffect(() => {
-    loadNotifications(true)
-  }, [loadNotifications]) // ✅ Maintenant on peut l'ajouter dans les deps
+    const loadInitial = async () => {
+      await Promise.all([
+        loadNotifications(true),
+        loadUnreadCount(),
+      ])
+    }
+
+    loadInitial()
+  }, [loadNotifications, loadUnreadCount])
+
+  // Écouter les nouvelles notifications via Socket.IO
+  useEffect(() => {
+    if (!socketClient.isConnected()) return
+
+    const handleNewNotification = (notification: Notification) => {
+      // Ajouter la notification en haut de la liste
+      setNotifications((prev) => [notification, ...prev])
+      
+      // Incrémenter le compteur de non-lues
+      setUnreadCount((prev) => prev + 1)
+    }
+
+    const handleReadAll = () => {
+      // Marquer toutes les notifications comme lues
+      setNotifications((prev) =>
+        prev.map((notif) => ({ ...notif, read: true })),
+      )
+      setUnreadCount(0)
+    }
+
+    // Écouter les événements (la room user:${userId} est auto-join côté backend)
+    socketClient.on('notification:new', handleNewNotification)
+    socketClient.on('notification:read-all', handleReadAll)
+
+    return () => {
+      socketClient.off('notification:new', handleNewNotification)
+      socketClient.off('notification:read-all', handleReadAll)
+    }
+  }, [])
 
   return {
     notifications,
+    unreadCount,
     loading,
     loadingMore,
     hasMore,

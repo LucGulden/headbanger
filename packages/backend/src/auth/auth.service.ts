@@ -21,12 +21,26 @@ export class AuthService {
   /**
    * Inscription utilisateur via Supabase Auth
    */
-  async signup(email: string, password: string, ip?: string, userAgent?: string) {
-    this.logger.log(`Signup attempt for: ${email}`);
+  async signup(
+    email: string,
+    username: string,
+    password: string,
+    ip?: string,
+    userAgent?: string,
+  ) {
+    this.logger.log(`Signup attempt for: ${email} (username: ${username})`);
 
-    // 1. Appel Supabase Auth
+    // 1. Appel Supabase Auth avec username dans les metadata
     const supabase = this.supabaseService.getClient();
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          username,
+        },
+      },
+    });
 
     if (error) {
       this.logger.error(`Signup failed for ${email}:`, error.message);
@@ -41,7 +55,7 @@ export class AuthService {
       throw new UnauthorizedException('No user created after signup');
     }
 
-    this.logger.log(`✅ User created: ${data.user.id}`);
+    this.logger.log(`✅ User created: ${data.user.id} (${username})`);
 
     // 2. Créer session Redis + JWT backend
     return this.createSessionAndToken(data.user.id, data.session, ip, userAgent);

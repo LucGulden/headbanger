@@ -49,7 +49,7 @@ export class CommentsService {
   /**
    * Ajoute un commentaire à un post
    */
-  async addComment(postId: string, userId: string, content: string): Promise<Comment> {
+  async addComment(token: string, postId: string, userId: string, content: string): Promise<Comment> {
     // Valider le contenu
     if (!content || content.trim().length === 0) {
       throw new BadRequestException('Comment content cannot be empty');
@@ -59,7 +59,7 @@ export class CommentsService {
       throw new BadRequestException('Comment content must not exceed 500 characters');
     }
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getClientWithAuth(token);
 
     // 1. Créer le commentaire
     const { data, error } = await supabase
@@ -98,7 +98,7 @@ export class CommentsService {
     });
 
     // 3. Créer la notification (async, non-bloquant)
-    this.createCommentNotification(userId, postId, data.id);
+    await this.createCommentNotification(token, userId, postId, data.id);
 
     return comment;
   }
@@ -106,8 +106,8 @@ export class CommentsService {
   /**
    * Supprime un commentaire
    */
-  async deleteComment(commentId: string, userId: string): Promise<void> {
-    const supabase = this.supabaseService.getClient();
+  async deleteComment(token: string, commentId: string, userId: string): Promise<void> {
+    const supabase = this.supabaseService.getClientWithAuth(token);
 
     // Vérifier que le commentaire appartient à l'utilisateur
     const { data: comment, error: fetchError } = await supabase
@@ -127,7 +127,7 @@ export class CommentsService {
     const postId = comment.post_id;
 
     // 1. Supprimer la notification AVANT de supprimer le commentaire
-    await this.notificationsService.deleteByComment(commentId);
+    await this.notificationsService.deleteByComment(token, commentId);
 
     // 2. Supprimer le commentaire
     const { error } = await supabase.from('comments').delete().eq('id', commentId);
@@ -165,12 +165,13 @@ export class CommentsService {
    * Crée une notification de commentaire (privée, async)
    */
   private async createCommentNotification(
+    token: string,
     userId: string,
     postId: string,
     commentId: string,
   ): Promise<void> {
     try {
-      const supabase = this.supabaseService.getClient();
+      const supabase = this.supabaseService.getClientWithAuth(token);
 
       // Récupérer l'auteur du post
       const { data: post, error } = await supabase
@@ -191,6 +192,7 @@ export class CommentsService {
 
       // Créer la notification
       await this.notificationsService.createNotification(
+        token,
         post.user_id, // destinataire
         'post_comment',
         userId, // acteur

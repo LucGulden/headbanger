@@ -1,9 +1,8 @@
 import imageCompression from 'browser-image-compression'
-import { supabase } from '../supabaseClient'
 
-const AVATAR_BUCKET = 'avatars'
 const MAX_SIZE_PX = 256
 const MAX_SIZE_MB = 0.5
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
 /**
  * Compresse et redimensionne une image pour l'avatar
@@ -28,12 +27,11 @@ async function compressImage(file: File): Promise<File> {
 }
 
 /**
- * Upload la photo de profil vers Supabase Storage
- * @param userId - ID de l'utilisateur
+ * Upload la photo de profil vers le backend
  * @param file - Fichier image à uploader
  * @returns URL publique de l'image
  */
-export async function uploadProfilePhoto(userId: string, file: File): Promise<string> {
+export async function uploadProfilePhoto(file: File): Promise<string> {
   // Valider le type de fichier
   if (!file.type.startsWith('image/')) {
     throw new Error('Le fichier doit être une image')
@@ -48,32 +46,26 @@ export async function uploadProfilePhoto(userId: string, file: File): Promise<st
     // Compresser l'image
     const compressedFile = await compressImage(file)
 
-    // Chemin du fichier : {userId}/avatar.webp
-    const filePath = `${userId}/avatar.webp`
+    // Créer un FormData pour envoyer le fichier
+    const formData = new FormData()
+    formData.append('file', compressedFile, 'avatar.webp')
 
-    // Upload vers Supabase Storage (upsert pour remplacer si existe)
-    const { error: uploadError } = await supabase.storage
-      .from(AVATAR_BUCKET)
-      .upload(filePath, compressedFile, {
-        cacheControl: '3600',
-        upsert: true,
-        contentType: 'image/webp',
-      })
+    // Upload vers le backend (userId sera récupéré via JWT)
+    const response = await fetch(`${API_URL}/storage/upload/avatar`, {
+      method: 'POST',
+      credentials: 'include', // Envoyer les cookies httpOnly
+      body: formData, // Ne pas mettre de Content-Type, fetch le gère automatiquement
+    })
 
-    if (uploadError) {
-      console.error('Erreur upload:', uploadError)
-      throw new Error('Impossible d\'uploader l\'image')
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({
+        message: response.statusText,
+      }))
+      throw new Error(error.message || 'Impossible d\'uploader l\'image')
     }
 
-    // Récupérer l'URL publique
-    const { data: urlData } = supabase.storage
-      .from(AVATAR_BUCKET)
-      .getPublicUrl(filePath)
-
-    // Ajouter un timestamp pour éviter le cache navigateur
-    const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`
-
-    return publicUrl
+    const data = await response.json()
+    return data.url // Le backend retourne { url: string }
   } catch (error) {
     if (error instanceof Error) {
       throw error
@@ -83,19 +75,20 @@ export async function uploadProfilePhoto(userId: string, file: File): Promise<st
 }
 
 /**
- * Supprime la photo de profil d'un utilisateur
- * @param userId - ID de l'utilisateur
+ * Supprime la photo de profil de l'utilisateur connecté
+ * Note: userId récupéré automatiquement via le JWT
  */
-export async function deleteProfilePhoto(userId: string): Promise<void> {
-  const filePath = `${userId}/avatar.webp`
+export async function deleteProfilePhoto(): Promise<void> {
+  const response = await fetch(`${API_URL}/storage/avatar`, {
+    method: 'DELETE',
+    credentials: 'include', // Envoyer les cookies httpOnly
+  })
 
-  const { error } = await supabase.storage
-    .from(AVATAR_BUCKET)
-    .remove([filePath])
-
-  if (error) {
-    console.error('Erreur suppression:', error)
-    throw new Error('Impossible de supprimer l\'image')
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({
+      message: response.statusText,
+    }))
+    throw new Error(error.message || 'Impossible de supprimer l\'image')
   }
 }
 

@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient'
+import { apiClient } from '../apiClient'
 import type { Album, AlbumLight } from '@fillcrate/shared'
 
 /**
@@ -6,11 +6,11 @@ import type { Album, AlbumLight } from '@fillcrate/shared'
  */
 export async function getAlbumById(albumId: string): Promise<Album | null> {
   try {
-    const album = await apiClient.get<Album>(`/albums/${albumId}`);
-    return album;
+    const album = await apiClient.get<Album>(`/albums/${albumId}`)
+    return album
   } catch (error) {
-    console.error('Error fetching album:', error);
-    return null;
+    console.error('Error fetching album:', error)
+    return null
   }
 }
 
@@ -23,16 +23,16 @@ export async function searchAlbums(
   offset: number = 0,
 ): Promise<AlbumLight[]> {
   if (!query || query.trim().length < 2) {
-    return [];
+    return []
   }
 
   try {
     const albums = await apiClient.get<Album[]>(
-      `/albums/search?query=${encodeURIComponent(query)}&limit=${limit}&offset=${offset}`
-    );
-    return albums;
+      `/albums/search?query=${encodeURIComponent(query)}&limit=${limit}&offset=${offset}`,
+    )
+    return albums
   } catch (error) {
-    console.error('Error searching albums:', error);
-    return [];
+    console.error('Error searching albums:', error)
+    return []
   }
 }

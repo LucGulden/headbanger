@@ -47,14 +47,14 @@ export class FollowsService {
   /**
    * Suivre un utilisateur
    */
-  async followUser(followerId: string, followingId: string): Promise<void> {
+  async followUser(token: string, followerId: string, followingId: string): Promise<void> {
     if (followerId === followingId) {
       throw new BadRequestException('You cannot follow yourself');
     }
 
     await this.usersService.getUserByUid(followingId);
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getClientWithAuth(token);
 
     // 1. Créer le follow
     const { error } = await supabase.from('follows').insert({
@@ -70,18 +70,18 @@ export class FollowsService {
     }
 
     // 2. Créer la notification (async, non-bloquant)
-    this.createFollowNotification(followerId, followingId);
+    await this.createFollowNotification(token, followerId, followingId);
   }
 
   /**
    * Ne plus suivre un utilisateur
    */
-  async unfollowUser(followerId: string, followingId: string): Promise<void> {
+  async unfollowUser(token: string, followerId: string, followingId: string): Promise<void> {
     // 1. Supprimer la notification AVANT de supprimer le follow
-    await this.notificationsService.deleteByFollow(followerId, followingId);
+    await this.notificationsService.deleteByFollow(token, followerId, followingId);
 
     // 2. Supprimer le follow
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getClientWithAuth(token);
 
     const { error } = await supabase
       .from('follows')
@@ -185,9 +185,10 @@ export class FollowsService {
   /**
    * Crée une notification de follow (privée, async)
    */
-  private async createFollowNotification(followerId: string, followedId: string): Promise<void> {
+  private async createFollowNotification(token: string, followerId: string, followedId: string): Promise<void> {
     try {
       await this.notificationsService.createNotification(
+        token,
         followedId, // destinataire
         'new_follower',
         followerId, // acteur

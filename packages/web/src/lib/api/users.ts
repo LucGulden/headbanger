@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient'
+import { apiClient } from '../apiClient'
 import type { User } from '@fillcrate/shared'
 
 // ============================================================================
@@ -95,7 +95,7 @@ export async function checkUsernameAvailability(
   if (excludeUserId) params.append('excludeUserId', excludeUserId)
 
   const result = await apiClient.get<{ available: boolean }>(
-    `/users/check-username?${params.toString()}`
+    `/users/check-username?${params.toString()}`,
   )
   return result.available
 }

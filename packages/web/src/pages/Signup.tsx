@@ -1,13 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { useAuth } from '../hooks/useAuth'
 import Input from '../components/Input'
 import Button from '../components/Button'
 import { validateUsername, checkUsernameAvailability } from '../lib/api/users'
+import { useAuthStore } from '../stores/useAuthStore'
 
 export default function SignupPage() {
   const navigate = useNavigate()
-  const { signUp, error: authError } = useAuth()
+  const { signUp, error: authError, user } = useAuthStore() // ← UTILISER LE STORE
 
   const [formData, setFormData] = useState({
     email: '',
@@ -68,6 +68,13 @@ export default function SignupPage() {
     return Object.keys(newErrors).length === 0
   }
 
+  // Rediriger automatiquement quand l'utilisateur est créé
+  useEffect(() => {
+    if (user) {
+      navigate('/')
+    }
+  }, [user, navigate])
+
   // Gestion de la soumission du formulaire
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -82,7 +89,6 @@ export default function SignupPage() {
         username: formData.username,
         password: formData.password,
       })
-      navigate('/')
     } catch (error) {
       console.error("Erreur d'inscription:", error)
     } finally {

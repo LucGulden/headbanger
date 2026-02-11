@@ -41,6 +41,7 @@ export class AuthController {
     
     const { jwt, csrfToken, userId } = await this.authService.signup(
       dto.email,
+      dto.username,
       dto.password,
       ip,
       userAgent,
@@ -61,7 +62,7 @@ export class AuthController {
       maxAge: 24 * 60 * 60, // 24 heures
     });
 
-    return reply.send({ userId });
+    return reply.send({ id: userId }); // ✅ Retourner "id" au lieu de "userId" pour cohérence
   }
 
   @Post('login')
@@ -96,7 +97,7 @@ export class AuthController {
       maxAge: 24 * 60 * 60, // 24 heures
     });
 
-    return reply.send({ userId });
+    return reply.send({ id: userId });
   }
 
   @Post('logout')

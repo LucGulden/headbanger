@@ -20,17 +20,21 @@ export const useUserStore = create<UserStore>((set, get) => ({
   initialize: async () => {
     // Éviter les doubles initialisations
     if (get().isInitialized) {
+      console.log('⚠️ UserStore déjà initialisé')
       return
     }
 
     try {
+      // ✅ getCurrentUser utilise le userId du JWT cookie
       const user = await getCurrentUser()
       set({ 
         appUser: user,
         isInitialized: true,
       })
+      console.log('✅ UserStore initialisé:', user.username)
     } catch (error) {
-      console.error('❌ Erreur initialisation user:', error)
+      console.error('❌ Erreur initialisation userStore:', error)
+      set({ isInitialized: false })
     }
   },
 
@@ -49,5 +53,6 @@ export const useUserStore = create<UserStore>((set, get) => ({
       appUser: null,
       isInitialized: false,
     })
+    console.log('🧹 UserStore nettoyé')
   },
 }))

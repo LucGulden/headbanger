@@ -1,30 +1,28 @@
 import { create } from 'zustand'
-import { getUnreadCount, subscribeToNotifications } from '../lib/api/notifications'
+import { getUnreadCount } from '../lib/api/notifications'
+import { socketClient } from '../lib/socket'
+import type { Notification } from '@fillcrate/shared'
 
 interface NotificationsStore {
   unreadCount: number
   isInitialized: boolean
   
   // Actions
-  initialize: (userId: string) => Promise<void>
+  initialize: () => Promise<void>
   increment: () => void
   reset: () => void
   cleanup: () => void
-  
-  // Internal
-  unsubscribe: (() => void) | null
 }
 
 export const useNotificationsStore = create<NotificationsStore>((set, get) => ({
   unreadCount: 0,
   isInitialized: false,
-  unsubscribe: null,
 
-  initialize: async (userId: string) => {
-    // ✅ Cleanup d'abord si déjà initialisé
-    const { isInitialized, unsubscribe } = get()
-    if (isInitialized && unsubscribe) {
-      unsubscribe()
+  initialize: async () => {
+    // Éviter la double initialisation
+    if (get().isInitialized) {
+      console.log('⚠️ Notifications store déjà initialisé')
+      return
     }
 
     try {
@@ -32,25 +30,33 @@ export const useNotificationsStore = create<NotificationsStore>((set, get) => ({
       const count = await getUnreadCount()
       set({ unreadCount: count })
 
-      // 2. Subscribe aux nouvelles notifications en temps réel (Supabase)
-      const unsubscribeFn = subscribeToNotifications(
-        userId, // ✅ userId requis pour Supabase filter
-        async () => {
-          // ✅ Recharger le count complet via l'API
-          const newCount = await getUnreadCount()
-          set({ unreadCount: newCount })
-        },
-        (error) => {
-          console.error('❌ Erreur subscription notifications:', error)
-        },
-      )
+      // 2. Écouter les événements Socket.IO
+      const handleNewNotification = (notification: Notification) => {
+        console.log('🔔 Nouvelle notification:', notification)
+        set((state) => ({ unreadCount: state.unreadCount + 1 }))
+      }
 
-      // 3. Stocker la fonction unsubscribe pour cleanup
-      set({
-        unsubscribe: unsubscribeFn,
-        isInitialized: true,
-      })
+      const handleReadAll = () => {
+        console.log('✅ Toutes les notifications lues')
+        set({ unreadCount: 0 })
+      }
 
+      // ✅ AJOUTER : Écouter les suppressions de notifications
+      const handleNotificationDeleted = (data: any) => {
+        console.log('🗑️ Notification supprimée:', data)
+        set((state) => ({ 
+          unreadCount: Math.max(0, state.unreadCount - 1) // Décrémenter (min 0)
+        }))
+      }
+
+      // La room user:${userId} est auto-join côté backend
+      socketClient.on('notification:new', handleNewNotification)
+      socketClient.on('notification:read-all', handleReadAll)
+      socketClient.on('notification:deleted', handleNotificationDeleted) // ← AJOUTER
+
+      set({ isInitialized: true })
+
+      console.log('✅ Notifications store initialisé')
     } catch (error) {
       console.error('❌ Erreur initialisation notifications:', error)
     }
@@ -65,14 +71,16 @@ export const useNotificationsStore = create<NotificationsStore>((set, get) => ({
   },
 
   cleanup: () => {
-    const { unsubscribe } = get()
-    if (unsubscribe) {
-      unsubscribe()
-      set({ 
-        unsubscribe: null, 
-        isInitialized: false,
-        unreadCount: 0,
-      })
-    }
+    // Retirer les listeners Socket.IO
+    socketClient.off('notification:new')
+    socketClient.off('notification:read-all')
+    socketClient.off('notification:deleted') // ← AJOUTER
+
+    set({ 
+      isInitialized: false,
+      unreadCount: 0,
+    })
+
+    console.log('🧹 Notifications store nettoyé')
   },
 }))

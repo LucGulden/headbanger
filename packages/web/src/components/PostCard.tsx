@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import Avatar from './Avatar'
-import { likePost, unlikePost, hasLikedPost, subscribeToPostLikes } from '../lib/api/postLikes'
-import { addComment, subscribeToPostComments, subscribeToPostCommentsCount } from '../lib/api/comments'
+import { likePost, unlikePost, hasLikedPost } from '../lib/api/postLikes'
+import { addComment, getCommentsCount } from '../lib/api/comments'
+import { socketClient } from '../lib/socket'
 import type { Comment } from '@fillcrate/shared'
 import { getRelativeTimeString } from '../utils/date-utils'
 import CommentItem from './CommentItem'
@@ -39,7 +40,9 @@ export default function PostCard({
   const [comments, setComments] = useState<OptimisticComment[]>([])
   const [commentText, setCommentText] = useState('')
   const [isCommenting, setIsCommenting] = useState(false)
+  const [loadingComments, setLoadingComments] = useState(false)
 
+  // Vérifier si l'utilisateur a liké ce post
   useEffect(() => {
     if (!currentUserId) return
 
@@ -51,66 +54,111 @@ export default function PostCard({
     checkLike()
   }, [currentUserId, post.id])
 
-  // S'abonner au compteur de commentaires en temps réel (toujours actif)
+  // Charger le compteur de commentaires initial
   useEffect(() => {
-    const unsubscribe = subscribeToPostCommentsCount(
-      post.id,
-      (count: number) => {
+    const loadCount = async () => {
+      try {
+        const count = await getCommentsCount(post.id)
         setCommentsCount(count)
-      },
-      (error: Error) => {
-        console.error('Erreur lors de la récupération du compteur de commentaires:', error)
-      },
-    )
+      } catch (error) {
+        console.error('Erreur chargement compteur commentaires:', error)
+      }
+    }
 
-    return () => unsubscribe()
+    loadCount()
   }, [post.id])
 
-  // S'abonner à la liste des commentaires (seulement si section ouverte)
+  // S'abonner aux événements Socket.IO quand le composant est monté
+  useEffect(() => {
+    if (!socketClient.isConnected()) return
+
+    const room = `post:${post.id}`
+
+    // Écouter les likes
+    const handleLikeAdded = (data: { postId: string; userId: string; likesCount: number }) => {
+      if (data.postId === post.id) {
+        setLikesCount(data.likesCount)
+      }
+    }
+
+    const handleLikeRemoved = (data: { postId: string; userId: string; likesCount: number }) => {
+      if (data.postId === post.id) {
+        setLikesCount(data.likesCount)
+      }
+    }
+
+    // Écouter les commentaires
+    const handleCommentAdded = (data: { postId: string; comment: Comment }) => {
+      if (data.postId === post.id) {
+        // Incrémenter le compteur
+        setCommentsCount(prev => prev + 1)
+
+        // Si la section commentaires est ouverte, ajouter le commentaire à la liste
+        if (showComments) {
+          setComments(prev => {
+            // Retirer le commentaire optimiste si c'est le même contenu
+            const withoutOptimistic = prev.filter(c => !c.isPending || c.content !== data.comment.content)
+            
+            return [...withoutOptimistic, {
+              ...data.comment,
+              isPending: false,
+              tempId: '',
+            }]
+          })
+        }
+      }
+    }
+
+    const handleCommentDeleted = (data: { postId: string; commentId: string }) => {
+      if (data.postId === post.id) {
+        // Décrémenter le compteur
+        setCommentsCount(prev => Math.max(0, prev - 1))
+
+        // Retirer le commentaire de la liste
+        setComments(prev => prev.filter(c => c.id !== data.commentId))
+      }
+    }
+
+    // Join la room et écouter les événements
+    socketClient.joinRoom(room)
+    socketClient.on('post:like:added', handleLikeAdded)
+    socketClient.on('post:like:removed', handleLikeRemoved)
+    socketClient.on('post:comment:added', handleCommentAdded)
+    socketClient.on('post:comment:deleted', handleCommentDeleted)
+
+    return () => {
+      // Cleanup
+      socketClient.off('post:like:added', handleLikeAdded)
+      socketClient.off('post:like:removed', handleLikeRemoved)
+      socketClient.off('post:comment:added', handleCommentAdded)
+      socketClient.off('post:comment:deleted', handleCommentDeleted)
+      socketClient.leaveRoom(room)
+    }
+  }, [post.id, showComments])
+
+  // Charger les commentaires quand la section s'ouvre
   useEffect(() => {
     if (!showComments) return
 
-    const unsubscribe = subscribeToPostComments(
-      post.id,
-      (newComments: Comment[]) => {
-        // Fusionner les commentaires DB avec les optimistes
-        setComments(prevComments => {
-          // Garder seulement les commentaires optimistes qui n'ont pas encore été créés
-          const pendingComments = prevComments.filter(c => c.isPending)
-          
-          // Convertir les nouveaux commentaires en OptimisticComment
-          const dbComments: OptimisticComment[] = newComments.map(c => ({
-            ...c,
-            isPending: false,
-            tempId: '',
-          }))
-          
-          // Fusionner : d'abord les DB (les plus anciens en premier), puis les pending
-          return [...dbComments, ...pendingComments]
-        })
-      },
-      (error: Error) => {
-        console.error('Erreur lors de la récupération des commentaires:', error)
-      },
-    )
+    const loadComments = async () => {
+      setLoadingComments(true)
+      try {
+        const { getComments } = await import('../lib/api/comments')
+        const data = await getComments(post.id)
+        setComments(data.map(c => ({
+          ...c,
+          isPending: false,
+          tempId: '',
+        })))
+      } catch (error) {
+        console.error('Erreur chargement commentaires:', error)
+      } finally {
+        setLoadingComments(false)
+      }
+    }
 
-    return () => unsubscribe()
-  }, [post.id, showComments])
-
-  // S'abonner aux likes en temps réel (conditionnel)
-  useEffect(() => {
-    const unsubscribe = subscribeToPostLikes(
-      post.id,
-      (count: number) => {
-        setLikesCount(count)
-      },
-      (error: Error) => {
-        console.error('Erreur lors de la récupération des likes:', error)
-      },
-    )
-
-    return () => unsubscribe()
-  }, [post.id])
+    loadComments()
+  }, [showComments, post.id])
 
   const handleLike = async () => {
     if (!currentUserId || isLiking) return
@@ -170,8 +218,8 @@ export default function PostCard({
     try {
       await addComment(post.id, commentContent)
       
-      // Le vrai commentaire arrivera via la subscription dans < 500ms
-      setComments(prev => prev.filter(c => c.tempId !== tempId))
+      // Le vrai commentaire arrivera via Socket.IO dans < 500ms
+      // L'optimistic update sera remplacé dans handleCommentAdded
     } catch (error) {
       // Revert on error : retirer le commentaire optimiste
       setComments(prev => prev.filter(c => c.tempId !== tempId))
@@ -227,7 +275,7 @@ export default function PostCard({
         </div>
       </div>
 
-      {/* Album Cover - LIEN VERS LA PAGE VINYLE */}
+      {/* Album Cover */}
       <Link 
         to={`/vinyl/${post.vinyl.id}`}
         className="block mb-4 relative w-full max-w-md mx-auto aspect-square group"
@@ -238,7 +286,6 @@ export default function PostCard({
           className="rounded-xl shadow-md object-cover w-full h-full transition-transform group-hover:scale-[1.02]"
           loading={priority ? 'eager' : 'lazy'}
         />
-        {/* Overlay au hover pour indiquer que c'est cliquable */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100">
           <svg 
             className="w-12 h-12 text-white drop-shadow-lg" 
@@ -306,8 +353,15 @@ export default function PostCard({
       {/* Comments Section */}
       {showComments && (
         <div className="border-t border-[var(--background-lighter)] pt-4">
+          {/* Loading State */}
+          {loadingComments && (
+            <div className="text-center py-4 text-[var(--foreground-muted)]">
+              Chargement des commentaires...
+            </div>
+          )}
+
           {/* Comments List */}
-          {comments.length > 0 && (
+          {!loadingComments && comments.length > 0 && (
             <div className="space-y-1 mb-4 max-h-96 overflow-y-auto">
               {comments.map((comment) => (
                 <CommentItem
@@ -321,9 +375,16 @@ export default function PostCard({
             </div>
           )}
 
+          {/* Empty State */}
+          {!loadingComments && comments.length === 0 && (
+            <p className="text-sm text-[var(--foreground-muted)] text-center py-2">
+              Aucun commentaire pour le moment
+            </p>
+          )}
+
           {/* Add Comment Form */}
           {currentUserId && (
-            <form onSubmit={handleAddComment} className="flex gap-2">
+            <form onSubmit={handleAddComment} className="flex gap-2 mt-4">
               <input
                 type="text"
                 value={commentText}

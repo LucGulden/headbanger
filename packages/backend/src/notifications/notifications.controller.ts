@@ -4,6 +4,7 @@ import { NotificationsService } from './notifications.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
+import { CurrentToken } from 'src/auth/decorators';
 
 @Controller('notifications')
 @UseGuards(AuthGuard) // Toutes les routes sont protégées
@@ -16,11 +17,13 @@ export class NotificationsController {
    */
   @Get()
   async getNotifications(
+    @CurrentToken() token: string,
     @CurrentUser() user: AuthenticatedUser,
     @Query('limit') limit?: number,
     @Query('lastCreatedAt') lastCreatedAt?: string,
   ): Promise<Notification[]> {
     return this.notificationsService.getNotifications(
+      token,
       user.id,
       limit ? Number(limit) : 20,
       lastCreatedAt,
@@ -32,8 +35,11 @@ export class NotificationsController {
    * Compte les notifications non lues
    */
   @Get('unread-count')
-  async getUnreadCount(@CurrentUser() user: AuthenticatedUser): Promise<{ count: number }> {
-    const count = await this.notificationsService.getUnreadCount(user.id);
+  async getUnreadCount(
+    @CurrentToken() token: string,
+    @CurrentUser() user: AuthenticatedUser
+  ): Promise<{ count: number }> {
+    const count = await this.notificationsService.getUnreadCount(token, user.id);
     return { count };
   }
 
@@ -42,8 +48,11 @@ export class NotificationsController {
    * Marque toutes les notifications comme lues
    */
   @Put('mark-all-read')
-  async markAllAsRead(@CurrentUser() user: AuthenticatedUser): Promise<{ success: boolean }> {
-    await this.notificationsService.markAllAsRead(user.id);
+  async markAllAsRead(
+    @CurrentToken() token: string,
+    @CurrentUser() user: AuthenticatedUser
+  ): Promise<{ success: boolean }> {
+    await this.notificationsService.markAllAsRead(token, user.id);
     return { success: true };
   }
 }

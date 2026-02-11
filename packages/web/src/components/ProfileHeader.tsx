@@ -38,7 +38,7 @@ export default function ProfileHeader({
 
     const checkFollowing = async () => {
       try {
-        const result = await isFollowing(currentUser.id)
+        const result = await isFollowing(user.uid)
         setFollowing(result)
       } catch (error) {
         console.error('Erreur lors de la vérification du follow:', error)
@@ -56,10 +56,10 @@ export default function ProfileHeader({
       setLoading(true)
       
       if (following) {
-        await unfollowUser(currentUser.id)
+        await unfollowUser(user.uid)
         setFollowing(false)
       } else {
-        await followUser(currentUser.id)
+        await followUser(user.uid)
         setFollowing(true)
       }
 

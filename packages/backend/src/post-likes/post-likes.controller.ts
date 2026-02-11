@@ -3,6 +3,7 @@ import { PostLikesService } from './post-likes.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
+import { CurrentToken } from 'src/auth/decorators/current-token.decorator';
 
 @Controller('post-likes')
 export class PostLikesController {
@@ -15,10 +16,11 @@ export class PostLikesController {
   @Post(':postId')
   @UseGuards(AuthGuard)
   async likePost(
+    @CurrentToken() token: string,
     @CurrentUser() user: AuthenticatedUser,
     @Param('postId') postId: string,
   ): Promise<{ success: boolean }> {
-    await this.postLikesService.likePost(user.id, postId);
+    await this.postLikesService.likePost(token, user.id, postId);
     return { success: true };
   }
 
@@ -29,10 +31,11 @@ export class PostLikesController {
   @Delete(':postId')
   @UseGuards(AuthGuard)
   async unlikePost(
+    @CurrentToken() token: string,
     @CurrentUser() user: AuthenticatedUser,
     @Param('postId') postId: string,
   ): Promise<{ success: boolean }> {
-    await this.postLikesService.unlikePost(user.id, postId);
+    await this.postLikesService.unlikePost(token, user.id, postId);
     return { success: true };
   }
 

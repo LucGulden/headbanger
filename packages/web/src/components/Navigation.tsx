@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { useAuth } from '../hooks/useAuth'
 import Avatar from './Avatar'
 import { useNotificationsStore } from '../stores/notificationsStore'
 import { useUserStore } from '../stores/userStore'
+import { useAuthStore } from '../stores/useAuthStore'
 
 export default function Navigation() {
-  const { user, signOut, loading } = useAuth()
+  const { user, signOut, loading } = useAuthStore()
   const navigate = useNavigate()
   const location = useLocation()
   const [dropdownOpen, setDropdownOpen] = useState(false)

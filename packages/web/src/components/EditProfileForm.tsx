@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Avatar from './Avatar'
 import Input from './Input'
 import Button from './Button'
-import { uploadProfilePhoto, generateImagePreview } from '../lib/avatars'
+import { uploadProfilePhoto, generateImagePreview } from '../lib/api/avatars'
 import {
   updateUserProfile,
   checkUsernameAvailability,

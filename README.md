@@ -1,389 +1,122 @@
 # FillCrate - Réseau social pour passionnés de vinyles
 
-Monorepo pour FillCrate, application web permettant aux passionnés de vinyles de gérer leur collection, découvrir de nouveaux albums et interagir avec une communauté.
+Monorepo pour FillCrate : gestion de collection vinyle, feed social, follows, likes, commentaires, notifications temps réel.
 
-## Vue d'ensemble
+## Stack technique
 
-FillCrate est organisé en monorepo avec trois packages :
+- **Web** : React 18 + TypeScript + Vite + Tailwind CSS + Zustand
+- **Backend** : NestJS + Fastify + Socket.IO + Redis
+- **Database** : Supabase (PostgreSQL + Auth + Storage)
+- **Shared** : Types TypeScript partagés
 
-- **`@fillcrate/web`** : Frontend React avec TypeScript, Vite et Tailwind CSS
-- **`@fillcrate/backend`** : API REST NestJS avec Fastify et Supabase
-- **`@fillcrate/shared`** : Types TypeScript partagés entre tous les projets
-
-## Architecture
-
-### Approche hybride Backend + Supabase
-
-FillCrate utilise une architecture hybride qui combine le meilleur des deux mondes :
-
-**Backend NestJS (API REST)** :
-- Logique métier centralisée (posts, likes, comments, follows, notifications)
-- Validation et autorisation (JWT Supabase vérifié par AuthGuard)
-- Endpoints propres pour frontend web + future app mobile
-- Transformations de données (snake_case DB → camelCase API)
-
-**Supabase direct** :
-- Realtime (likes, comments, notifications via WebSocket)
-- Storage (avatars, covers avec policies RLS)
-- Recherche avancée (albums, artistes, utilisateurs)
-- Certaines mutations de données (création albums/vinyles)
-
-**Authentification** :
-- Supabase Auth génère les JWT
-- Frontend envoie JWT dans headers `Authorization: Bearer <token>`
-- Backend valide JWT via `AuthGuard` et récupère `userId` automatiquement
-- Pas de `userId` dans les appels API protégés (récupéré du JWT)
-
-## Structure du monorepo
+## Structure
 ```
 fillcrate/
 ├── packages/
-│   ├── shared/              # Types partagés
-│   │   ├── src/
-│   │   │   └── types/
-│   │   │       └── index.ts
-│   │   └── package.json
-│   ├── backend/             # API NestJS
-│   │   ├── src/
-│   │   │   ├── albums/
-│   │   │   ├── artists/
-│   │   │   ├── vinyls/
-│   │   │   ├── user-vinyls/
-│   │   │   ├── users/
-│   │   │   ├── follows/
-│   │   │   ├── posts/
-│   │   │   ├── post-likes/
-│   │   │   ├── comments/
-│   │   │   ├── notifications/
-│   │   │   └── common/
-│   │   │       ├── database/
-│   │   │       ├── guards/
-│   │   │       └── decorators/
-│   │   ├── package.json
-│   │   └── README.md
-│   └── web/                 # Frontend React
-│       ├── src/
-│       │   ├── lib/
-│       │   │   └── api/    # Services API centralisés
-│       │   │       ├── apiClient.ts
-│       │   │       ├── posts.ts
-│       │   │       ├── postLikes.ts
-│       │   │       ├── comments.ts
-│       │   │       ├── notifications.ts
-│       │   │       ├── follows.ts
-│       │   │       ├── albums.ts
-│       │   │       ├── vinyls.ts
-│       │   │       ├── artists.ts
-│       │   │       ├── userVinyls.ts
-│       │   │       └── users.ts
-│       │   ├── components/
-│       │   ├── pages/
-│       │   │   ├── VinylPage.tsx     # Page dédiée vinyle
-│       │   │   ├── AlbumPage.tsx     # Page dédiée album
-│       │   │   ├── ArtistPage.tsx    # Page dédiée artiste
-│       │   │   └── ...
-│       │   └── stores/
-│       ├── package.json
-│       └── README.md
-├── package.json             # Root avec workspaces
+│   ├── shared/          # Types partagés (@fillcrate/shared)
+│   ├── backend/         # API NestJS + Socket.IO
+│   └── web/        # React app
 ├── pnpm-workspace.yaml
-└── README.md
+└── package.json
 ```
 
-## Prérequis
-
-- **Node.js** >= 18.0.0
-- **pnpm** >= 8.0.0 (installer avec `npm install -g pnpm`)
-- **Supabase** : Projet configuré avec les tables nécessaires
-
-## Installation
+## Installation rapide
 ```bash
-# Cloner le repository
-git clone https://github.com/ton-username/fillcrate.git
+# Cloner et installer
+git clone <repo>
 cd fillcrate
-
-# Installer toutes les dépendances
 pnpm install
 
-# Configurer les variables d'environnement
-# Backend : packages/backend/.env
-# Web : packages/web/.env
+# Configurer .env dans backend/ et web/
+
+# Lancer en dev (web + backend)
+pnpm dev
 ```
 
-### Configuration des variables d'environnement
+## Architecture clé
 
-**`packages/backend/.env`** :
+### Authentification
+1. Web → Supabase Auth (signup/login) → JWT
+2. Backend valide JWT via `AuthGuard` + récupère `userId`
+3. Tous les endpoints protégés : `userId` auto-extrait du JWT
+
+### Temps réel (Socket.IO)
+- ✅ **Notifications** : Temps réel via Socket.IO
+  - `notification:new` (like, comment, follow)
+  - `notification:deleted` (unlike, uncomment, unfollow)
+  - `notification:read-all`
+- ❌ **Likes/Comments** : Optimistic UI + refresh après action
+
+### Pattern API
+```typescript
+// ❌ AVANT (avec userId explicite)
+await likePost(userId, postId)
+
+// ✅ MAINTENANT (userId du JWT)
+await likePost(postId)
+```
+
+## Scripts
 ```bash
-SUPABASE_URL=https://ton-projet.supabase.co
-SUPABASE_ANON_KEY=ta-anon-key  # Pas service_role !
+pnpm dev              # Lancer web + backend
+pnpm dev:web          # Web seul (port 5173)
+pnpm dev:backend      # Backend seul (port 3001)
+pnpm build            # Build tous les packages
+pnpm build:shared     # Build types partagés
+```
+
+## Variables d'environnement
+
+**Backend** (`packages/backend/.env`) :
+```bash
+SUPABASE_URL=https://xxx.supabase.co
+SUPABASE_ANON_KEY=xxx
+JWT_SECRET=xxx
+REDIS_HOST=localhost
+REDIS_PORT=6379
 PORT=3001
 NODE_ENV=development
 ```
 
-**`packages/web/.env`** :
+**Web** (`packages/web/.env`) :
 ```bash
-VITE_SUPABASE_URL=https://ton-projet.supabase.co
-VITE_SUPABASE_ANON_KEY=ta-anon-key
+VITE_SUPABASE_URL=https://xxx.supabase.co
+VITE_SUPABASE_ANON_KEY=xxx
 VITE_API_URL=http://localhost:3001
 ```
 
-## Scripts disponibles
+## Base de données (Supabase)
 
-### Développement
-```bash
-# Lancer frontend + backend en parallèle
-pnpm dev
+**Tables principales** :
+- `users`, `artists`, `albums`, `vinyls`
+- `user_vinyls` (collections/wishlists)
+- `posts`, `post_likes`, `comments`, `follows`, `notifications`
 
-# Lancer uniquement le frontend (http://localhost:5173)
-pnpm dev:web
-
-# Lancer uniquement le backend (http://localhost:3001)
-pnpm dev:backend
-```
-
-### Build
-```bash
-# Builder tous les packages
-pnpm build
-
-# Builder un package spécifique
-pnpm build:shared      # Types partagés
-pnpm build:web         # Frontend
-pnpm build:backend     # Backend
-```
-
-### Autres commandes
-```bash
-# Nettoyer tous les builds et node_modules
-pnpm clean
-
-# Réinstaller toutes les dépendances
-pnpm install:all
-```
-
-## Architecture détaillée
-
-### @fillcrate/shared
-
-Package de types TypeScript partagés entre frontend et backend. C'est la **single source of truth** pour tous les contrats de données.
-
-**Types disponibles** :
-- `Album`, `AlbumLight` : Structures d'albums avec artistes
-- `Vinyl`, `VinylLight` : Pressages vinyles avec artistes
-- `Artist`, `ArtistLight` : Artistes musicaux
-- `User`, `UserLight` : Utilisateurs et profils
-- `UserVinyl` : Relations user-vinyl (collection/wishlist)
-- `PostWithDetails` : Posts sociaux avec détails
-- `Comment` : Commentaires
-- `Notification` : Notifications
-- `FollowStats`, `VinylStats` : Statistiques
-
-**Pattern Light vs Complet** :
-- Types `Light` (ex: `AlbumLight`, `VinylLight`) : Sans relations, pour listes/recherche
-- Types complets (ex: `Album`, `Artist`) : Avec relations, pour pages détaillées
-
-**Utilisation** :
-```typescript
-import { Album, AlbumLight, User, PostWithDetails } from '@fillcrate/shared';
-```
-
-### @fillcrate/backend
-
-API REST NestJS avec Fastify. Centralise la logique métier et expose des endpoints pour gérer albums, vinyles, utilisateurs, posts, etc.
-
-**Modules disponibles** :
-- Albums, Artists, Vinyls
-- UserVinyls (collections/wishlists)
-- Users (profils)
-- Follows (relations sociales)
-- Posts, PostLikes, Comments
-- Notifications
-
-**Pattern d'optimisation** :
-- `findById()` : Retourne type complet avec relations (ex: `Album` avec `vinyls[]`)
-- `searchXxx()` : Retourne type Light sans relations (ex: `AlbumLight[]`)
-
-**Authentification** :
-- Valide JWT Supabase via `AuthGuard`
-- Récupère automatiquement `userId` du token
-- `@CurrentUser()` decorator pour accéder à l'utilisateur authentifié
-
-**Documentation complète** : [`packages/backend/README.md`](packages/backend/README.md)
-
-### @fillcrate/web
-
-Application React avec Vite, TypeScript, Tailwind CSS et Zustand. Interface utilisateur pour gérer collections, découvrir albums et interagir avec la communauté.
-
-**Architecture API frontend** :
-```
-src/lib/api/
-├── apiClient.ts      # Client HTTP centralisé avec JWT auto
-├── posts.ts          # Endpoints posts
-├── postLikes.ts      # Endpoints likes
-├── comments.ts       # Endpoints commentaires
-├── notifications.ts  # Endpoints notifications
-├── follows.ts        # Endpoints follows
-├── albums.ts         # getAlbumById + searchAlbums
-├── vinyls.ts         # getVinylById
-├── artists.ts        # getArtistById + searchArtists
-├── userVinyls.ts     # Endpoints collections/wishlists
-└── users.ts          # Endpoints profils
-```
-
-**Pages dédiées** :
-- `/vinyl/:id` - Page vinyle (détails + actions collection/wishlist)
-- `/album/:id` - Page album (détails + liste des vinyles)
-- `/artist/:id` - Page artiste (bio + discographie)
-
-**Features** :
-- Gestion collection/wishlist (via backend)
-- Feed social avec posts, likes, commentaires (via backend)
-- Realtime pour likes/comments (via Supabase WebSocket)
-- Recherche d'albums/artistes/utilisateurs
-- Pages dédiées pour vinyles, albums et artistes
-- Profils utilisateurs
-- Notifications temps réel
-- Infinite scroll
-
-**Documentation complète** : [`packages/web/README.md`](packages/web/README.md)
-
-## Workflow de développement
-
-### Ajouter un nouveau type
-
-1. Éditer `packages/shared/src/types/index.ts`
-2. Exporter le nouveau type
-3. Builder shared : `pnpm build:shared`
-4. Utiliser le type dans web ou backend :
-```typescript
-   import { MonNouveauType } from '@fillcrate/shared';
-```
-
-### Ajouter un nouveau endpoint backend
-
-1. Créer un nouveau module dans `packages/backend/src/`
-2. Créer controller + service + module
-3. Importer le module dans `app.module.ts`
-4. Utiliser les types depuis `@fillcrate/shared`
-5. Créer le service API correspondant dans `packages/web/src/lib/api/`
-
-### Connecter frontend au backend
-```typescript
-// packages/web/src/lib/api/albums.ts
-import { apiClient } from './apiClient'
-import type { Album, AlbumLight } from '@fillcrate/shared'
-
-export async function getAlbumById(albumId: string): Promise<Album> {
-  return apiClient.get<Album>(`/albums/${albumId}`)
-}
-
-export async function searchAlbums(query: string): Promise<AlbumLight[]> {
-  return apiClient.get<AlbumLight[]>(`/albums/search?query=${query}`)
-}
-```
-
-Le `apiClient` gère automatiquement :
-- Ajout du JWT dans les headers
-- Gestion des erreurs
-- Content-Type (uniquement si body présent)
-
-## Technologies
-
-| Package | Technologies |
-|---------|-------------|
-| **shared** | TypeScript |
-| **backend** | NestJS, Fastify, Supabase, TypeScript, Class Validator |
-| **web** | React 18, TypeScript, Vite 7, Tailwind CSS, Zustand, Framer Motion, Supabase |
-
-## Base de données
-
-Supabase PostgreSQL avec les tables suivantes :
-
-- `users` : Profils utilisateurs
-- `artists` : Artistes musicaux
-- `albums` : Albums musicaux
-- `vinyls` : Pressages vinyles spécifiques
-- `user_vinyls` : Collections et wishlists
-- `posts` : Publications sociales
-- `post_likes`, `comments`, `follows`, `notifications`
-
-Relations :
-- Albums ↔ Artists (many-to-many via `album_artists`)
-- Vinyls ↔ Artists (many-to-many via `vinyl_artists`)
-- Users ↔ Vinyls (many-to-many via `user_vinyls`)
-
-**Row Level Security (RLS)** :
-- Frontend → Supabase : RLS actif 🔒 (Realtime, Storage)
-- Backend → Supabase : Sécurité implémentée dans les services
+**RLS (Row Level Security)** :
+- Web utilise Supabase avec RLS actif
+- Backend utilise token user pour respecter RLS
 
 ## Déploiement
 
-### Frontend (Vercel)
-
+**Web (Vercel)** :
 - Framework : Vite
-- Build command : Géré par `vercel.json`
-- Variables d'env : `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_URL`
+- Variables : `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_URL`
 
-### Backend (Railway)
-
-- Builder : Nixpacks
-- Build command : Géré par `railway.toml` et `nixpacks.toml`
-- Variables d'env : `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `PORT`, `FRONTEND_URL`, `NODE_ENV`
+**Backend (Railway)** :
+- Runtime : Node.js
+- Variables : `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `JWT_SECRET`, `REDIS_URL`, `PORT`
 
 ## Troubleshooting
 
-### "Cannot find module @fillcrate/shared"
+**Types partagés non reconnus** :
 ```bash
-# Builder shared et réinstaller
-pnpm build:shared
-pnpm install
+pnpm build:shared && pnpm install
 ```
 
-### Erreur 401 sur les endpoints backend
+**Port déjà utilisé** : Changer dans `.env`
 
-Vérifier que :
-- Le JWT Supabase est valide
-- `apiClient` récupère bien le token via `supabase.auth.getSession()`
-- Le backend utilise bien `SUPABASE_ANON_KEY` (pas service_role)
-
-### Port déjà utilisé
-
-Changer les ports dans les fichiers `.env` respectifs.
-
-### Erreurs TypeScript
-```bash
-# Redémarrer le serveur TypeScript dans VSCode
-Ctrl+Shift+P > TypeScript: Restart TS Server
-```
-
-### Dépendances manquantes
-```bash
-# Nettoyer et réinstaller
-pnpm clean
-pnpm install
-```
-
-## Contribution
-
-1. Créer une branche depuis `main`
-2. Développer la feature
-3. Tester localement : `pnpm dev`
-4. Builder pour vérifier : `pnpm build`
-5. Commit et push
-6. Ouvrir une Pull Request
-
-## Ressources
-
-- [Documentation NestJS](https://docs.nestjs.com/)
-- [Documentation React](https://react.dev/)
-- [Documentation Supabase](https://supabase.com/docs)
-- [Documentation pnpm Workspaces](https://pnpm.io/workspaces)
-- [Documentation Vite](https://vitejs.dev/)
-
-## Licence
-
-Privé - Tous droits réservés
+**401 Unauthorized** : Vérifier JWT Supabase + `SUPABASE_ANON_KEY` backend
 
 ---
 
-**Dernière mise à jour** : 5 février 2026
+**Dernière mise à jour** : Février 2026

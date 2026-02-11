@@ -3,6 +3,7 @@ import { User, FollowStats } from '@fillcrate/shared';
 import { FollowsService } from './follows.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { CurrentToken } from '../auth/decorators/current-token.decorator';
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
 
 @Controller('follows')
@@ -39,10 +40,11 @@ export class FollowsController {
   @Post(':userId')
   @UseGuards(AuthGuard)
   async followUser(
+    @CurrentToken() token: string,
     @CurrentUser() user: AuthenticatedUser,
     @Param('userId') userId: string,
   ): Promise<{ success: boolean }> {
-    await this.followsService.followUser(user.id, userId);
+    await this.followsService.followUser(token, user.id, userId);
     return { success: true };
   }
 
@@ -53,10 +55,11 @@ export class FollowsController {
   @Delete(':userId')
   @UseGuards(AuthGuard)
   async unfollowUser(
+    @CurrentToken() token: string,
     @CurrentUser() user: AuthenticatedUser,
     @Param('userId') userId: string,
   ): Promise<{ success: boolean }> {
-    await this.followsService.unfollowUser(user.id, userId);
+    await this.followsService.unfollowUser(token, user.id, userId);
     return { success: true };
   }
 

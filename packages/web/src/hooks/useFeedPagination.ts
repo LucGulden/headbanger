@@ -1,6 +1,4 @@
 import { useState, useEffect, useCallback } from 'react'
-import { supabase } from '../supabaseClient'
-import { toCamelCase } from '../utils/caseConverter'
 import type { PostWithDetails } from '@fillcrate/shared'
 import { getGlobalFeed, getProfileFeed } from '../lib/api/posts'
 
@@ -14,7 +12,6 @@ export interface UseFeedPaginationReturn {
   hasMore: boolean
   error: Error | null
   refreshing: boolean
-  newPostsAvailable: number
   loadMore: () => Promise<void>
   refresh: () => Promise<void>
 }
@@ -32,7 +29,6 @@ export function useFeedPagination(userId?: string, profileFeed: boolean = false)
   const [hasMore, setHasMore] = useState(true)
   const [error, setError] = useState<Error | null>(null)
   const [refreshing, setRefreshing] = useState(false)
-  const [newPostsAvailable, setNewPostsAvailable] = useState(0)
 
   const fetchInitialPosts = useCallback(async () => {
     setLoading(true)
@@ -42,13 +38,11 @@ export function useFeedPagination(userId?: string, profileFeed: boolean = false)
       let initialPosts: PostWithDetails[]
 
       if (profileFeed && userId) {
-        // Feed d'un profil spécifique
         initialPosts = await getProfileFeed({
           userId,
           limit: INITIAL_LOAD_COUNT,
         })
       } else {
-        // Feed global (utilisateur connecté + ceux qu'il suit)
         initialPosts = await getGlobalFeed({
           limit: INITIAL_LOAD_COUNT,
         })
@@ -74,14 +68,12 @@ export function useFeedPagination(userId?: string, profileFeed: boolean = false)
       let morePosts: PostWithDetails[]
 
       if (profileFeed && userId) {
-        // Feed d'un profil spécifique
         morePosts = await getProfileFeed({
           userId,
           limit: LOAD_MORE_COUNT,
           lastCreatedAt: lastPost.createdAt,
         })
       } else {
-        // Feed global
         morePosts = await getGlobalFeed({
           limit: LOAD_MORE_COUNT,
           lastCreatedAt: lastPost.createdAt,
@@ -105,19 +97,16 @@ export function useFeedPagination(userId?: string, profileFeed: boolean = false)
   const refreshFeed = async () => {
     setRefreshing(true)
     setError(null)
-    setNewPostsAvailable(0)
 
     try {
       let initialPosts: PostWithDetails[]
 
       if (profileFeed && userId) {
-        // Feed d'un profil spécifique
         initialPosts = await getProfileFeed({
           userId,
           limit: INITIAL_LOAD_COUNT,
         })
       } else {
-        // Feed global
         initialPosts = await getGlobalFeed({
           limit: INITIAL_LOAD_COUNT,
         })
@@ -138,79 +127,6 @@ export function useFeedPagination(userId?: string, profileFeed: boolean = false)
     fetchInitialPosts()
   }, [fetchInitialPosts])
 
-  // Écoute en temps réel des nouveaux posts avec Supabase Realtime
-  useEffect(() => {
-    if (posts.length === 0) return
-
-    const newestPostTime = posts[0].createdAt
-
-    // Fonction pour vérifier si un post doit être dans le feed
-    const shouldIncludePost = async (postUserId: string, connectedUserId: string): Promise<boolean> => {
-      if (profileFeed && userId) {
-        // Feed de profil : seulement les posts de l'utilisateur du profil
-        return postUserId === userId
-      } else {
-        // Feed global : posts des utilisateurs suivis + les siens
-        if (postUserId === connectedUserId) return true
-
-        // Vérifier si on suit cet utilisateur
-        const { data, error } = await supabase
-          .from('follows')
-          .select('id')
-          .eq('follower_id', connectedUserId)
-          .eq('following_id', postUserId)
-
-        if (error) {
-          console.error('Erreur lors de la vérification du follow:', error)
-          return false
-        }
-
-        return data && data.length > 0
-      }
-    }
-
-    // S'abonner aux nouveaux posts
-    const channel = supabase
-      .channel('new-posts-feed')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'posts',
-        },
-        async (payload) => {
-          // Récupérer l'utilisateur connecté
-          const { data: { session } } = await supabase.auth.getSession()
-          if (!session?.user) return
-
-          const connectedUserId = session.user.id
-
-          // ⚠️ Les données Realtime arrivent en snake_case depuis Supabase
-          const newPostRaw = payload.new as any
-          
-          // Convertir en camelCase pour comparer avec nos données
-          const newPost = toCamelCase(newPostRaw)
-          
-          if (newPost.createdAt > newestPostTime) {
-            // Vérifier si ce post doit être inclus dans le feed
-            const shouldInclude = await shouldIncludePost(newPost.userId, connectedUserId)
-            
-            if (shouldInclude) {
-              // Incrémenter le compteur de nouveaux posts
-              setNewPostsAvailable((prev) => prev + 1)
-            }
-          }
-        },
-      )
-      .subscribe()
-
-    // Cleanup : se désabonner quand le composant est démonté
-    return () => {
-      channel.unsubscribe()
-    }
-  }, [posts, userId, profileFeed])
-
   return {
     posts,
     loading,
@@ -218,7 +134,6 @@ export function useFeedPagination(userId?: string, profileFeed: boolean = false)
     hasMore,
     error,
     refreshing,
-    newPostsAvailable,
     loadMore: loadMorePosts,
     refresh: refreshFeed,
   }

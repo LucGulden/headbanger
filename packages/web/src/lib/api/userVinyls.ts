@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient'
+import { apiClient } from '../apiClient'
 import type { UserVinyl, UserVinylType, VinylStats } from '@fillcrate/shared'
 
 const ITEMS_PER_PAGE = 20
