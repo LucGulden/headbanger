@@ -4,6 +4,7 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import react from 'eslint-plugin-react'
 import tseslint from 'typescript-eslint'
+import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended'
 
 export default tseslint.config(
   {
@@ -14,14 +15,11 @@ export default tseslint.config(
     extends: [
       js.configs.recommended,
       ...tseslint.configs.recommended,
+      eslintPluginPrettierRecommended,
     ],
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
-      parserOptions: {
-        projectService: true,
-        tsconfigRootDir: import.meta.dirname,
-      },
     },
     plugins: {
       'react-hooks': reactHooks,
@@ -34,23 +32,16 @@ export default tseslint.config(
       },
     },
     rules: {
-      // React Hooks
+      // React
       ...reactHooks.configs.recommended.rules,
-      
-      // React Refresh
-      'react-refresh/only-export-components': [
-        'warn',
-        { allowConstantExport: true },
-      ],
-
-      // ===== React =====
+      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       'react/jsx-uses-react': 'off',
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
       'react/jsx-key': 'error',
       'react/self-closing-comp': 'warn',
       
-      // ===== TypeScript =====
+      // TypeScript
       '@typescript-eslint/no-unused-vars': [
         'warn',
         {
@@ -62,15 +53,13 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-non-null-assertion': 'warn',
       
-      // ===== Code Quality =====
+      // Code Quality
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'prefer-const': 'warn',
       'no-var': 'error',
-      
-      // ===== Style =====
-      'semi': ['warn', 'never'],
-      'quotes': ['warn', 'single', { avoidEscape: true }],
-      'comma-dangle': ['warn', 'always-multiline'],
+
+      // Prettier
+      'prettier/prettier': 'error',
     },
   },
 )
