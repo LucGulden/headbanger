@@ -220,4 +220,4 @@ pnpm install
 
 ---
 
-**Dernière mise à jour** : Février 2026
+**Dernière mise à jour** : 11 Février 2026
