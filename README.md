@@ -1,6 +1,6 @@
-# FillCrate - Réseau social pour passionnés de vinyles
+# HeadBanger - Réseau social pour passionnés de vinyles
 
-Monorepo pour FillCrate : gestion de collection vinyle, feed social, follows, likes, commentaires, notifications temps réel.
+Monorepo pour HeadBanger : gestion de collection vinyle, feed social, follows, likes, commentaires, notifications temps réel.
 
 ## Stack technique
 
@@ -11,9 +11,9 @@ Monorepo pour FillCrate : gestion de collection vinyle, feed social, follows, li
 
 ## Structure
 ```
-fillcrate/
+headbanger/
 ├── packages/
-│   ├── shared/          # Types partagés (@fillcrate/shared)
+│   ├── shared/          # Types partagés (@headbanger/shared)
 │   ├── backend/         # API NestJS + Socket.IO
 │   └── web/        # React app
 ├── pnpm-workspace.yaml
@@ -24,7 +24,7 @@ fillcrate/
 ```bash
 # Cloner et installer
 git clone <repo>
-cd fillcrate
+cd headbanger
 pnpm install
 
 # Configurer .env dans backend/ et web/

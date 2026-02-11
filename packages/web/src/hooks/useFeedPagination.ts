@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { PostWithDetails } from '@fillcrate/shared'
+import type { PostWithDetails } from '@headbanger/shared'
 import { getGlobalFeed, getProfileFeed } from '../lib/api/posts'
 
 const INITIAL_LOAD_COUNT = 15

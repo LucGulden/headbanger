@@ -4,12 +4,12 @@ import Avatar from './Avatar'
 import { likePost, unlikePost, hasLikedPost } from '../lib/api/postLikes'
 import { addComment, getCommentsCount } from '../lib/api/comments'
 import { socketClient } from '../lib/socket'
-import type { Comment } from '@fillcrate/shared'
+import type { Comment } from '@headbanger/shared'
 import { getRelativeTimeString } from '../utils/date-utils'
 import CommentItem from './CommentItem'
 import Button from './Button'
 import { useUserStore } from '../stores/userStore'
-import type { PostWithDetails } from '@fillcrate/shared'
+import type { PostWithDetails } from '@headbanger/shared'
 
 // Type pour les commentaires optimistes (en cours de publication)
 type OptimisticComment = Comment & { 

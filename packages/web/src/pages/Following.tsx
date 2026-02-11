@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, Link, Navigate } from 'react-router-dom'
 import { getFollowing } from '../lib/api/follows'
 import UserListItem from '../components/UserListItem'
-import type { User } from '@fillcrate/shared'
+import type { User } from '@headbanger/shared'
 import LoadingSpinner from '../components/LoadingSpinner'
 import { getUserByUsername } from '../lib/api/users'
 

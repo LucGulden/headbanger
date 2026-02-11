@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Notification } from '@fillcrate/shared';
+import { Notification } from '@headbanger/shared';
 import { SupabaseService } from '../common/database/supabase.service';
 import { EventsService } from '../events/events.service';
 

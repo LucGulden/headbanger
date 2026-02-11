@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { getUnreadCount } from '../lib/api/notifications'
 import { socketClient } from '../lib/socket'
-import type { Notification } from '@fillcrate/shared'
+import type { Notification } from '@headbanger/shared'
 
 interface NotificationsStore {
   unreadCount: number

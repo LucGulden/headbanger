@@ -1,5 +1,5 @@
 import { apiClient } from '../apiClient'
-import type { Comment } from '@fillcrate/shared'
+import type { Comment } from '@headbanger/shared'
 
 /**
  * Récupère tous les commentaires d'un post (endpoint public)

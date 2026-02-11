@@ -1,6 +1,6 @@
-# FillCrate Web - React App
+# HeadBanger Web - React App
 
-Interface utilisateur FillCrate : gestion collection vinyle + réseau social.
+Interface utilisateur HeadBanger : gestion collection vinyle + réseau social.
 
 ## Stack
 - React 18 + TypeScript

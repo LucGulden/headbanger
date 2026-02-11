@@ -112,7 +112,7 @@ export default function SignupPage() {
         {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="mb-2 text-4xl font-bold text-[var(--foreground)]">
-            Rejoignez FillCrate
+            Rejoignez HeadBanger
           </h1>
           <p className="text-[var(--foreground-muted)]">
             Commencez à partager votre passion pour les vinyles

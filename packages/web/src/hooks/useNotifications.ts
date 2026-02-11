@@ -5,7 +5,7 @@ import {
   markAllAsRead,
 } from '../lib/api/notifications'
 import { socketClient } from '../lib/socket'
-import type { Notification } from '@fillcrate/shared'
+import type { Notification } from '@headbanger/shared'
 
 interface UseNotificationsReturn {
   notifications: Notification[]

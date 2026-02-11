@@ -1,5 +1,5 @@
 import { apiClient } from '../apiClient'
-import type { Vinyl } from '@fillcrate/shared'
+import type { Vinyl } from '@headbanger/shared'
 
 // ============================================================================
 // ROUTES BACKEND DISPONIBLES

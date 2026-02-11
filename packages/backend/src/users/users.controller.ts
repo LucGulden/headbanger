@@ -1,5 +1,5 @@
 import { Controller, Get, Put, Param, Query, Body, UseGuards } from '@nestjs/common';
-import { User } from '@fillcrate/shared';
+import { User } from '@headbanger/shared';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';

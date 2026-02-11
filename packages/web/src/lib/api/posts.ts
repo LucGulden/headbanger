@@ -1,5 +1,5 @@
 import { apiClient } from '../apiClient'
-import type { PostWithDetails } from '@fillcrate/shared'
+import type { PostWithDetails } from '@headbanger/shared'
 
 // src/lib/api/posts.ts
 

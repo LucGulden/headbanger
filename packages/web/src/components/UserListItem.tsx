@@ -4,7 +4,7 @@ import Avatar from './Avatar'
 import Button from './Button'
 import { followUser, unfollowUser, isFollowing } from '../lib/api/follows' // ✅ Changer import
 import { useAuth } from '../hooks/useAuth'
-import type { User } from '@fillcrate/shared'
+import type { User } from '@headbanger/shared'
 
 interface UserListItemProps {
   user: User

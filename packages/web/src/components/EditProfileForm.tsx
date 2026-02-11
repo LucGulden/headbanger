@@ -11,7 +11,7 @@ import {
   validateBio,
 } from '../lib/api/users'
 import { useUserStore } from '../stores/userStore'
-import type { User } from '@fillcrate/shared'
+import type { User } from '@headbanger/shared'
 
 interface EditProfileFormProps {
   user: User;

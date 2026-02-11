@@ -9,7 +9,7 @@ export default function Footer() {
           <div>
             <div className="mb-4 flex items-center gap-2 text-xl font-bold">
               <span>🎵</span>
-              <span className="text-[var(--foreground)]">FillCrate</span>
+              <span className="text-[var(--foreground)]">HeadBanger</span>
             </div>
             <p className="text-sm text-[var(--foreground-muted)]">
               Le réseau social pour les passionnés de vinyles.
@@ -50,7 +50,7 @@ export default function Footer() {
 
         {/* Copyright */}
         <div className="mt-8 border-t border-[var(--background-lighter)] pt-8 text-center text-sm text-[var(--foreground-muted)]">
-          <p>&copy; {new Date().getFullYear()} FillCrate. Tous droits réservés.</p>
+          <p>&copy; {new Date().getFullYear()} HeadBanger. Tous droits réservés.</p>
         </div>
       </div>
     </footer>

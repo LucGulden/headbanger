@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import Avatar from './Avatar'
 import { deleteComment } from '../lib/api/comments'
 import { getRelativeTimeString } from '../utils/date-utils'
-import type { Comment } from '@fillcrate/shared'
+import type { Comment } from '@headbanger/shared'
 
 interface CommentItemProps {
   comment: Comment

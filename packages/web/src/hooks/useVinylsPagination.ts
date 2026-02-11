@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { getUserVinyls, getUserVinylsCount } from '../lib/api/userVinyls'
-import type { UserVinylType, UserVinyl } from '@fillcrate/shared'
+import type { UserVinylType, UserVinyl } from '@headbanger/shared'
 
 interface UseVinylsPaginationParams {
   userId: string;

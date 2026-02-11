@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { AlbumLight, Artist, ArtistLight } from '@fillcrate/shared';
+import { AlbumLight, Artist, ArtistLight } from '@headbanger/shared';
 import { SupabaseService } from '../common/database/supabase.service';
 
 @Injectable()

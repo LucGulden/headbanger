@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { searchUsers } from '../lib/api/users'
-import type { User } from '@fillcrate/shared'
+import type { User } from '@headbanger/shared'
 
 interface UseUserSearchParams {
   query: string;

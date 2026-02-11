@@ -7,7 +7,7 @@ import ProfileVinyls from '../components/ProfileVinyls'
 import Feed from '../components/Feed'
 import { getFollowStats } from '../lib/api/follows'
 import { getVinylStats } from '../lib/api/userVinyls'
-import type { User } from '@fillcrate/shared'
+import type { User } from '@headbanger/shared'
 import LoadingSpinner from '../components/LoadingSpinner'
 import { getUserByUsername } from '../lib/api/users'
 

@@ -1,6 +1,6 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { AlbumsService } from './albums.service';
-import { Album, AlbumLight } from '@fillcrate/shared';
+import { Album, AlbumLight } from '@headbanger/shared';
 
 @Controller('albums')
 export class AlbumsController {

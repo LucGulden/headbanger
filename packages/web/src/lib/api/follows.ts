@@ -1,5 +1,5 @@
 import { apiClient } from '../apiClient'
-import type { User, FollowStats } from '@fillcrate/shared'
+import type { User, FollowStats } from '@headbanger/shared'
 
 /**
  * Récupère les statistiques de follow d'un utilisateur (endpoint public)

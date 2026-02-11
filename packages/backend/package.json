@@ -1,5 +1,5 @@
 {
-  "name": "@fillcrate/backend",
+  "name": "@headbanger/backend",
   "version": "0.0.1",
   "description": "",
   "author": "",
@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",
-    "@fillcrate/shared": "workspace:*",
+    "@headbanger/shared": "workspace:*",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",

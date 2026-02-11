@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Delete, Param, Query, Body, UseGuards } from '@nestjs/common';
-import { UserVinyl, VinylStats } from '@fillcrate/shared';
-import type { UserVinylType } from '@fillcrate/shared';
+import { UserVinyl, VinylStats } from '@headbanger/shared';
+import type { UserVinylType } from '@headbanger/shared';
 import { UserVinylsService } from './user-vinyls.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';

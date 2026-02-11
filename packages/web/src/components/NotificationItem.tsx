@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import Avatar from './Avatar'
 import VinylImage from './VinylImage'
 import { getRelativeTimeString } from '../utils/date-utils'
-import type { Notification } from '@fillcrate/shared'
+import type { Notification } from '@headbanger/shared'
 
 interface NotificationItemProps {
   notification: Notification;

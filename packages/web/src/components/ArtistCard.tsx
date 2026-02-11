@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import type { ArtistLight } from '@fillcrate/shared'
+import type { ArtistLight } from '@headbanger/shared'
 
 interface ArtistCardProps {
   artist: ArtistLight;

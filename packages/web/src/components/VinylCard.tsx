@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import type { VinylLight } from '@fillcrate/shared'
+import type { VinylLight } from '@headbanger/shared'
 import VinylImage from './VinylImage'
 
 interface VinylCardProps {

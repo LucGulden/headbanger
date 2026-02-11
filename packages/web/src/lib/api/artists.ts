@@ -1,5 +1,5 @@
 import { apiClient } from '../apiClient'
-import type { Artist, ArtistLight } from '@fillcrate/shared'
+import type { Artist, ArtistLight } from '@headbanger/shared'
 
 // ============================================================================
 // ROUTES BACKEND DISPONIBLES

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import VinylImage from './VinylImage'
-import type { AlbumLight } from '@fillcrate/shared'
+import type { AlbumLight } from '@headbanger/shared'
 
 interface AlbumCardProps {
   album: AlbumLight;

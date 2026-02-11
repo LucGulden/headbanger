@@ -1,5 +1,5 @@
 import { apiClient } from '../apiClient'
-import type { User } from '@fillcrate/shared'
+import type { User } from '@headbanger/shared'
 
 // ============================================================================
 // VALIDATION LOCALE (pas besoin du backend)

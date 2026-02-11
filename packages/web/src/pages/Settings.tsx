@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth'
 import EditProfileForm from '../components/EditProfileForm'
 import LoadingSpinner from '../components/LoadingSpinner'
 import { getCurrentUser } from '../lib/api/users'
-import type { User } from '@fillcrate/shared'
+import type { User } from '@headbanger/shared'
 
 export default function Settings() {
   const { user: authUser } = useAuth()

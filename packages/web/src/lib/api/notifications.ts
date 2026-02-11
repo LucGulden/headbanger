@@ -1,5 +1,5 @@
 import { apiClient } from '../apiClient'
-import type { Notification } from '@fillcrate/shared'
+import type { Notification } from '@headbanger/shared'
 
 /**
  * Options de pagination pour les notifications

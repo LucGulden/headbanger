@@ -9,7 +9,7 @@ export default function Landing() {
           <h1 className="mb-6 text-5xl font-bold tracking-tight text-[var(--foreground)] sm:text-7xl">
             Bienvenue sur{' '}
             <span className="bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] bg-clip-text text-transparent">
-              FillCrate
+              HeadBanger
             </span>
           </h1>
           <p className="mx-auto mb-10 max-w-2xl text-lg text-[var(--foreground-muted)] sm:text-xl">
@@ -20,7 +20,7 @@ export default function Landing() {
             to="/signup"
             className="inline-block rounded-full bg-[var(--primary)] px-8 py-4 text-lg font-semibold text-white hover:bg-[#d67118] hover:scale-105 transition-transform"
           >
-            Rejoindre FillCrate
+            Rejoindre HeadBanger
           </Link>
         </div>
 
@@ -33,7 +33,7 @@ export default function Landing() {
       <section className="px-6 py-24">
         <div className="mx-auto max-w-7xl">
           <h2 className="mb-16 text-center text-3xl font-bold text-[var(--foreground)] sm:text-4xl">
-            Pourquoi rejoindre FillCrate ?
+            Pourquoi rejoindre HeadBanger ?
           </h2>
 
           <div className="grid grid-cols-1 gap-8 md:grid-cols-3">

@@ -56,7 +56,7 @@ export default function Navigation() {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 text-xl font-bold hover:opacity-80">
             <span>🎵</span>
-            <span className="text-[var(--foreground)]">FillCrate</span>
+            <span className="text-[var(--foreground)]">HeadBanger</span>
           </Link>
 
           {/* Navigation links - Desktop & Tablette */}

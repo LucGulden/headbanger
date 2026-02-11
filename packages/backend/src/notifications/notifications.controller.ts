@@ -1,5 +1,5 @@
 import { Controller, Get, Put, Param, Query, UseGuards } from '@nestjs/common';
-import { Notification } from '@fillcrate/shared';
+import { Notification } from '@headbanger/shared';
 import { NotificationsService } from './notifications.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../common/database/supabase.service';
-import { Album, AlbumLight, ArtistLight, VinylLight } from '@fillcrate/shared';
+import { Album, AlbumLight, ArtistLight, VinylLight } from '@headbanger/shared';
 
 @Injectable()
 export class AlbumsService {

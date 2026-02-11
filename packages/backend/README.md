@@ -1,6 +1,6 @@
-# FillCrate Backend - API NestJS
+# HeadBanger Backend - API NestJS
 
-API REST avec Socket.IO pour FillCrate.
+API REST avec Socket.IO pour HeadBanger.
 
 ## Stack
 - NestJS + Fastify

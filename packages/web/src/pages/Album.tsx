@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { getAlbumById } from '../lib/api/albums'
 import LoadingSpinner from '../components/LoadingSpinner'
 import VinylCard from '../components/VinylCard'
-import type { Album } from '@fillcrate/shared'
+import type { Album } from '@headbanger/shared'
 
 export default function AlbumPage() {
   const { id } = useParams<{ id: string }>()

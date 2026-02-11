@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { getArtistById } from '../lib/api/artists'
 import LoadingSpinner from '../components/LoadingSpinner'
 import AlbumCard from '../components/AlbumCard'
-import type { Artist } from '@fillcrate/shared'
+import type { Artist } from '@headbanger/shared'
 
 export default function ArtistPage() {
   const { id } = useParams<{ id: string }>()

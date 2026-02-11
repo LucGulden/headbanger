@@ -1,19 +1,19 @@
 {
-  "name": "fillcrate",
+  "name": "headbanger",
   "version": "1.0.0",
   "private": true,
-  "description": "FillCrate monorepo - Social network for vinyl enthusiasts",
+  "description": "HeadBanger monorepo - Social network for vinyl enthusiasts",
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
-    "dev:web": "pnpm --filter @fillcrate/web dev",
-    "dev:backend": "pnpm --filter @fillcrate/backend start:dev",
-    "dev": "pnpm --parallel --filter @fillcrate/web --filter @fillcrate/backend dev",
-    "build:shared": "pnpm --filter @fillcrate/shared build",
-    "build:web": "pnpm --filter @fillcrate/web build",
-    "build:backend": "pnpm --filter @fillcrate/backend build",
-    "build": "pnpm build:shared && pnpm --parallel --filter @fillcrate/web --filter @fillcrate/backend build",
+    "dev:web": "pnpm --filter @headbanger/web dev",
+    "dev:backend": "pnpm --filter @headbanger/backend start:dev",
+    "dev": "pnpm --parallel --filter @headbanger/web --filter @headbanger/backend dev",
+    "build:shared": "pnpm --filter @headbanger/shared build",
+    "build:web": "pnpm --filter @headbanger/web build",
+    "build:backend": "pnpm --filter @headbanger/backend build",
+    "build": "pnpm build:shared && pnpm --parallel --filter @headbanger/web --filter @headbanger/backend build",
     "clean": "pnpm --parallel -r run clean",
     "install:all": "pnpm install"
   },

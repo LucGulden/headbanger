@@ -1,5 +1,5 @@
 import { Controller, Get, Param } from '@nestjs/common';
-import { Vinyl } from '@fillcrate/shared';
+import { Vinyl } from '@headbanger/shared';
 import { VinylsService } from './vinyls.service';
 
 @Controller('vinyls')

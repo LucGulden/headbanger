@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PostWithDetails, PostType, ArtistLight } from '@fillcrate/shared';
+import { PostWithDetails, PostType, ArtistLight } from '@headbanger/shared';
 import { SupabaseService } from '../common/database/supabase.service';
 
 @Injectable()

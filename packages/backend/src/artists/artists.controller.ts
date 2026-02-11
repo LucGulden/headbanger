@@ -1,5 +1,5 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
-import { Artist, ArtistLight } from '@fillcrate/shared';
+import { Artist, ArtistLight } from '@headbanger/shared';
 import { ArtistsService } from './artists.service';
 
 @Controller('artists')

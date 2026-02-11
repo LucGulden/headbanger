@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
-import { Comment } from '@fillcrate/shared';
+import { Comment } from '@headbanger/shared';
 import { SupabaseService } from '../common/database/supabase.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { EventsService } from 'src/events/events.service';

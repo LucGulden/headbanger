@@ -1,6 +1,6 @@
 import VinylGrid from './VinylGrid'
 import { useVinylsPagination } from '../hooks/useVinylsPagination'
-import type { UserVinylType } from '@fillcrate/shared'
+import type { UserVinylType } from '@headbanger/shared'
 import Button from './Button'
 import { Link } from 'react-router-dom'
 

@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Delete, Param, UseGuards } from '@nestjs/common';
-import { User, FollowStats } from '@fillcrate/shared';
+import { User, FollowStats } from '@headbanger/shared';
 import { FollowsService } from './follows.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';

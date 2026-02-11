@@ -1,5 +1,5 @@
 import { apiClient } from '../apiClient'
-import type { Album, AlbumLight } from '@fillcrate/shared'
+import type { Album, AlbumLight } from '@headbanger/shared'
 
 /**
  * Récupère un album par son ID avec tous ses vinyles

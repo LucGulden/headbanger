@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { User } from '@fillcrate/shared'
+import type { User } from '@headbanger/shared'
 import { getCurrentUser } from '../lib/api/users'
 
 interface UserStore {

@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Delete, Param, Query, Body, UseGuards } from '@nestjs/common';
-import { PostWithDetails, PostType } from '@fillcrate/shared';
+import { PostWithDetails, PostType } from '@headbanger/shared';
 import { PostsService } from './posts.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';

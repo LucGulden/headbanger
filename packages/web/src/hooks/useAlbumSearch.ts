@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { searchAlbums } from '../lib/api/albums'
-import type { AlbumLight } from '@fillcrate/shared'
+import type { AlbumLight } from '@headbanger/shared'
 
 interface UseAlbumSearchParams {
   query: string;

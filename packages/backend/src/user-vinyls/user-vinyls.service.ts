@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { Logger } from '@nestjs/common';
-import { UserVinyl, UserVinylType, VinylStats } from '@fillcrate/shared';
+import { UserVinyl, UserVinylType, VinylStats } from '@headbanger/shared';
 import { SupabaseService } from '../common/database/supabase.service';
 import { VinylsService } from '../vinyls/vinyls.service';
 import { PostsService } from 'src/posts/posts.service';

@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { User } from '@fillcrate/shared';
+import { User } from '@headbanger/shared';
 import { SupabaseService } from '../common/database/supabase.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 
