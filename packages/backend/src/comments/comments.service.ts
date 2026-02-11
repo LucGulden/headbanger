@@ -47,7 +47,12 @@ export class CommentsService {
   /**
    * Ajoute un commentaire à un post
    */
-  async addComment(token: string, postId: string, userId: string, content: string): Promise<Comment> {
+  async addComment(
+    token: string,
+    postId: string,
+    userId: string,
+    content: string,
+  ): Promise<Comment> {
     // Valider le contenu
     if (!content || content.trim().length === 0) {
       throw new BadRequestException('Comment content cannot be empty');

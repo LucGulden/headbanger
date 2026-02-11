@@ -21,9 +21,7 @@ import { AuthService } from '../auth/auth.service';
     credentials: true,
   },
 })
-export class WebsocketsGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
-{
+export class WebsocketsGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
@@ -72,56 +70,36 @@ export class WebsocketsGateway
       const userRoom = `user:${session.userId}`;
       client.join(userRoom);
 
-      this.logger.log(
-        `Client ${client.id} connected (user: ${session.userId}, room: ${userRoom})`,
-      );
+      this.logger.log(`Client ${client.id} connected (user: ${session.userId}, room: ${userRoom})`);
     } catch (error) {
-      this.logger.error(
-        `Error during client ${client.id} connection:`,
-        error.message,
-      );
+      this.logger.error(`Error during client ${client.id} connection:`, error.message);
       client.disconnect();
     }
   }
 
   handleDisconnect(client: Socket) {
     const userId = client.data.userId;
-    this.logger.log(
-      `Client ${client.id} disconnected${userId ? ` (user: ${userId})` : ''}`,
-    );
+    this.logger.log(`Client ${client.id} disconnected${userId ? ` (user: ${userId})` : ''}`);
   }
 
   @SubscribeMessage('join-room')
-  handleJoinRoom(
-    @MessageBody() dto: JoinRoomDto,
-    @ConnectedSocket() client: Socket,
-  ) {
+  handleJoinRoom(@MessageBody() dto: JoinRoomDto, @ConnectedSocket() client: Socket) {
     client.join(dto.roomId);
-    this.logger.log(
-      `Client ${client.id} joined room: ${dto.roomId} (user: ${client.data.userId})`,
-    );
+    this.logger.log(`Client ${client.id} joined room: ${dto.roomId} (user: ${client.data.userId})`);
     return { success: true, room: dto.roomId };
   }
 
   @SubscribeMessage('leave-room')
-  handleLeaveRoom(
-    @MessageBody() dto: LeaveRoomDto,
-    @ConnectedSocket() client: Socket,
-  ) {
+  handleLeaveRoom(@MessageBody() dto: LeaveRoomDto, @ConnectedSocket() client: Socket) {
     client.leave(dto.roomId);
-    this.logger.log(
-      `Client ${client.id} left room: ${dto.roomId} (user: ${client.data.userId})`,
-    );
+    this.logger.log(`Client ${client.id} left room: ${dto.roomId} (user: ${client.data.userId})`);
     return { success: true, room: dto.roomId };
   }
 
   /**
    * Utilitaire pour extraire un cookie depuis le header Cookie
    */
-  private extractTokenFromCookie(
-    cookieHeader: string,
-    cookieName: string,
-  ): string | null {
+  private extractTokenFromCookie(cookieHeader: string, cookieName: string): string | null {
     const cookies = cookieHeader.split(';').map((c) => c.trim());
     const cookie = cookies.find((c) => c.startsWith(`${cookieName}=`));
     return cookie ? cookie.split('=')[1] : null;

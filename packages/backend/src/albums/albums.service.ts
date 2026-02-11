@@ -74,11 +74,7 @@ export class AlbumsService {
    * Recherche d'albums par titre avec pagination offset-based
    * Retourne AlbumLight[] (sans les vinyles pour optimiser les performances)
    */
-  async searchAlbums(
-    query: string,
-    limit: number = 20,
-    offset: number = 0,
-  ): Promise<AlbumLight[]> {
+  async searchAlbums(query: string, limit: number = 20, offset: number = 0): Promise<AlbumLight[]> {
     if (!query || query.trim().length < 2) {
       return [];
     }

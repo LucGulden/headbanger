@@ -17,7 +17,7 @@ import { SupabaseService } from '../common/database/supabase.service';
       useFactory: (configService: ConfigService) => {
         const secret = configService.get<string>('JWT_SECRET');
         const expiresIn = configService.get<string>('JWT_EXPIRES_IN') || '15m';
-        
+
         return {
           secret,
           signOptions: {
@@ -30,18 +30,18 @@ import { SupabaseService } from '../common/database/supabase.service';
   ],
   controllers: [AuthController], // ← Ajouter
   providers: [
-    AuthService, 
+    AuthService,
     SupabaseService,
-    AuthGuard,      // ← Ajouter
-    RefreshGuard,   // ← Ajouter
-    CsrfGuard,      // ← Ajouter
+    AuthGuard, // ← Ajouter
+    RefreshGuard, // ← Ajouter
+    CsrfGuard, // ← Ajouter
   ],
   exports: [
-    AuthService, 
+    AuthService,
     JwtModule,
-    AuthGuard,      // ← Ajouter (pour utiliser dans d'autres modules)
-    RefreshGuard,   // ← Ajouter
-    CsrfGuard,      // ← Ajouter
+    AuthGuard, // ← Ajouter (pour utiliser dans d'autres modules)
+    RefreshGuard, // ← Ajouter
+    CsrfGuard, // ← Ajouter
   ],
 })
 export class AuthModule {}

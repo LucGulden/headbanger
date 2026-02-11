@@ -1,10 +1,10 @@
-import { 
-  Controller, 
-  Post, 
-  Get, 
-  Body, 
-  UseGuards, 
-  Req, 
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  UseGuards,
+  Req,
   Res,
   HttpCode,
   HttpStatus,
@@ -33,14 +33,10 @@ export class AuthController {
 
   @Post('signup')
   @HttpCode(HttpStatus.CREATED)
-  async signup(
-    @Body() dto: SignUpDto,
-    @Req() request: FastifyRequest,
-    @Res() reply: FastifyReply,
-  ) {
+  async signup(@Body() dto: SignUpDto, @Req() request: FastifyRequest, @Res() reply: FastifyReply) {
     const ip = request.ip;
     const userAgent = request.headers['user-agent'];
-    
+
     const { jwt, csrfToken, userId } = await this.authService.signup(
       dto.email,
       dto.username,
@@ -69,14 +65,10 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(
-    @Body() dto: LoginDto,
-    @Req() request: FastifyRequest,
-    @Res() reply: FastifyReply,
-  ) {
+  async login(@Body() dto: LoginDto, @Req() request: FastifyRequest, @Res() reply: FastifyReply) {
     const ip = request.ip;
     const userAgent = request.headers['user-agent'];
-    
+
     const { jwt, csrfToken, userId } = await this.authService.login(
       dto.email,
       dto.password,
@@ -105,10 +97,7 @@ export class AuthController {
   @Post('logout')
   @UseGuards(AuthGuard)
   @HttpCode(HttpStatus.OK)
-  async logout(
-    @CurrentSession() session: any,
-    @Res() reply: FastifyReply,
-  ) {
+  async logout(@CurrentSession() session: any, @Res() reply: FastifyReply) {
     await this.authService.logout(session.id);
 
     // Clear cookies
@@ -135,10 +124,7 @@ export class AuthController {
   @Post('refresh')
   @UseGuards(RefreshGuard)
   @HttpCode(HttpStatus.OK)
-  async refresh(
-    @CurrentSession() session: any,
-    @Res() reply: FastifyReply,
-  ) {
+  async refresh(@CurrentSession() session: any, @Res() reply: FastifyReply) {
     const jwt = await this.authService.refresh(session.id);
 
     const isProduction = process.env.NODE_ENV === 'production';

@@ -185,7 +185,11 @@ export class FollowsService {
   /**
    * Crée une notification de follow (privée, async)
    */
-  private async createFollowNotification(token: string, followerId: string, followedId: string): Promise<void> {
+  private async createFollowNotification(
+    token: string,
+    followerId: string,
+    followedId: string,
+  ): Promise<void> {
     try {
       await this.notificationsService.createNotification(
         token,

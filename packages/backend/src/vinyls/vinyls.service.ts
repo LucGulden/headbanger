@@ -80,9 +80,10 @@ export class VinylsService {
     const album: AlbumLight = {
       id: albumData?.id || '',
       title: albumData?.title || 'Album inconnu',
-      artists: albumArtists.length > 0 
-        ? albumArtists 
-        : [{ id: '', name: 'Artiste inconnu', imageUrl: null }],
+      artists:
+        albumArtists.length > 0
+          ? albumArtists
+          : [{ id: '', name: 'Artiste inconnu', imageUrl: null }],
       coverUrl: albumData?.cover_url || '',
       year: albumData?.year || 0,
     };
@@ -90,9 +91,10 @@ export class VinylsService {
     return {
       id: data.id,
       title: data.title,
-      artists: vinylArtists.length > 0 
-        ? vinylArtists 
-        : [{ id: '', name: 'Artiste inconnu', imageUrl: null }],
+      artists:
+        vinylArtists.length > 0
+          ? vinylArtists
+          : [{ id: '', name: 'Artiste inconnu', imageUrl: null }],
       coverUrl: data.cover_url,
       year: data.year,
       label: data.label,

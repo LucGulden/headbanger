@@ -21,13 +21,7 @@ export class AuthService {
   /**
    * Inscription utilisateur via Supabase Auth
    */
-  async signup(
-    email: string,
-    username: string,
-    password: string,
-    ip?: string,
-    userAgent?: string,
-  ) {
+  async signup(email: string, username: string, password: string, ip?: string, userAgent?: string) {
     this.logger.log(`Signup attempt for: ${email} (username: ${username})`);
 
     // 1. Appel Supabase Auth avec username dans les metadata

@@ -96,7 +96,11 @@ export class PostLikesService {
   /**
    * Crée une notification de like (privée, async)
    */
-  private async createLikeNotification(token: string, userId: string, postId: string): Promise<void> {
+  private async createLikeNotification(
+    token: string,
+    userId: string,
+    postId: string,
+  ): Promise<void> {
     try {
       const supabase = this.supabaseService.getClientWithAuth(token);
 

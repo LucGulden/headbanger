@@ -189,13 +189,17 @@ export class NotificationsService {
   ): Promise<void> {
     const supabase = this.supabaseService.getClientWithAuth(token);
 
-    const { data, error } = await supabase.from('notifications').insert({
-      user_id: userId,
-      type,
-      actor_id: actorId,
-      post_id: postId || null,
-      comment_id: commentId || null,
-    }).select(`
+    const { data, error } = await supabase
+      .from('notifications')
+      .insert({
+        user_id: userId,
+        type,
+        actor_id: actorId,
+        post_id: postId || null,
+        comment_id: commentId || null,
+      })
+      .select(
+        `
       id,
       type,
       read,
@@ -215,7 +219,9 @@ export class NotificationsService {
         id,
         content
       )
-    `).single();
+    `,
+      )
+      .single();
 
     if (error && error.code !== '23505') {
       // 23505 = duplicate, on ignore (ON CONFLICT DO NOTHING)

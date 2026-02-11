@@ -37,7 +37,7 @@ export class NotificationsController {
   @Get('unread-count')
   async getUnreadCount(
     @CurrentToken() token: string,
-    @CurrentUser() user: AuthenticatedUser
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<{ count: number }> {
     const count = await this.notificationsService.getUnreadCount(token, user.id);
     return { count };
@@ -50,7 +50,7 @@ export class NotificationsController {
   @Put('mark-all-read')
   async markAllAsRead(
     @CurrentToken() token: string,
-    @CurrentUser() user: AuthenticatedUser
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<{ success: boolean }> {
     await this.notificationsService.markAllAsRead(token, user.id);
     return { success: true };

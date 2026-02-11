@@ -42,12 +42,12 @@ async function bootstrap() {
       disableErrorMessages: false,
       exceptionFactory: (errors) => {
         // ✅ Logger SEULEMENT les contraintes, pas les valeurs
-        const sanitizedErrors = errors.map(err => ({
+        const sanitizedErrors = errors.map((err) => ({
           property: err.property,
           constraints: err.constraints,
           // ❌ Ne PAS logger err.value ni err.target (contient le password)
         }));
-        
+
         console.error('Validation errors:', sanitizedErrors);
         return new BadRequestException('Invalid request data');
       },

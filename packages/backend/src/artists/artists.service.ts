@@ -105,7 +105,8 @@ export class ArtistsService {
         return {
           id: album.id,
           title: album.title,
-          artists: artists.length > 0 ? artists : [{ id: '', name: 'Artiste inconnu', imageUrl: null }],
+          artists:
+            artists.length > 0 ? artists : [{ id: '', name: 'Artiste inconnu', imageUrl: null }],
           coverUrl: album.cover_url,
           year: album.year,
         };

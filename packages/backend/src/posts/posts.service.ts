@@ -146,15 +146,10 @@ export class PostsService {
     });
 
     commentsData?.forEach((comment) => {
-      commentsCountMap.set(
-        comment.post_id,
-        (commentsCountMap.get(comment.post_id) || 0) + 1,
-      );
+      commentsCountMap.set(comment.post_id, (commentsCountMap.get(comment.post_id) || 0) + 1);
     });
 
-    return data.map((post: any) =>
-      this.transformPostData(post, likesCountMap, commentsCountMap),
-    );
+    return data.map((post: any) => this.transformPostData(post, likesCountMap, commentsCountMap));
   }
 
   /**
@@ -279,7 +274,7 @@ export class PostsService {
         title: data.vinyl?.title || 'Vinyle inconnu',
         artists: artists,
         coverUrl: data.vinyl?.cover_url || data.vinyl?.album?.cover_url,
-        year: data.vinyl?.year ||  0,
+        year: data.vinyl?.year || 0,
         country: data.vinyl?.country || '',
         catalogNumber: data.vinyl?.catalog_number || '',
       },

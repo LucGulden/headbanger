@@ -48,7 +48,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   async setSession(sessionId: string, session: Session): Promise<void> {
     const ttl = parseInt(this.configService.get<string>('SESSION_EXPIRES_IN') || '86400');
     const key = `session:${sessionId}`;
-    
+
     await this.client.setex(
       key,
       ttl,
@@ -56,9 +56,9 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         ...session,
         createdAt: session.createdAt.toISOString(),
         lastActivity: session.lastActivity.toISOString(),
-      })
+      }),
     );
-    
+
     this.logger.debug(`Session ${sessionId} stored with TTL ${ttl}s`);
   }
 
@@ -68,13 +68,13 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   async getSession(sessionId: string): Promise<Session | null> {
     const key = `session:${sessionId}`;
     const data = await this.client.get(key);
-    
+
     if (!data) {
       return null;
     }
 
     const parsed = JSON.parse(data);
-    
+
     // Reconstruit les objets Date
     return {
       ...parsed,
@@ -97,7 +97,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
    */
   async updateLastActivity(sessionId: string): Promise<void> {
     const session = await this.getSession(sessionId);
-    
+
     if (session) {
       session.lastActivity = new Date();
       await this.setSession(sessionId, session);

@@ -21,11 +21,7 @@ export class PostsController {
     @Query('limit') limit?: number,
     @Query('lastCreatedAt') lastCreatedAt?: string,
   ): Promise<PostWithDetails[]> {
-    return this.postsService.getGlobalFeed(
-      user.id,
-      limit ? Number(limit) : 20,
-      lastCreatedAt,
-    );
+    return this.postsService.getGlobalFeed(user.id, limit ? Number(limit) : 20, lastCreatedAt);
   }
 
   /**
@@ -39,10 +35,6 @@ export class PostsController {
     @Query('limit') limit?: number,
     @Query('lastCreatedAt') lastCreatedAt?: string,
   ): Promise<PostWithDetails[]> {
-    return this.postsService.getProfileFeed(
-      userId,
-      limit ? Number(limit) : 20,
-      lastCreatedAt,
-    );
+    return this.postsService.getProfileFeed(userId, limit ? Number(limit) : 20, lastCreatedAt);
   }
 }
