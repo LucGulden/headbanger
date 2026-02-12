@@ -6,7 +6,9 @@ import { RedisService } from '../../src/redis/redis.service'
 import { createSupabaseServiceMock, SupabaseMockResponses } from '../mocks/supabase.mock'
 import { createRedisServiceMock } from '../mocks/redis.mock'
 
-export async function createAppWithSupabaseMock(responses: SupabaseMockResponses): Promise<INestApplication> {
+export async function createAppWithSupabaseMock(
+  responses: SupabaseMockResponses,
+): Promise<INestApplication> {
   const moduleFixture: TestingModule = await Test.createTestingModule({
     imports: [AppModule],
   })

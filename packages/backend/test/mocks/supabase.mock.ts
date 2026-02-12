@@ -1,8 +1,6 @@
+export type SupabaseSingleResult = { data: unknown; error: unknown }
 
-export type SupabaseSingleResult = { data: unknown; error: unknown };
-
-export type SupabaseMockResponses = Record<string, SupabaseSingleResult>;
-
+export type SupabaseMockResponses = Record<string, SupabaseSingleResult>
 
 export const createSupabaseMock = (responses: SupabaseMockResponses) => {
   return {

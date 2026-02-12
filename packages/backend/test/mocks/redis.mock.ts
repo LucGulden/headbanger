@@ -1,15 +1,27 @@
 import { Session } from '../../src/common/interfaces/session.interface'
 
-export const createRedisServiceMock = (overrides: any = {}) => {
+export interface RedisServiceMock {
+  onModuleInit: () => Promise<void>
+  onModuleDestroy: () => Promise<void>
+
+  setSession: (sessionId: string, session: Session) => Promise<void>
+  getSession: (sessionId: string) => Promise<Session | null>
+  deleteSession: (sessionId: string) => Promise<void>
+  updateLastActivity: (sessionId: string) => Promise<void>
+  getUserSessions: (userId: string) => Promise<Session[]>
+  isHealthy: () => Promise<boolean>
+}
+
+export type RedisMockOverrides = Partial<RedisServiceMock>
+
+export const createRedisServiceMock = (overrides: RedisMockOverrides = {}): RedisServiceMock => {
   const store = new Map<string, string>() // simulate Redis KV store
 
-  return {
-    // Fake onModuleInit / onModuleDestroy (no real Redis connection)
+  const mock: RedisServiceMock = {
     onModuleInit: jest.fn().mockResolvedValue(undefined),
     onModuleDestroy: jest.fn().mockResolvedValue(undefined),
 
-    // ---- Session methods ----
-    setSession: jest.fn(async (sessionId: string, session: Session) => {
+    async setSession(sessionId: string, session: Session) {
       store.set(
         `session:${sessionId}`,
         JSON.stringify({
@@ -18,9 +30,9 @@ export const createRedisServiceMock = (overrides: any = {}) => {
           lastActivity: session.lastActivity.toISOString(),
         }),
       )
-    }),
+    },
 
-    getSession: jest.fn(async (sessionId: string): Promise<Session | null> => {
+    async getSession(sessionId: string): Promise<Session | null> {
       const raw = store.get(`session:${sessionId}`)
       if (!raw) return null
 
@@ -30,22 +42,24 @@ export const createRedisServiceMock = (overrides: any = {}) => {
         createdAt: new Date(parsed.createdAt),
         lastActivity: new Date(parsed.lastActivity),
       }
-    }),
+    },
 
-    deleteSession: jest.fn(async (sessionId: string) => {
+    async deleteSession(sessionId: string): Promise<void> {
       store.delete(`session:${sessionId}`)
-    }),
+    },
 
-    updateLastActivity: jest.fn(async (sessionId: string) => {
-      const existing = await (this as any).getSession(sessionId)
+    async updateLastActivity(sessionId: string): Promise<void> {
+      const existing = await mock.getSession(sessionId)
+
       if (existing) {
         existing.lastActivity = new Date()
-        await (this as any).setSession(sessionId, existing)
+        await mock.setSession(sessionId, existing)
       }
-    }),
+    },
 
-    getUserSessions: jest.fn(async (userId: string): Promise<Session[]> => {
+    async getUserSessions(userId: string): Promise<Session[]> {
       const sessions: Session[] = []
+
       for (const [key, raw] of store.entries()) {
         if (key.startsWith('session:')) {
           const parsed = JSON.parse(raw)
@@ -58,12 +72,14 @@ export const createRedisServiceMock = (overrides: any = {}) => {
           }
         }
       }
+
       return sessions
-    }),
+    },
 
-    isHealthy: jest.fn(async () => true),
-
-    // Allow overrides for special cases
-    ...overrides,
+    async isHealthy() {
+      return true
+    },
   }
+
+  return { ...mock, ...overrides }
 }
