@@ -9,29 +9,25 @@ export interface DbUser {
   last_name: string | null
   bio: string | null
   photo_url: string | null
-  created_at?: string
-  updated_at?: string
 }
 
 export interface DbArtist {
   id: string
   name: string
   image_url: string | null
-  spotify_id?: string | null
+  spotify_id: string | null
 }
 
 export interface DbVinyl {
   id: string
   title: string
-  cover_url: string
+  cover_url: string | null
   year: number
   label: string
   catalog_number: string
   country: string
   format: string
   album_id: string
-  created_at?: string
-  updated_at?: string
 }
 
 export interface DbComment {

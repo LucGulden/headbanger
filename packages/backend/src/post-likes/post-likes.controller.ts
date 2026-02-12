@@ -3,7 +3,7 @@ import { PostLikesService } from './post-likes.service'
 import { AuthGuard } from '../auth/guards/auth.guard'
 import { CurrentUser } from '../auth/decorators/current-user.decorator'
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator'
-import { CurrentToken } from 'src/auth/decorators/current-token.decorator'
+import { CurrentToken } from '../auth/decorators/current-token.decorator'
 
 @Controller('post-likes')
 export class PostLikesController {

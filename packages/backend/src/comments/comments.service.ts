@@ -189,9 +189,9 @@ export class CommentsService {
       content: data.content,
       createdAt: data.created_at,
       user: {
-        uid: data.user[0]?.uid ?? data.user_id,
-        username: data.user[0]?.username ?? '',
-        photoUrl: data.user[0]?.photo_url ?? undefined,
+        uid: data.user[0]?.uid,
+        username: data.user[0]?.username,
+        photoUrl: data.user[0]?.photo_url,
       },
     }
   }

@@ -1,24 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { Vinyl, ArtistLight, AlbumLight } from '@headbanger/shared'
 import { SupabaseService } from '../common/database/supabase.service'
-import { DbVinyl } from '../common/database/database.types'
-
-type VinylByIdQueryResult = DbVinyl & {
-  vinyl_artists: {
-    position: number
-    artist: { id: string; name: string; image_url: string | null }[]
-  }[]
-  albums: {
-    id: string
-    title: string
-    cover_url: string | null
-    year: number
-    album_artists: {
-      position: number
-      artist: { id: string; name: string; image_url: string | null }[]
-    }[]
-  } | null
-}
+import { VinylByIdQueryResult } from './vinyls.types'
 
 @Injectable()
 export class VinylsService {

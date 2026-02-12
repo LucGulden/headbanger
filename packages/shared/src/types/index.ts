@@ -35,7 +35,7 @@ export interface ArtistLight {
 
 // Artist complet (pour getById)
 export interface Artist extends ArtistLight {
-  spotifyId?: string | null;
+  spotifyId: string | null;
   albums: AlbumLight[];
 }
 
@@ -81,13 +81,13 @@ export interface VinylStats {
 export interface UserLight {
   uid: string;
   username: string;
-  photoUrl?: string;
+  photoUrl: string | null;
 }
 
 export interface User extends UserLight {
-  firstName?: string;
-  lastName?: string;
-  bio?: string;
+  firstName: string | null;
+  lastName: string | null;
+  bio: string | null;
 }
 
 // ============================================
@@ -169,6 +169,6 @@ export interface Notification {
   read: boolean;
   createdAt: string;
   actor: NotificationActor;
-  post?: NotificationPost;
-  comment?: NotificationComment;
+  post?: NotificationPost; // on laisse en membre possiblement absent car c'est un objet construit et le membre est potentiellement absent en fonction du type de notification
+  comment?: NotificationComment; // idem
 }

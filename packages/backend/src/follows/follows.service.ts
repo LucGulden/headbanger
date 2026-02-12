@@ -3,7 +3,7 @@ import { User, FollowStats } from '@headbanger/shared'
 import { SupabaseService } from '../common/database/supabase.service'
 import { UsersService } from '../users/users.service'
 import { NotificationsService } from '../notifications/notifications.service'
-import { DbUser } from 'src/common/database/database.types'
+import { DbUser } from '../common/database/database.types'
 
 @Injectable()
 export class FollowsService {
@@ -212,10 +212,10 @@ export class FollowsService {
     return {
       uid: data.uid,
       username: data.username,
-      firstName: data.first_name ?? undefined,
-      lastName: data.last_name ?? undefined,
-      photoUrl: data.photo_url ?? undefined,
-      bio: data.bio ?? undefined,
+      firstName: data.first_name,
+      lastName: data.last_name,
+      photoUrl: data.photo_url,
+      bio: data.bio,
     }
   }
 }

@@ -5,6 +5,6 @@ import { VinylsService } from './vinyls.service'
 @Module({
   controllers: [VinylsController],
   providers: [VinylsService],
-  exports: [VinylsService], // Pour utiliser dans UserVinyls plus tard
+  exports: [VinylsService],
 })
 export class VinylsModule {}

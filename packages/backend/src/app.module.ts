@@ -16,6 +16,7 @@ import { AuthModule } from './auth/auth.module'
 import { EventsModule } from './events/events.module'
 import { WebsocketsModule } from './websockets/websockets.module'
 import { StorageModule } from './storage/storage.module'
+import { AppController } from './app.controller'
 
 @Module({
   imports: [
@@ -34,14 +35,15 @@ import { StorageModule } from './storage/storage.module'
     // Modules métier
     AlbumsModule,
     ArtistsModule,
-    VinylsModule,
-    UserVinylsModule,
-    UsersModule,
+    CommentsModule,
     FollowsModule,
+    NotificationsModule,
     PostsModule,
     PostLikesModule,
-    CommentsModule,
-    NotificationsModule,
+    UsersModule,
+    UserVinylsModule,
+    VinylsModule,
   ],
+  controllers: [AppController],
 })
 export class AppModule {}

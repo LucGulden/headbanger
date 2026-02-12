@@ -277,18 +277,18 @@ export class PostsService {
       likesCount: likesCountMap.get(data.id) ?? 0,
       commentsCount: commentsCountMap.get(data.id) ?? 0,
       user: {
-        uid: data.user[0]?.uid ?? data.user_id,
-        username: data.user[0]?.username ?? '',
-        photoUrl: data.user[0]?.photo_url ?? undefined,
+        uid: data.user[0]?.uid,
+        username: data.user[0]?.username,
+        photoUrl: data.user[0]?.photo_url,
       },
       vinyl: {
-        id: vinyl?.id ?? '',
-        title: vinyl?.title ?? '',
+        id: vinyl?.id,
+        title: vinyl?.title,
         artists,
-        coverUrl: vinyl?.cover_url ?? '',
-        year: vinyl?.year ?? 0,
-        country: vinyl?.country ?? '',
-        catalogNumber: vinyl?.catalog_number ?? '',
+        coverUrl: vinyl?.cover_url,
+        year: vinyl?.year,
+        country: vinyl?.country,
+        catalogNumber: vinyl?.catalog_number,
       },
     }
   }
