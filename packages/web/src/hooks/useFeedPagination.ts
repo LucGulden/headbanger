@@ -18,11 +18,14 @@ export interface UseFeedPaginationReturn {
 
 /**
  * Hook pour gérer la pagination d'un feed (global ou profil)
- * 
+ *
  * @param userId - ID de l'utilisateur du profil (requis seulement si profileFeed = true)
  * @param profileFeed - true = feed d'un profil spécifique, false = feed global
  */
-export function useFeedPagination(userId?: string, profileFeed: boolean = false): UseFeedPaginationReturn {
+export function useFeedPagination(
+  userId?: string,
+  profileFeed: boolean = false,
+): UseFeedPaginationReturn {
   const [posts, setPosts] = useState<PostWithDetails[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)

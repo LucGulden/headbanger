@@ -56,9 +56,7 @@ export default function Settings() {
             <h1 className="mb-2 text-3xl font-bold text-[var(--foreground)]">
               Paramètres du profil
             </h1>
-            <p className="text-[var(--foreground-muted)]">
-              Modifiez vos informations personnelles
-            </p>
+            <p className="text-[var(--foreground-muted)]">Modifiez vos informations personnelles</p>
           </div>
           <Link
             to={`/profile/${user.username}`}

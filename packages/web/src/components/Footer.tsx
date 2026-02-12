@@ -12,8 +12,8 @@ export default function Footer() {
               <span className="text-[var(--foreground)]">HeadBanger</span>
             </div>
             <p className="text-sm text-[var(--foreground-muted)]">
-              Le réseau social pour les passionnés de vinyles.
-              Partagez votre collection et découvrez de nouveaux albums.
+              Le réseau social pour les passionnés de vinyles. Partagez votre collection et
+              découvrez de nouveaux albums.
             </p>
           </div>
 

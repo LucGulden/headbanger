@@ -8,7 +8,7 @@ import LoadingSpinner from '../components/LoadingSpinner'
 
 export default function Notifications() {
   const { user } = useAuth()
-  
+
   // Guard TypeScript (ne devrait jamais arriver grâce à ProtectedRoute)
   if (!user) {
     return null
@@ -18,21 +18,15 @@ export default function Notifications() {
 }
 
 function NotificationsContent() {
-  const {
-    notifications,
-    loading,
-    loadingMore,
-    hasMore,
-    loadMore,
-    handleMarkAllAsRead,
-  } = useNotifications()
+  const { notifications, loading, loadingMore, hasMore, loadMore, handleMarkAllAsRead } =
+    useNotifications()
 
   const { reset } = useNotificationsStore()
   const observerRef = useRef<IntersectionObserver | null>(null)
   const loadMoreRef = useRef<HTMLDivElement>(null)
 
   // Calculer le nombre de notifications non lues depuis les données locales
-  const unreadCount = notifications.filter(n => !n.read).length
+  const unreadCount = notifications.filter((n) => !n.read).length
 
   // Marquer toutes les notifications comme lues au montage
   useEffect(() => {
@@ -92,7 +86,8 @@ function NotificationsContent() {
           <h1 className="text-2xl font-bold text-foreground">Notifications</h1>
           {unreadCount > 0 && (
             <p className="text-sm text-foreground-muted mt-1">
-              {unreadCount} notification{unreadCount > 1 ? 's' : ''} non lue{unreadCount > 1 ? 's' : ''}
+              {unreadCount} notification{unreadCount > 1 ? 's' : ''} non lue
+              {unreadCount > 1 ? 's' : ''}
             </p>
           )}
         </div>
@@ -103,21 +98,14 @@ function NotificationsContent() {
         // Empty state
         <div className="bg-background-light rounded-lg p-12 text-center">
           <div className="text-6xl mb-4">🔔</div>
-          <h2 className="text-xl font-semibold text-foreground mb-2">
-            Aucune notification
-          </h2>
-          <p className="text-foreground-muted">
-            Vous n'avez pas encore de notifications.
-          </p>
+          <h2 className="text-xl font-semibold text-foreground mb-2">Aucune notification</h2>
+          <p className="text-foreground-muted">Vous n'avez pas encore de notifications.</p>
         </div>
       ) : (
         <div className="bg-background-light rounded-lg overflow-hidden">
           <AnimatePresence mode="popLayout">
             {notifications.map((notification) => (
-              <NotificationItem
-                key={notification.id}
-                notification={notification}
-              />
+              <NotificationItem key={notification.id} notification={notification} />
             ))}
           </AnimatePresence>
 

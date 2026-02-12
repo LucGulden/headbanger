@@ -34,7 +34,7 @@ export default function SignupPage() {
     if (!formData.username) {
       newErrors.username = "Le nom d'utilisateur est requis"
     } else if (!validateUsername(formData.username)) {
-      newErrors.username = 'Nom d\'utilisateur invalide (3-20 caractères, lettres, chiffres, - et _)'
+      newErrors.username = "Nom d'utilisateur invalide (3-20 caractères, lettres, chiffres, - et _)"
     } else {
       // Vérifier la disponibilité
       try {
@@ -111,9 +111,7 @@ export default function SignupPage() {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="mb-8 text-center">
-          <h1 className="mb-2 text-4xl font-bold text-[var(--foreground)]">
-            Rejoignez HeadBanger
-          </h1>
+          <h1 className="mb-2 text-4xl font-bold text-[var(--foreground)]">Rejoignez HeadBanger</h1>
           <p className="text-[var(--foreground-muted)]">
             Commencez à partager votre passion pour les vinyles
           </p>
@@ -141,7 +139,12 @@ export default function SignupPage() {
               disabled={loading}
               icon={
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"
+                  />
                 </svg>
               }
             />
@@ -157,7 +160,12 @@ export default function SignupPage() {
               disabled={loading || checkingUsername}
               icon={
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
                 </svg>
               }
             />
@@ -173,7 +181,12 @@ export default function SignupPage() {
               disabled={loading}
               icon={
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                  />
                 </svg>
               }
             />
@@ -189,12 +202,22 @@ export default function SignupPage() {
               disabled={loading}
               icon={
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
                 </svg>
               }
             />
 
-            <Button type="submit" className="w-full" loading={loading || checkingUsername} disabled={loading || checkingUsername}>
+            <Button
+              type="submit"
+              className="w-full"
+              loading={loading || checkingUsername}
+              disabled={loading || checkingUsername}
+            >
               Créer mon compte
             </Button>
           </form>
@@ -202,10 +225,7 @@ export default function SignupPage() {
           {/* Lien vers Login */}
           <p className="mt-6 text-center text-sm text-[var(--foreground-muted)]">
             Vous avez déjà un compte ?{' '}
-            <Link
-              to="/login"
-              className="font-semibold text-[var(--primary)] hover:underline"
-            >
+            <Link to="/login" className="font-semibold text-[var(--primary)] hover:underline">
               Se connecter
             </Link>
           </p>

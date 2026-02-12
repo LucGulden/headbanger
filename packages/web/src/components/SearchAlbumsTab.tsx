@@ -3,7 +3,7 @@ import { useAlbumSearch } from '../hooks/useAlbumSearch'
 import AlbumCard from './AlbumCard'
 
 interface SearchAlbumsTabProps {
-  query: string;
+  query: string
 }
 
 export default function SearchAlbumsTab({ query }: SearchAlbumsTabProps) {
@@ -70,7 +70,8 @@ export default function SearchAlbumsTab({ query }: SearchAlbumsTabProps) {
       {!loading && albums.length > 0 && (
         <>
           <p className="mb-4 text-sm text-[var(--foreground-muted)]">
-            {albums.length}{hasMore ? '+' : ''} résultat{albums.length > 1 ? 's' : ''} trouvé
+            {albums.length}
+            {hasMore ? '+' : ''} résultat{albums.length > 1 ? 's' : ''} trouvé
             {albums.length > 1 ? 's' : ''}
           </p>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
@@ -97,9 +98,7 @@ export default function SearchAlbumsTab({ query }: SearchAlbumsTabProps) {
       {!loading && hasSearched && albums.length === 0 && !error && (
         <div className="py-16 text-center">
           <div className="mb-4 text-6xl">🔍</div>
-          <h3 className="mb-2 text-xl font-semibold text-[var(--foreground)]">
-            Aucun résultat
-          </h3>
+          <h3 className="mb-2 text-xl font-semibold text-[var(--foreground)]">Aucun résultat</h3>
           <p className="text-[var(--foreground-muted)]">
             Aucun album trouvé pour "{query}". Essayez un autre nom d'album ou d'artiste.
           </p>

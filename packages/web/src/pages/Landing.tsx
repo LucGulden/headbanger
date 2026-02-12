@@ -13,8 +13,9 @@ export default function Landing() {
             </span>
           </h1>
           <p className="mx-auto mb-10 max-w-2xl text-lg text-[var(--foreground-muted)] sm:text-xl">
-            Le réseau social qui réunit les passionnés de vinyles.
-            Partagez votre collection, découvrez de nouveaux albums et connectez-vous avec une communauté qui partage votre passion.
+            Le réseau social qui réunit les passionnés de vinyles. Partagez votre collection,
+            découvrez de nouveaux albums et connectez-vous avec une communauté qui partage votre
+            passion.
           </p>
           <Link
             to="/signup"
@@ -40,33 +41,32 @@ export default function Landing() {
             {/* Feature 1: Collection */}
             <div className="group rounded-2xl border border-[var(--background-lighter)] bg-[var(--background-light)] p-8 transition-all hover:border-[var(--primary)] hover:shadow-lg hover:shadow-[var(--primary)]/20">
               <div className="mb-4 text-5xl">💿</div>
-              <h3 className="mb-3 text-2xl font-semibold text-[var(--foreground)]">
-                Collection
-              </h3>
+              <h3 className="mb-3 text-2xl font-semibold text-[var(--foreground)]">Collection</h3>
               <p className="text-[var(--foreground-muted)]">
-                {'Cataloguez vos vinyles, ajoutez des notes d\'écoute et suivez l\'évolution de votre collection au fil du temps.'}
+                {
+                  "Cataloguez vos vinyles, ajoutez des notes d'écoute et suivez l'évolution de votre collection au fil du temps."
+                }
               </p>
             </div>
 
             {/* Feature 2: Communauté */}
             <div className="group rounded-2xl border border-[var(--background-lighter)] bg-[var(--background-light)] p-8 transition-all hover:border-[var(--primary)] hover:shadow-lg hover:shadow-[var(--primary)]/20">
               <div className="mb-4 text-5xl">👥</div>
-              <h3 className="mb-3 text-2xl font-semibold text-[var(--foreground)]">
-                Communauté
-              </h3>
+              <h3 className="mb-3 text-2xl font-semibold text-[var(--foreground)]">Communauté</h3>
               <p className="text-[var(--foreground-muted)]">
-                {'Partagez vos dernières acquisitions, échangez des recommandations et connectez-vous avec d\'autres collectionneurs.'}
+                {
+                  "Partagez vos dernières acquisitions, échangez des recommandations et connectez-vous avec d'autres collectionneurs."
+                }
               </p>
             </div>
 
             {/* Feature 3: Découverte */}
             <div className="group rounded-2xl border border-[var(--background-lighter)] bg-[var(--background-light)] p-8 transition-all hover:border-[var(--primary)] hover:shadow-lg hover:shadow-[var(--primary)]/20">
               <div className="mb-4 text-5xl">🔍</div>
-              <h3 className="mb-3 text-2xl font-semibold text-[var(--foreground)]">
-                Découverte
-              </h3>
+              <h3 className="mb-3 text-2xl font-semibold text-[var(--foreground)]">Découverte</h3>
               <p className="text-[var(--foreground-muted)]">
-                Explorez les collections des autres utilisateurs, créez votre wishlist et trouvez votre prochaine pépite musicale.
+                Explorez les collections des autres utilisateurs, créez votre wishlist et trouvez
+                votre prochaine pépite musicale.
               </p>
             </div>
           </div>

@@ -3,7 +3,7 @@ import { useUserSearch } from '../hooks/useUserSearch'
 import UserListItem from './UserListItem'
 
 interface SearchUsersTabProps {
-  query: string;
+  query: string
 }
 
 export default function SearchUsersTab({ query }: SearchUsersTabProps) {
@@ -77,15 +77,12 @@ export default function SearchUsersTab({ query }: SearchUsersTabProps) {
       {!loading && users.length > 0 && (
         <>
           <p className="mb-4 text-sm text-[var(--foreground-muted)]">
-            {users.length}{hasMore ? '+' : ''} résultat{users.length > 1 ? 's' : ''}
+            {users.length}
+            {hasMore ? '+' : ''} résultat{users.length > 1 ? 's' : ''}
           </p>
           <div className="space-y-3">
             {users.map((user) => (
-              <UserListItem
-                key={user.uid}
-                user={user}
-                showFollowButton={true}
-              />
+              <UserListItem key={user.uid} user={user} showFollowButton={true} />
             ))}
           </div>
 
@@ -107,9 +104,7 @@ export default function SearchUsersTab({ query }: SearchUsersTabProps) {
       {!loading && hasSearched && users.length === 0 && !error && (
         <div className="py-16 text-center">
           <div className="mb-4 text-6xl">🔍</div>
-          <h3 className="mb-2 text-xl font-semibold text-[var(--foreground)]">
-            Aucun résultat
-          </h3>
+          <h3 className="mb-2 text-xl font-semibold text-[var(--foreground)]">Aucun résultat</h3>
           <p className="text-[var(--foreground-muted)]">
             Aucun utilisateur trouvé pour "{query}". Essayez un autre nom ou nom d'utilisateur.
           </p>

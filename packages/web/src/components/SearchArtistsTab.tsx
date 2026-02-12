@@ -3,7 +3,7 @@ import { useArtistSearch } from '../hooks/useArtistSearch'
 import ArtistCard from './ArtistCard'
 
 interface SearchArtistsTabProps {
-  query: string;
+  query: string
 }
 
 export default function SearchArtistsTab({ query }: SearchArtistsTabProps) {
@@ -69,15 +69,13 @@ export default function SearchArtistsTab({ query }: SearchArtistsTabProps) {
       {!loading && artists.length > 0 && (
         <>
           <p className="mb-4 text-sm text-[var(--foreground-muted)]">
-            {artists.length}{hasMore ? '+' : ''} résultat{artists.length > 1 ? 's' : ''} trouvé
+            {artists.length}
+            {hasMore ? '+' : ''} résultat{artists.length > 1 ? 's' : ''} trouvé
             {artists.length > 1 ? 's' : ''}
           </p>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
             {artists.map((artist) => (
-              <ArtistCard
-                key={artist.id}
-                artist={artist}
-              />
+              <ArtistCard key={artist.id} artist={artist} />
             ))}
           </div>
 
@@ -115,9 +113,7 @@ export default function SearchArtistsTab({ query }: SearchArtistsTabProps) {
           <h3 className="mb-2 text-xl font-semibold text-[var(--foreground)]">
             Recherchez un artiste
           </h3>
-          <p className="text-[var(--foreground-muted)]">
-            Tapez le nom d'un artiste pour commencer
-          </p>
+          <p className="text-[var(--foreground-muted)]">Tapez le nom d'un artiste pour commencer</p>
         </div>
       )}
     </div>

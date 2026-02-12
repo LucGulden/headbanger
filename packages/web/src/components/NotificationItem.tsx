@@ -6,19 +6,18 @@ import { getRelativeTimeString } from '../utils/date-utils'
 import type { Notification } from '@headbanger/shared'
 
 interface NotificationItemProps {
-  notification: Notification;
+  notification: Notification
 }
 
-export default function NotificationItem({ 
-  notification,
-}: NotificationItemProps) {
+export default function NotificationItem({ notification }: NotificationItemProps) {
   const { actor, type, read, createdAt, post, comment } = notification
 
   // Générer le message selon le type
   const getMessage = () => {
-    const actorName = actor.firstName && actor.lastName 
-      ? `${actor.firstName} ${actor.lastName}`
-      : `@${actor.username}`
+    const actorName =
+      actor.firstName && actor.lastName
+        ? `${actor.firstName} ${actor.lastName}`
+        : `@${actor.username}`
 
     switch (type) {
       case 'new_follower':
@@ -76,41 +75,35 @@ export default function NotificationItem({
       >
         <div className="flex items-start gap-3">
           {/* Avatar de l'acteur */}
-          <Avatar
-            src={actor.photoUrl}
-            username={actor.username}
-            size="md"
-          />
+          <Avatar src={actor.photoUrl} username={actor.username} size="md" />
 
           {/* Contenu de la notification */}
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1">
-                <div className="text-sm text-foreground">
-                  {getMessage()}
-                </div>
+                <div className="text-sm text-foreground">{getMessage()}</div>
                 <div className="text-xs text-foreground-muted mt-1">
                   {getRelativeTimeString(createdAt)}
                 </div>
               </div>
 
               {/* Badge "non lu" */}
-              {!read && (
-                <div className="w-2 h-2 bg-primary rounded-full mt-1 flex-shrink-0" />
-              )}
+              {!read && <div className="w-2 h-2 bg-primary rounded-full mt-1 flex-shrink-0" />}
             </div>
           </div>
 
           {/* Aperçu du vinyle (pour post_like et post_comment) */}
-          {(type === 'post_like' || type === 'post_comment') && post?.vinyl && post.vinyl.coverUrl && (
-            <div className="w-12 h-12 flex-shrink-0">
-              <VinylImage
-                src={post.vinyl.coverUrl}
-                alt={`${post.vinyl.artist} - ${post.vinyl.title}`}
-                className="rounded"
-              />
-            </div>
-          )}
+          {(type === 'post_like' || type === 'post_comment') &&
+            post?.vinyl &&
+            post.vinyl.coverUrl && (
+              <div className="w-12 h-12 flex-shrink-0">
+                <VinylImage
+                  src={post.vinyl.coverUrl}
+                  alt={`${post.vinyl.artist} - ${post.vinyl.title}`}
+                  className="rounded"
+                />
+              </div>
+            )}
         </div>
       </Link>
     </motion.div>

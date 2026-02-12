@@ -3,7 +3,7 @@ import SearchAlbumsTab from '../components/SearchAlbumsTab'
 import SearchArtistsTab from '../components/SearchArtistsTab'
 import SearchUsersTab from '../components/SearchUsersTab'
 
-type SearchTab = 'albums' | 'artists' | 'users';
+type SearchTab = 'albums' | 'artists' | 'users'
 
 export default function Search() {
   const [activeTab, setActiveTab] = useState<SearchTab>('albums')
@@ -14,9 +14,7 @@ export default function Search() {
       <div className="mx-auto max-w-5xl">
         {/* Header avec input de recherche */}
         <div className="mb-8">
-          <h1 className="mb-4 text-3xl font-bold text-[var(--foreground)]">
-            Rechercher
-          </h1>
+          <h1 className="mb-4 text-3xl font-bold text-[var(--foreground)]">Rechercher</h1>
 
           {/* Barre de recherche */}
           <div className="relative">
@@ -43,8 +41,8 @@ export default function Search() {
                 activeTab === 'albums'
                   ? 'Rechercher un album ou un artiste...'
                   : activeTab === 'artists'
-                  ? 'Rechercher un artiste...'
-                  : 'Rechercher par nom d\'utilisateur ou nom...'
+                    ? 'Rechercher un artiste...'
+                    : "Rechercher par nom d'utilisateur ou nom..."
               }
               className="w-full rounded-lg border border-[var(--background-lighter)] bg-[var(--background-light)] py-3 pl-12 pr-4 text-[var(--foreground)] placeholder:text-[var(--foreground-muted)] focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20"
             />

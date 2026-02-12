@@ -3,10 +3,7 @@ interface LoadingSpinnerProps {
   size?: 'sm' | 'md' | 'lg'
 }
 
-export default function LoadingSpinner({ 
-  fullScreen = false, 
-  size = 'md',
-}: LoadingSpinnerProps) {
+export default function LoadingSpinner({ fullScreen = false, size = 'md' }: LoadingSpinnerProps) {
   const sizeClasses = {
     sm: 'h-6 w-6 border-2',
     md: 'h-8 w-8 border-2',
@@ -14,8 +11,8 @@ export default function LoadingSpinner({
   }
 
   const spinner = (
-    <div 
-      className={`${sizeClasses[size]} animate-spin rounded-full border-[var(--primary)] border-t-transparent`} 
+    <div
+      className={`${sizeClasses[size]} animate-spin rounded-full border-[var(--primary)] border-t-transparent`}
     />
   )
 

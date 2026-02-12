@@ -44,7 +44,8 @@ export default function Navigation() {
     }
   }
 
-  const username = appUser?.username || user?.userMetadata?.username || user?.email?.split('@')[0] || ''
+  const username =
+    appUser?.username || user?.userMetadata?.username || user?.email?.split('@')[0] || ''
 
   const isActive = (path: string) => location.pathname === path
 
@@ -169,7 +170,12 @@ export default function Navigation() {
                     viewBox="0 0 24 24"
                     stroke="currentColor"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
                   </svg>
                 </button>
 
@@ -181,7 +187,12 @@ export default function Navigation() {
                       onClick={() => setDropdownOpen(false)}
                       className="flex items-center gap-3 px-4 py-3 text-[var(--foreground)] hover:bg-[var(--background-lighter)]"
                     >
-                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -197,7 +208,12 @@ export default function Navigation() {
                       onClick={() => setDropdownOpen(false)}
                       className="flex items-center gap-3 px-4 py-3 text-[var(--foreground)] hover:bg-[var(--background-lighter)]"
                     >
-                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -220,7 +236,12 @@ export default function Navigation() {
                       onClick={handleSignOut}
                       className="flex w-full items-center gap-3 px-4 py-3 text-red-500 hover:bg-[var(--background-lighter)]"
                     >
-                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -261,9 +282,7 @@ export default function Navigation() {
             <Link
               to="/"
               className={`flex flex-col items-center gap-1 transition-colors ${
-                isActive('/')
-                  ? 'text-[var(--primary)]'
-                  : 'text-[var(--foreground-muted)]'
+                isActive('/') ? 'text-[var(--primary)]' : 'text-[var(--foreground-muted)]'
               }`}
             >
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -280,9 +299,7 @@ export default function Navigation() {
             <Link
               to="/search"
               className={`flex flex-col items-center gap-1 transition-colors ${
-                isActive('/search')
-                  ? 'text-[var(--primary)]'
-                  : 'text-[var(--foreground-muted)]'
+                isActive('/search') ? 'text-[var(--primary)]' : 'text-[var(--foreground-muted)]'
               }`}
             >
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

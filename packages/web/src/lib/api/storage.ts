@@ -19,7 +19,7 @@ async function compressImage(file: File): Promise<File> {
     return await imageCompression(file, options)
   } catch (error) {
     console.error('Erreur lors de la compression:', error)
-    throw new Error('Impossible de compresser l\'image')
+    throw new Error("Impossible de compresser l'image")
   }
 }
 
@@ -37,7 +37,7 @@ export async function uploadProfilePhoto(file: File): Promise<string> {
   }
 
   if (file.size > 5 * 1024 * 1024) {
-    throw new Error('L\'image ne doit pas dépasser 5MB')
+    throw new Error("L'image ne doit pas dépasser 5MB")
   }
 
   // Compression (peut retourner un Blob sans .type)
@@ -66,7 +66,7 @@ export function generateImagePreview(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => resolve(reader.result as string)
-    reader.onerror = () => reject(new Error('Erreur lors de la lecture de l\'image'))
+    reader.onerror = () => reject(new Error("Erreur lors de la lecture de l'image"))
     reader.readAsDataURL(file)
   })
 }

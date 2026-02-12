@@ -55,7 +55,7 @@ export function getRelativeTimeString(date: string | Date): string {
  */
 export function formatDate(date: string | Date): string {
   const d = typeof date === 'string' ? new Date(date) : date
-  
+
   return d.toLocaleDateString('fr-FR', {
     day: 'numeric',
     month: 'long',
@@ -70,7 +70,7 @@ export function formatDate(date: string | Date): string {
  */
 export function formatDateTime(date: string | Date): string {
   const d = typeof date === 'string' ? new Date(date) : date
-  
+
   return d.toLocaleDateString('fr-FR', {
     day: 'numeric',
     month: 'long',
@@ -88,7 +88,7 @@ export function formatDateTime(date: string | Date): string {
 export function isToday(date: string | Date): boolean {
   const d = typeof date === 'string' ? new Date(date) : date
   const today = new Date()
-  
+
   return (
     d.getDate() === today.getDate() &&
     d.getMonth() === today.getMonth() &&
@@ -105,7 +105,7 @@ export function isYesterday(date: string | Date): boolean {
   const d = typeof date === 'string' ? new Date(date) : date
   const yesterday = new Date()
   yesterday.setDate(yesterday.getDate() - 1)
-  
+
   return (
     d.getDate() === yesterday.getDate() &&
     d.getMonth() === yesterday.getMonth() &&

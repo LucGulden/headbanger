@@ -7,13 +7,10 @@ class ApiClient {
     this.baseUrl = baseUrl
   }
 
-  private async request<T>(
-    path: string,
-    options: RequestInit = {}
-  ): Promise<T> {
+  private async request<T>(path: string, options: RequestInit = {}): Promise<T> {
     // ✅ Ne pas ajouter Content-Type si c'est un FormData
     const isFormData = options.body instanceof FormData
-    
+
     const headers = isFormData
       ? {} // Pas de Content-Type, le browser le gère
       : { 'Content-Type': 'application/json' } // JSON pour le reste

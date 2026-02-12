@@ -3,7 +3,6 @@ import type { UserVinyl, UserVinylType, VinylStats } from '@headbanger/shared'
 
 const ITEMS_PER_PAGE = 20
 
-
 // ============================================================================
 // ROUTES BACKEND DISPONIBLES Public
 // ============================================================================
@@ -31,8 +30,10 @@ export async function getUserVinyls(
 export async function getUserVinylsCount(userId: string, type: UserVinylType): Promise<number> {
   const params = new URLSearchParams()
   params.append('type', type)
-  
-  const result = await apiClient.get<{ count: number }>(`/user-vinyls/user/${userId}/count?${params.toString()}`)
+
+  const result = await apiClient.get<{ count: number }>(
+    `/user-vinyls/user/${userId}/count?${params.toString()}`,
+  )
   return result.count
 }
 
@@ -54,8 +55,10 @@ export async function getVinylStats(userId: string): Promise<VinylStats> {
 export async function hasVinyl(vinylId: string, type: UserVinylType): Promise<boolean> {
   const params = new URLSearchParams()
   params.append('type', type)
-  
-  const result = await apiClient.get<{ has: boolean }>(`/user-vinyls/check/${vinylId}?${params.toString()}`)
+
+  const result = await apiClient.get<{ has: boolean }>(
+    `/user-vinyls/check/${vinylId}?${params.toString()}`,
+  )
   return result.has
 }
 
@@ -74,7 +77,7 @@ export async function addVinylToUser(vinylId: string, type: UserVinylType): Prom
 export async function removeVinylFromUser(vinylId: string, type: UserVinylType): Promise<void> {
   const params = new URLSearchParams()
   params.append('type', type)
-  
+
   await apiClient.delete<{ success: boolean }>(`/user-vinyls/${vinylId}?${params.toString()}`)
 }
 

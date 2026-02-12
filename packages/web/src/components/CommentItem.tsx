@@ -12,11 +12,11 @@ interface CommentItemProps {
   onDelete: () => void
 }
 
-export default function CommentItem({ 
-  comment, 
-  currentUserId, 
+export default function CommentItem({
+  comment,
+  currentUserId,
   isPending = false,
-  onDelete, 
+  onDelete,
 }: CommentItemProps) {
   const [isDeleting, setIsDeleting] = useState(false)
   const isOwner = currentUserId === comment.user.uid
@@ -41,16 +41,12 @@ export default function CommentItem({
   }
 
   return (
-    <div 
+    <div
       className={`flex gap-3 py-3 transition-opacity ${isPending ? 'opacity-50' : 'opacity-100'}`}
     >
       {/* Avatar */}
       <Link to={`/profile/${comment.user.username}`} className="flex-shrink-0">
-        <Avatar 
-          src={comment.user.photoUrl} 
-          username={comment.user.username} 
-          size="sm" 
-        />
+        <Avatar src={comment.user.photoUrl} username={comment.user.username} size="sm" />
       </Link>
 
       {/* Contenu */}

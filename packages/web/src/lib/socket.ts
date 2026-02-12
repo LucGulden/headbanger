@@ -26,7 +26,7 @@ class SocketClient {
     this.userId = userId
 
     console.log('🔌 Connecting Socket.IO...')
-    
+
     this.socket = io(SOCKET_URL, {
       withCredentials: true,
       autoConnect: true,
@@ -91,7 +91,7 @@ class SocketClient {
    */
   on<T = any>(event: string, callback: (data: T) => void) {
     if (!this.socket) {
-      console.warn('⚠️ Socket non initialisé, impossible d\'écouter:', event)
+      console.warn("⚠️ Socket non initialisé, impossible d'écouter:", event)
       return
     }
 

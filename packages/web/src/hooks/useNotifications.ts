@@ -1,9 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { 
-  getNotifications, 
-  getUnreadCount,
-  markAllAsRead,
-} from '../lib/api/notifications'
+import { getNotifications, getUnreadCount, markAllAsRead } from '../lib/api/notifications'
 import { socketClient } from '../lib/socket'
 import type { Notification } from '@headbanger/shared'
 
@@ -26,10 +22,10 @@ export function useNotifications(): UseNotificationsReturn {
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [error, setError] = useState<Error | null>(null)
-  
+
   // Ref pour le cursor de pagination
   const cursorRef = useRef<string | undefined>(undefined)
-  
+
   const LIMIT = 20
 
   // Charger les notifications avec pagination
@@ -52,7 +48,7 @@ export function useNotifications(): UseNotificationsReturn {
       if (reset) {
         setNotifications(data)
       } else {
-        setNotifications(prev => [...prev, ...data])
+        setNotifications((prev) => [...prev, ...data])
       }
 
       // Mettre à jour le cursor pour la prochaine page
@@ -89,19 +85,14 @@ export function useNotifications(): UseNotificationsReturn {
 
   // Rafraîchir les notifications
   const refresh = useCallback(async () => {
-    await Promise.all([
-      loadNotifications(true),
-      loadUnreadCount(),
-    ])
+    await Promise.all([loadNotifications(true), loadUnreadCount()])
   }, [loadNotifications, loadUnreadCount])
 
   // Marquer toutes les notifications comme lues
   const handleMarkAllAsRead = useCallback(async () => {
     try {
       // Optimistic update
-      setNotifications(prev =>
-        prev.map(notif => ({ ...notif, read: true })),
-      )
+      setNotifications((prev) => prev.map((notif) => ({ ...notif, read: true })))
       setUnreadCount(0)
 
       await markAllAsRead()
@@ -116,10 +107,7 @@ export function useNotifications(): UseNotificationsReturn {
   // Chargement initial
   useEffect(() => {
     const loadInitial = async () => {
-      await Promise.all([
-        loadNotifications(true),
-        loadUnreadCount(),
-      ])
+      await Promise.all([loadNotifications(true), loadUnreadCount()])
     }
 
     loadInitial()
@@ -132,16 +120,14 @@ export function useNotifications(): UseNotificationsReturn {
     const handleNewNotification = (notification: Notification) => {
       // Ajouter la notification en haut de la liste
       setNotifications((prev) => [notification, ...prev])
-      
+
       // Incrémenter le compteur de non-lues
       setUnreadCount((prev) => prev + 1)
     }
 
     const handleReadAll = () => {
       // Marquer toutes les notifications comme lues
-      setNotifications((prev) =>
-        prev.map((notif) => ({ ...notif, read: true })),
-      )
+      setNotifications((prev) => prev.map((notif) => ({ ...notif, read: true })))
       setUnreadCount(0)
     }
 

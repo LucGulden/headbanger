@@ -3,10 +3,10 @@ import type { VinylLight } from '@headbanger/shared'
 import VinylImage from './VinylImage'
 
 interface VinylCardProps {
-  vinyl: VinylLight;
-  inCollection?: boolean;
-  inWishlist?: boolean;
-  variant?: 'full' | 'compact';
+  vinyl: VinylLight
+  inCollection?: boolean
+  inWishlist?: boolean
+  variant?: 'full' | 'compact'
 }
 
 export default function VinylCard({
@@ -50,7 +50,7 @@ export default function VinylCard({
       <div className="relative aspect-square w-full overflow-hidden rounded-lg border border-[var(--background-lighter)] bg-[var(--background-lighter)]">
         <VinylImage
           src={vinyl.coverUrl}
-          alt={`${vinyl.title} par ${vinyl.artists.map(a => a.name).join(', ')}`}
+          alt={`${vinyl.title} par ${vinyl.artists.map((a) => a.name).join(', ')}`}
           className="h-full w-full object-cover transition-transform"
         />
       </div>
@@ -58,24 +58,19 @@ export default function VinylCard({
       {/* Info */}
       {variant === 'full' ? (
         <div className="mt-3">
-          <h4 className="truncate font-medium text-[var(--foreground)]">
-            {vinyl.title}
-          </h4>
+          <h4 className="truncate font-medium text-[var(--foreground)]">{vinyl.title}</h4>
           <p className="mt-1 truncate text-xs text-[var(--foreground-muted)]">
-            {vinyl.country}{' (' + vinyl.year + ')'} – {vinyl.catalogNumber}
+            {vinyl.country}
+            {' (' + vinyl.year + ')'} – {vinyl.catalogNumber}
           </p>
         </div>
       ) : (
         <div className="mt-3">
-          <h3 className="truncate font-semibold text-[var(--foreground)]">
-            {vinyl.title}
-          </h3>
+          <h3 className="truncate font-semibold text-[var(--foreground)]">{vinyl.title}</h3>
           <p className="truncate text-sm text-[var(--foreground-muted)]">
-            {vinyl.artists.map(a => a.name).join(', ')}
+            {vinyl.artists.map((a) => a.name).join(', ')}
           </p>
-          <p className="text-xs text-[var(--foreground-muted)]">
-            {vinyl.year}
-          </p>
+          <p className="text-xs text-[var(--foreground-muted)]">{vinyl.year}</p>
         </div>
       )}
     </Link>

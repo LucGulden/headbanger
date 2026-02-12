@@ -13,16 +13,8 @@ interface FeedProps {
 export default function Feed({ userId, profileFeed = false }: FeedProps) {
   const { user: currentUser } = useAuth()
 
-  const {
-    posts,
-    loading,
-    loadingMore,
-    hasMore,
-    error,
-    refreshing,
-    loadMore,
-    refresh,
-  } = useFeedPagination(userId, profileFeed)
+  const { posts, loading, loadingMore, hasMore, error, refreshing, loadMore, refresh } =
+    useFeedPagination(userId, profileFeed)
 
   // Intersection Observer pour infinite scroll
   const observerTarget = useRef<HTMLDivElement>(null)
@@ -185,7 +177,6 @@ export default function Feed({ userId, profileFeed = false }: FeedProps) {
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-
       {/* Pull-to-refresh indicator */}
       {(isPulling || refreshing) && (
         <div
@@ -247,9 +238,7 @@ export default function Feed({ userId, profileFeed = false }: FeedProps) {
       {/* End of feed message */}
       {!hasMore && posts.length > 0 && (
         <div className="text-center py-8">
-          <p className="text-[var(--foreground-muted)]">
-            Vous avez atteint la fin du feed
-          </p>
+          <p className="text-[var(--foreground-muted)]">Vous avez atteint la fin du feed</p>
         </div>
       )}
     </div>

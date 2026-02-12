@@ -4,17 +4,17 @@ import Button from './Button'
 import type { UserVinylType, UserVinyl } from '@headbanger/shared'
 
 interface VinylGridProps {
-  vinyls: UserVinyl[];
-  loading: boolean;
-  loadingMore: boolean;
-  hasMore: boolean;
-  error: Error | null;
-  total: number;
-  onLoadMore: () => void;
-  onRefresh: () => void;
-  emptyMessage?: string;
-  emptyIcon?: string;
-  type: UserVinylType;
+  vinyls: UserVinyl[]
+  loading: boolean
+  loadingMore: boolean
+  hasMore: boolean
+  error: Error | null
+  total: number
+  onLoadMore: () => void
+  onRefresh: () => void
+  emptyMessage?: string
+  emptyIcon?: string
+  type: UserVinylType
 }
 
 export default function VinylGrid({
@@ -68,11 +68,13 @@ export default function VinylGrid({
     return (
       <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-center">
         <div className="mb-4 text-4xl">⚠️</div>
-        <h3 className="mb-2 text-lg font-semibold text-red-500">
-          Erreur de chargement
-        </h3>
+        <h3 className="mb-2 text-lg font-semibold text-red-500">Erreur de chargement</h3>
         <p className="mb-4 text-sm text-red-500/80">{error.message}</p>
-        <Button onClick={onRefresh} variant="outline" className="border-red-500/30 text-red-500 hover:bg-red-500/10">
+        <Button
+          onClick={onRefresh}
+          variant="outline"
+          className="border-red-500/30 text-red-500 hover:bg-red-500/10"
+        >
           Réessayer
         </Button>
       </div>
@@ -84,11 +86,9 @@ export default function VinylGrid({
     return (
       <div className="py-20 text-center">
         <div className="mb-6 text-8xl">{emptyIcon}</div>
-        <h3 className="mb-3 text-2xl font-bold text-[var(--foreground)]">
-          {emptyMessage}
-        </h3>
+        <h3 className="mb-3 text-2xl font-bold text-[var(--foreground)]">{emptyMessage}</h3>
         <p className="mb-6 text-[var(--foreground-muted)]">
-          {type === 'collection' 
+          {type === 'collection'
             ? 'Commencez à ajouter vos vinyles préférés à votre collection'
             : 'Ajoutez des vinyles que vous souhaitez acquérir'}
         </p>
@@ -102,11 +102,7 @@ export default function VinylGrid({
     <>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {vinyls.map((userVinyl) => (
-          <VinylCard
-            key={userVinyl.id}
-            vinyl={userVinyl.vinyl}
-            variant="compact"
-          />
+          <VinylCard key={userVinyl.id} vinyl={userVinyl.vinyl} variant="compact" />
         ))}
       </div>
 

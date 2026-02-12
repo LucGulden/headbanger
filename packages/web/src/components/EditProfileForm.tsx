@@ -14,15 +14,15 @@ import { useUserStore } from '../stores/userStore'
 import type { User } from '@headbanger/shared'
 
 interface EditProfileFormProps {
-  user: User;
-  onSuccess?: () => void;
+  user: User
+  onSuccess?: () => void
 }
 
 interface FormData {
-  username: string;
-  firstName: string;
-  lastName: string;
-  bio: string;
+  username: string
+  firstName: string
+  lastName: string
+  bio: string
 }
 
 export default function EditProfileForm({ user, onSuccess }: EditProfileFormProps) {
@@ -105,8 +105,7 @@ export default function EditProfileForm({ user, onSuccess }: EditProfileFormProp
     if (!formData.username) {
       newErrors.username = "Le nom d'utilisateur est requis"
     } else if (!validateUsername(formData.username)) {
-      newErrors.username =
-        "Nom d'utilisateur invalide (3-20 caractères, lettres, chiffres, - et _)"
+      newErrors.username = "Nom d'utilisateur invalide (3-20 caractères, lettres, chiffres, - et _)"
     } else if (!usernameAvailable) {
       newErrors.username = "Ce nom d'utilisateur est déjà pris"
     }
@@ -158,8 +157,7 @@ export default function EditProfileForm({ user, onSuccess }: EditProfileFormProp
     } catch (error) {
       console.error('Erreur lors de la mise à jour du profil:', error)
       setErrors({
-        submit:
-          error instanceof Error ? error.message : 'Erreur lors de la mise à jour du profil',
+        submit: error instanceof Error ? error.message : 'Erreur lors de la mise à jour du profil',
       })
     } finally {
       setLoading(false)

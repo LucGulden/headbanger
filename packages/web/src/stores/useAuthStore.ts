@@ -1,5 +1,12 @@
 import { create } from 'zustand'
-import { signup, login, logout, getCurrentUser, type SignupData, type LoginData } from '../lib/api/auth'
+import {
+  signup,
+  login,
+  logout,
+  getCurrentUser,
+  type SignupData,
+  type LoginData,
+} from '../lib/api/auth'
 import { socketClient } from '../lib/socket'
 import { useUserStore } from './userStore'
 import { useNotificationsStore } from './notificationsStore'
@@ -13,7 +20,7 @@ interface AuthStore {
   loading: boolean
   error: Error | null
   isInitializing: boolean // ← AJOUTER
-  
+
   // Actions
   initialize: () => Promise<void>
   signUp: (data: SignupData) => Promise<User>
@@ -43,12 +50,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     try {
       const currentUser = await getCurrentUser()
       console.log('✅ User authenticated:', currentUser.id)
-      
+
       set({ user: currentUser, loading: false, isInitializing: false })
-      
+
       // Connecter le Socket.IO
       socketClient.connect(currentUser.id)
-      
+
       // Initialiser userStore et notificationsStore
       await useUserStore.getState().initialize()
       await useNotificationsStore.getState().initialize()
@@ -64,19 +71,19 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     try {
       set({ error: null })
       console.log('🔄 Signing up...')
-      
+
       const newUser = await signup(data)
       console.log('✅ Signup successful:', newUser.id)
-      
+
       set({ user: newUser, loading: false })
-      
+
       // Connecter le Socket.IO
       socketClient.connect(newUser.id)
-      
+
       // Initialiser userStore et notificationsStore
       await useUserStore.getState().initialize()
       await useNotificationsStore.getState().initialize()
-      
+
       return newUser
     } catch (err) {
       console.error('❌ Signup failed:', err)
@@ -90,19 +97,19 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     try {
       set({ error: null })
       console.log('🔄 Logging in...')
-      
+
       const loggedUser = await login({ email, password })
       console.log('✅ Login successful:', loggedUser.id)
-      
+
       set({ user: loggedUser, loading: false })
-      
+
       // Connecter le Socket.IO
       socketClient.connect(loggedUser.id)
-      
+
       // Initialiser userStore et notificationsStore
       await useUserStore.getState().initialize()
       await useNotificationsStore.getState().initialize()
-      
+
       return loggedUser
     } catch (err) {
       console.error('❌ Login failed:', err)
@@ -116,17 +123,17 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     try {
       set({ error: null })
       console.log('🔄 Logging out...')
-      
+
       await logout()
       set({ user: null, loading: false })
-      
+
       // Déconnecter le Socket.IO
       socketClient.disconnect()
-      
+
       // Cleanup userStore et notificationsStore
       useUserStore.getState().cleanup()
       useNotificationsStore.getState().cleanup()
-      
+
       console.log('✅ Logout successful')
     } catch (err) {
       console.error('❌ Logout failed:', err)

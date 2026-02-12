@@ -12,10 +12,10 @@ import LoadingSpinner from '../components/LoadingSpinner'
 import { getUserByUsername } from '../lib/api/users'
 
 interface ProfileStats {
-  releasesCount: number;
-  wishlistCount: number;
-  followersCount: number;
-  followingCount: number;
+  releasesCount: number
+  wishlistCount: number
+  followersCount: number
+  followingCount: number
 }
 
 export default function ProfilePage() {
@@ -193,9 +193,7 @@ export default function ProfilePage() {
       {/* Tab Content */}
       <div className="mx-auto max-w-5xl px-6 py-12 sm:px-8">
         {/* Feed Tab */}
-        {activeTab === 'feed' && (
-          <Feed userId={profileUser.uid} profileFeed={true} />
-        )}
+        {activeTab === 'feed' && <Feed userId={profileUser.uid} profileFeed={true} />}
 
         {/* Collection Tab */}
         {activeTab === 'collection' && (

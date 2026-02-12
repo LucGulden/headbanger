@@ -26,7 +26,7 @@ interface ProfileFeedOptions {
  */
 export async function getGlobalFeed(options: GlobalFeedOptions = {}): Promise<PostWithDetails[]> {
   const params = new URLSearchParams()
-  
+
   if (options.limit) params.append('limit', String(options.limit))
   if (options.lastCreatedAt) params.append('lastCreatedAt', options.lastCreatedAt)
 
@@ -40,7 +40,7 @@ export async function getGlobalFeed(options: GlobalFeedOptions = {}): Promise<Po
  */
 export async function getProfileFeed(options: ProfileFeedOptions): Promise<PostWithDetails[]> {
   const params = new URLSearchParams()
-  
+
   if (options.limit) params.append('limit', String(options.limit))
   if (options.lastCreatedAt) params.append('lastCreatedAt', options.lastCreatedAt)
 

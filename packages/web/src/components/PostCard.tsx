@@ -11,7 +11,7 @@ import { useUserStore } from '../stores/userStore'
 import type { PostWithDetails } from '@headbanger/shared'
 
 // Type pour les commentaires optimistes (en cours de publication)
-type OptimisticComment = Comment & { 
+type OptimisticComment = Comment & {
   isPending: boolean
   tempId: string
 }
@@ -25,11 +25,7 @@ interface PostCardProps {
   priority?: boolean
 }
 
-export default function PostCard({ 
-  post, 
-  currentUserId, 
-  priority = false,
-}: PostCardProps) {
+export default function PostCard({ post, currentUserId, priority = false }: PostCardProps) {
   const { appUser } = useUserStore()
   const [isLiked, setIsLiked] = useState(false)
   const [likesCount, setLikesCount] = useState(post.likesCount)
@@ -62,11 +58,13 @@ export default function PostCard({
       try {
         const { getComments } = await import('../lib/api/comments')
         const data = await getComments(post.id)
-        setComments(data.map(c => ({
-          ...c,
-          isPending: false,
-          tempId: '',
-        })))
+        setComments(
+          data.map((c) => ({
+            ...c,
+            isPending: false,
+            tempId: '',
+          })),
+        )
       } catch (error) {
         console.error('Erreur chargement commentaires:', error)
       } finally {
@@ -116,7 +114,7 @@ export default function PostCard({
 
     const tempId = generateTempId()
     const commentContent = commentText.trim()
-    
+
     // 1. Créer le commentaire optimiste
     const optimisticComment: OptimisticComment = {
       id: tempId,
@@ -133,22 +131,20 @@ export default function PostCard({
     }
 
     // Ajout optimiste
-    setComments(prev => [...prev, optimisticComment])
-    setCommentsCount(prev => prev + 1)
+    setComments((prev) => [...prev, optimisticComment])
+    setCommentsCount((prev) => prev + 1)
     setCommentText('')
     setIsCommenting(true)
 
     try {
       // 2. API call (récupère le vrai commentaire)
       const newComment = await addComment(post.id, commentContent)
-      
+
       // 3. Remplacer l'optimiste par le vrai
-      setComments(prev => 
-        prev.map(c => 
-          c.tempId === tempId 
-            ? { ...newComment, isPending: false, tempId: '' }
-            : c
-        )
+      setComments((prev) =>
+        prev.map((c) =>
+          c.tempId === tempId ? { ...newComment, isPending: false, tempId: '' } : c,
+        ),
       )
 
       // 4. Refresh count réel
@@ -156,10 +152,10 @@ export default function PostCard({
       setCommentsCount(realCount)
     } catch (error) {
       // Rollback on error
-      setComments(prev => prev.filter(c => c.tempId !== tempId))
-      setCommentsCount(prev => Math.max(0, prev - 1))
-      console.error('Erreur lors de l\'ajout du commentaire:', error)
-      alert('Impossible d\'ajouter le commentaire')
+      setComments((prev) => prev.filter((c) => c.tempId !== tempId))
+      setCommentsCount((prev) => Math.max(0, prev - 1))
+      console.error("Erreur lors de l'ajout du commentaire:", error)
+      alert("Impossible d'ajouter le commentaire")
     } finally {
       setIsCommenting(false)
     }
@@ -167,9 +163,9 @@ export default function PostCard({
 
   const handleDeleteComment = async (commentId: string) => {
     // 1. Retirer de l'UI
-    setComments(prev => prev.filter(c => c.id !== commentId))
-    setCommentsCount(prev => Math.max(0, prev - 1))
-    
+    setComments((prev) => prev.filter((c) => c.id !== commentId))
+    setCommentsCount((prev) => Math.max(0, prev - 1))
+
     // 2. Refresh count réel (pour être cohérent avec le pattern)
     try {
       const realCount = await getCommentsCount(post.id)
@@ -179,10 +175,8 @@ export default function PostCard({
     }
   }
 
-  const postTypeText =
-    post.type === 'collection_add' ? 'a ajouté' : 'souhaite ajouter'
-  const collectionText =
-    post.type === 'collection_add' ? 'sa collection' : 'sa wishlist'
+  const postTypeText = post.type === 'collection_add' ? 'a ajouté' : 'souhaite ajouter'
+  const collectionText = post.type === 'collection_add' ? 'sa collection' : 'sa wishlist'
 
   return (
     <div className="rounded-2xl border border-[var(--background-lighter)] bg-[var(--background-light)] p-6 transition-shadow hover:shadow-lg">
@@ -207,52 +201,47 @@ export default function PostCard({
 
           <p className="mt-1 text-[var(--foreground-muted)]">
             {postTypeText}{' '}
-            <span className="font-semibold text-[var(--foreground)]">
-              {post.vinyl.title}
-            </span>{' '}
-            de{' '}
+            <span className="font-semibold text-[var(--foreground)]">{post.vinyl.title}</span> de{' '}
             {post.vinyl.artists.map((artist, index) => (
               <span key={artist.id}>
-                <span className="font-semibold text-[var(--foreground)]">
-                  {artist.name}
-                </span>
+                <span className="font-semibold text-[var(--foreground)]">{artist.name}</span>
                 {index < post.vinyl.artists.length - 1 && ', '}
               </span>
-            ))}
-            {' '}à {collectionText}
+            ))}{' '}
+            à {collectionText}
           </p>
         </div>
       </div>
 
       {/* Album Cover */}
-      <Link 
+      <Link
         to={`/vinyl/${post.vinyl.id}`}
         className="block mb-4 relative w-full max-w-md mx-auto aspect-square group"
       >
         <img
           src={post.vinyl.coverUrl}
-          alt={`${post.vinyl.title} - ${post.vinyl.artists.map(a => a.name).join(', ')}`}
+          alt={`${post.vinyl.title} - ${post.vinyl.artists.map((a) => a.name).join(', ')}`}
           className="rounded-xl shadow-md object-cover w-full h-full transition-transform group-hover:scale-[1.02]"
           loading={priority ? 'eager' : 'lazy'}
         />
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100">
-          <svg 
-            className="w-12 h-12 text-white drop-shadow-lg" 
-            fill="none" 
-            viewBox="0 0 24 24" 
+          <svg
+            className="w-12 h-12 text-white drop-shadow-lg"
+            fill="none"
+            viewBox="0 0 24 24"
             stroke="currentColor"
           >
-            <path 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              strokeWidth={2} 
-              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" 
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
             />
-            <path 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              strokeWidth={2} 
-              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" 
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
             />
           </svg>
         </div>
@@ -267,9 +256,25 @@ export default function PostCard({
           className="flex items-center gap-2 text-[var(--foreground-muted)] hover:text-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLiking ? (
-            <svg className="h-6 w-6 animate-spin text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            <svg
+              className="h-6 w-6 animate-spin text-red-500"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
             </svg>
           ) : (
             <svg
@@ -279,12 +284,14 @@ export default function PostCard({
               stroke="currentColor"
               strokeWidth={2}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+              />
             </svg>
           )}
-          <span className={isLiked ? 'text-red-500 font-semibold' : ''}>
-            {likesCount}
-          </span>
+          <span className={isLiked ? 'text-red-500 font-semibold' : ''}>{likesCount}</span>
         </button>
 
         {/* Comment Button */}
@@ -292,8 +299,19 @@ export default function PostCard({
           onClick={() => setShowComments(!showComments)}
           className="flex items-center gap-2 text-[var(--foreground-muted)] hover:text-[var(--primary)] transition-colors"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+            />
           </svg>
           <span>{commentsCount}</span>
         </button>
@@ -342,7 +360,11 @@ export default function PostCard({
                 className="flex-1 rounded-lg border border-[var(--background-lighter)] bg-[var(--background)] px-4 py-2 text-[var(--foreground)] placeholder:text-[var(--foreground-muted)] focus:border-[var(--primary)] focus:outline-none"
                 disabled={isCommenting}
               />
-              <Button type="submit" disabled={!commentText.trim() || isCommenting} variant="primary">
+              <Button
+                type="submit"
+                disabled={!commentText.trim() || isCommenting}
+                variant="primary"
+              >
                 {isCommenting ? 'Envoi...' : 'Envoyer'}
               </Button>
             </form>
@@ -350,13 +372,10 @@ export default function PostCard({
 
           {!currentUserId && (
             <p className="text-sm text-[var(--foreground-muted)] text-center py-2">
-              <Link 
-                to="/login" 
-                className="text-[var(--primary)] hover:underline"
-              >
+              <Link to="/login" className="text-[var(--primary)] hover:underline">
                 Connectez-vous
-              </Link>
-              {' '}pour commenter
+              </Link>{' '}
+              pour commenter
             </p>
           )}
         </div>

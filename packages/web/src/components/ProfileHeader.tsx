@@ -7,17 +7,17 @@ import { useAuth } from '../hooks/useAuth'
 import type { User } from '@headbanger/shared'
 
 interface ProfileStats {
-  releasesCount: number;
-  wishlistCount?: number;
-  followersCount: number;
-  followingCount: number;
+  releasesCount: number
+  wishlistCount?: number
+  followersCount: number
+  followingCount: number
 }
 
 interface ProfileHeaderProps {
-  user: User;
-  stats: ProfileStats;
-  isOwnProfile: boolean;
-  onFollowChange?: () => void;
+  user: User
+  stats: ProfileStats
+  isOwnProfile: boolean
+  onFollowChange?: () => void
 }
 
 export default function ProfileHeader({
@@ -54,7 +54,7 @@ export default function ProfileHeader({
 
     try {
       setLoading(true)
-      
+
       if (following) {
         await unfollowUser(user.uid)
         setFollowing(false)
@@ -98,13 +98,9 @@ export default function ProfileHeader({
               </h1>
             </div>
 
-            {fullName && (
-              <p className="mb-3 text-lg text-[var(--foreground-muted)]">{fullName}</p>
-            )}
+            {fullName && <p className="mb-3 text-lg text-[var(--foreground-muted)]">{fullName}</p>}
 
-            {user.bio && (
-              <p className="mb-4 max-w-2xl text-[var(--foreground)]">{user.bio}</p>
-            )}
+            {user.bio && <p className="mb-4 max-w-2xl text-[var(--foreground)]">{user.bio}</p>}
 
             {/* Stats */}
             <div className="flex gap-6">
@@ -170,14 +166,24 @@ export default function ProfileHeader({
                 {following ? (
                   <>
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
                     </svg>
                     Abonné
                   </>
                 ) : (
                   <>
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 4v16m8-8H4"
+                      />
                     </svg>
                     Suivre
                   </>

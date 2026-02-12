@@ -2,7 +2,12 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { getVinylById } from '../lib/api/vinyls'
-import { hasVinyl, moveToCollection, removeVinylFromUser, addVinylToUser } from '../lib/api/userVinyls'
+import {
+  hasVinyl,
+  moveToCollection,
+  removeVinylFromUser,
+  addVinylToUser,
+} from '../lib/api/userVinyls'
 import type { Vinyl } from '@headbanger/shared'
 import VinylImage from '../components/VinylImage'
 import Button from '../components/Button'
@@ -106,7 +111,7 @@ export default function VinylPage() {
       setInCollection(true)
     } catch (err) {
       console.error('Erreur ajout collection:', err)
-      alert('Erreur lors de l\'ajout à la collection')
+      alert("Erreur lors de l'ajout à la collection")
     } finally {
       setIsAdding(false)
     }
@@ -121,7 +126,7 @@ export default function VinylPage() {
       setInWishlist(true)
     } catch (err) {
       console.error('Erreur ajout wishlist:', err)
-      alert('Erreur lors de l\'ajout à la wishlist')
+      alert("Erreur lors de l'ajout à la wishlist")
     } finally {
       setIsAdding(false)
     }
@@ -225,15 +230,36 @@ export default function VinylPage() {
               {isRemoving ? (
                 <>
                   <svg className="mr-2 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
                   </svg>
                   Suppression...
                 </>
               ) : (
                 <>
-                  <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  <svg
+                    className="mr-2 h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
                   </svg>
                   Retirer de ma collection
                 </>
@@ -250,7 +276,8 @@ export default function VinylPage() {
         <div className="space-y-3">
           <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-4">
             <p className="mb-3 text-sm text-blue-400">
-              Ce vinyle est dans votre wishlist. Le déplacer vers la collection le retirera automatiquement de la wishlist.
+              Ce vinyle est dans votre wishlist. Le déplacer vers la collection le retirera
+              automatiquement de la wishlist.
             </p>
             <Button
               onClick={handleMoveToCollection}
@@ -261,15 +288,36 @@ export default function VinylPage() {
               {isMoving ? (
                 <>
                   <svg className="mr-2 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
                   </svg>
                   Déplacement...
                 </>
               ) : (
                 <>
-                  <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  <svg
+                    className="mr-2 h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
                   </svg>
                   J'ai acheté !
                 </>
@@ -286,15 +334,36 @@ export default function VinylPage() {
               {isRemoving ? (
                 <>
                   <svg className="mr-2 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
                   </svg>
                   Suppression...
                 </>
               ) : (
                 <>
-                  <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  <svg
+                    className="mr-2 h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
                   </svg>
                   Retirer de ma wishlist
                 </>
@@ -317,8 +386,19 @@ export default function VinylPage() {
           {isAdding ? (
             <>
               <svg className="mr-2 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
               </svg>
               Ajout...
             </>
@@ -335,8 +415,19 @@ export default function VinylPage() {
           {isAdding ? (
             <>
               <svg className="mr-2 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
               </svg>
               Ajout...
             </>
@@ -358,10 +449,7 @@ export default function VinylPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4 px-4">
         <p className="text-foreground-muted text-lg text-center">{error || 'Vinyle introuvable'}</p>
-        <button
-          onClick={() => navigate(-1)}
-          className="text-primary hover:underline"
-        >
+        <button onClick={() => navigate(-1)} className="text-primary hover:underline">
           ← Retour
         </button>
       </div>
@@ -377,7 +465,7 @@ export default function VinylPage() {
           <div className="relative aspect-square w-full overflow-hidden rounded-lg border border-[var(--background-lighter)] bg-[var(--background-lighter)] md:w-[300px]">
             <VinylImage
               src={vinyl.coverUrl || ''}
-              alt={`${vinyl.title} - ${vinyl.artists.map(a => a.name).join(', ')}`}
+              alt={`${vinyl.title} - ${vinyl.artists.map((a) => a.name).join(', ')}`}
               className="h-full w-full object-cover"
             />
           </div>
@@ -386,13 +474,21 @@ export default function VinylPage() {
           <div className="space-y-4">
             <div>
               <h1 className="text-2xl font-bold text-[var(--foreground)]">{vinyl.title}</h1>
-              <Link key={vinyl.album.id} className="text-xl font-medium text-[var(--foreground-muted)] transition-opacity hover:opacity-70" to={`/album/${vinyl.album.id}`}>
+              <Link
+                key={vinyl.album.id}
+                className="text-xl font-medium text-[var(--foreground-muted)] transition-opacity hover:opacity-70"
+                to={`/album/${vinyl.album.id}`}
+              >
                 Voir l'album &rarr;
               </Link>
               <p className="mt-1 text-lg font-medium text-[var(--foreground-muted)]">
                 {vinyl.artists.map((a, index) => (
                   <span key={a.id} className="flex items-center gap-2">
-                    <Link key={a.id} className="text-xl font-medium text-[var(--foreground-muted)] transition-opacity hover:opacity-70" to={`/artist/${a.id}`}>
+                    <Link
+                      key={a.id}
+                      className="text-xl font-medium text-[var(--foreground-muted)] transition-opacity hover:opacity-70"
+                      to={`/artist/${a.id}`}
+                    >
                       {a.name}
                     </Link>
                     {index < vinyl.artists.length - 1 && (
@@ -401,9 +497,7 @@ export default function VinylPage() {
                   </span>
                 ))}
               </p>
-              <p className="mt-1 text-sm text-[var(--foreground-muted)]">
-                {vinyl.year}
-              </p>
+              <p className="mt-1 text-sm text-[var(--foreground-muted)]">{vinyl.year}</p>
             </div>
 
             {/* Badges */}
@@ -438,7 +532,9 @@ export default function VinylPage() {
               </h2>
               <div className="space-y-2">
                 {vinyl.label && <DetailRow label="Label" value={vinyl.label} />}
-                {vinyl.catalogNumber && <DetailRow label="Numéro de catalogue" value={vinyl.catalogNumber} />}
+                {vinyl.catalogNumber && (
+                  <DetailRow label="Numéro de catalogue" value={vinyl.catalogNumber} />
+                )}
                 {vinyl.country && <DetailRow label="Pays" value={vinyl.country} />}
                 {vinyl.format && <DetailRow label="Format" value={vinyl.format} />}
               </div>
@@ -447,9 +543,7 @@ export default function VinylPage() {
         </div>
 
         {/* Actions */}
-        <div className="border-t border-[var(--background-lighter)] pt-6">
-          {renderActions()}
-        </div>
+        <div className="border-t border-[var(--background-lighter)] pt-6">{renderActions()}</div>
       </div>
     </div>
   )

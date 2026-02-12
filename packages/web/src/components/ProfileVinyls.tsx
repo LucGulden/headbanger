@@ -5,10 +5,10 @@ import Button from './Button'
 import { Link } from 'react-router-dom'
 
 interface ProfileVinylsProps {
-  userId: string;
-  type: UserVinylType;
-  isOwnProfile: boolean;
-  username: string;
+  userId: string
+  type: UserVinylType
+  isOwnProfile: boolean
+  username: string
 }
 
 export default function ProfileVinyls({
@@ -17,35 +17,24 @@ export default function ProfileVinyls({
   isOwnProfile,
   username,
 }: ProfileVinylsProps) {
-  const {
-    vinyls,
-    loading,
-    loadingMore,
-    hasMore,
-    error,
-    total,
-    loadMore,
-    refresh,
-  } = useVinylsPagination({ userId, type })
-  
+  const { vinyls, loading, loadingMore, hasMore, error, total, loadMore, refresh } =
+    useVinylsPagination({ userId, type })
 
   // Empty state
   if (!loading && vinyls.length === 0) {
     const isCollection = type === 'collection'
-    
+
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center text-center">
-        <div className="mb-4 text-6xl">
-          {isCollection ? '📀' : '⭐'}
-        </div>
+        <div className="mb-4 text-6xl">{isCollection ? '📀' : '⭐'}</div>
         <h3 className="mb-2 text-xl font-semibold text-[var(--foreground)]">
           {isOwnProfile
             ? isCollection
               ? 'Votre collection est vide'
               : 'Votre wishlist est vide'
             : isCollection
-            ? `${username} n'a pas encore de vinyles`
-            : `${username} n'a pas de wishlist`}
+              ? `${username} n'a pas encore de vinyles`
+              : `${username} n'a pas de wishlist`}
         </h3>
         <p className="mb-6 text-[var(--foreground-muted)]">
           {isOwnProfile
@@ -71,9 +60,7 @@ export default function ProfileVinyls({
         <h3 className="mb-2 text-xl font-semibold text-[var(--foreground)]">
           Erreur de chargement
         </h3>
-        <p className="text-[var(--foreground-muted)]">
-          {error.message}
-        </p>
+        <p className="text-[var(--foreground-muted)]">{error.message}</p>
       </div>
     )
   }

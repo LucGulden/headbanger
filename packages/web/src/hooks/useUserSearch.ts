@@ -3,23 +3,20 @@ import { searchUsers } from '../lib/api/users'
 import type { User } from '@headbanger/shared'
 
 interface UseUserSearchParams {
-  query: string;
-  pageSize?: number;
+  query: string
+  pageSize?: number
 }
 
 interface UseUserSearchReturn {
-  users: User[];
-  loading: boolean;
-  loadingMore: boolean;
-  hasMore: boolean;
-  error: Error | null;
-  loadMore: () => Promise<void>;
+  users: User[]
+  loading: boolean
+  loadingMore: boolean
+  hasMore: boolean
+  error: Error | null
+  loadMore: () => Promise<void>
 }
 
-export function useUserSearch({
-  query,
-  pageSize = 20,
-}: UseUserSearchParams): UseUserSearchReturn {
+export function useUserSearch({ query, pageSize = 20 }: UseUserSearchParams): UseUserSearchReturn {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -28,30 +25,33 @@ export function useUserSearch({
   const [offset, setOffset] = useState(0)
 
   // Recherche initiale
-  const search = useCallback(async (searchQuery: string) => {
-    if (!searchQuery || searchQuery.trim().length < 2) {
-      setUsers([])
-      setHasMore(false)
-      setOffset(0)
-      return
-    }
+  const search = useCallback(
+    async (searchQuery: string) => {
+      if (!searchQuery || searchQuery.trim().length < 2) {
+        setUsers([])
+        setHasMore(false)
+        setOffset(0)
+        return
+      }
 
-    setLoading(true)
-    setError(null)
+      setLoading(true)
+      setError(null)
 
-    try {
-      const results = await searchUsers(searchQuery, pageSize, 0)
-      setUsers(results)
-      setHasMore(results.length >= pageSize)
-      setOffset(results.length)
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Erreur lors de la recherche'))
-      setUsers([])
-      setHasMore(false)
-    } finally {
-      setLoading(false)
-    }
-  }, [pageSize])
+      try {
+        const results = await searchUsers(searchQuery, pageSize, 0)
+        setUsers(results)
+        setHasMore(results.length >= pageSize)
+        setOffset(results.length)
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Erreur lors de la recherche'))
+        setUsers([])
+        setHasMore(false)
+      } finally {
+        setLoading(false)
+      }
+    },
+    [pageSize],
+  )
 
   // Charger plus de résultats
   const loadMore = useCallback(async () => {

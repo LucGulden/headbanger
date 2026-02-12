@@ -67,16 +67,9 @@ export default function UserListItem({
 
   return (
     <div className="flex items-center justify-between rounded-lg border border-[var(--background-lighter)] bg-[var(--background-light)] p-4 transition-colors hover:bg-[var(--background-lighter)]">
-      <Link
-        to={`/profile/${user.username}`}
-        className="flex flex-1 items-center gap-3"
-      >
+      <Link to={`/profile/${user.username}`} className="flex flex-1 items-center gap-3">
         {/* Avatar */}
-        <Avatar
-          src={user.photoUrl}
-          username={user.username}
-          size="md"
-        />
+        <Avatar src={user.photoUrl} username={user.username} size="md" />
 
         {/* Infos utilisateur */}
         <div className="flex-1 overflow-hidden">
@@ -85,13 +78,9 @@ export default function UserListItem({
               {fullName || user.username}
             </p>
           </div>
-          <p className="truncate text-sm text-[var(--foreground-muted)]">
-            @{user.username}
-          </p>
+          <p className="truncate text-sm text-[var(--foreground-muted)]">@{user.username}</p>
           {user.bio && (
-            <p className="mt-1 line-clamp-1 text-sm text-[var(--foreground-muted)]">
-              {user.bio}
-            </p>
+            <p className="mt-1 line-clamp-1 text-sm text-[var(--foreground-muted)]">{user.bio}</p>
           )}
         </div>
       </Link>

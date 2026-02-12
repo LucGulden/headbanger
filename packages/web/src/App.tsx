@@ -53,7 +53,7 @@ function App() {
           <Route path="/vinyl/:id" element={<VinylPage />} />
           <Route path="/album/:id" element={<AlbumPage />} />
           <Route path="/artist/:id" element={<ArtistPage />} />
-          
+
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>

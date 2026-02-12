@@ -1,22 +1,14 @@
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label?: string; // ← Rendre optionnel
-  error?: string;
-  icon?: React.ReactNode;
+  label?: string // ← Rendre optionnel
+  error?: string
+  icon?: React.ReactNode
 }
 
-export default function Input({
-  label,
-  error,
-  icon,
-  className = '',
-  ...props
-}: InputProps) {
+export default function Input({ label, error, icon, className = '', ...props }: InputProps) {
   return (
     <div className="w-full">
       {label && ( // ← Afficher seulement si label existe
-        <label className="mb-2 block text-sm font-medium text-[var(--foreground)]">
-          {label}
-        </label>
+        <label className="mb-2 block text-sm font-medium text-[var(--foreground)]">{label}</label>
       )}
       <div className="relative">
         {icon && (
@@ -36,9 +28,7 @@ export default function Input({
           {...props}
         />
       </div>
-      {error && (
-        <p className="mt-2 text-sm text-red-500">{error}</p>
-      )}
+      {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
     </div>
   )
 }

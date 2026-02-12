@@ -1,8 +1,8 @@
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline';
-  size?: 'sm' | 'md' | 'lg';
-  loading?: boolean;
-  icon?: React.ReactNode;
+  variant?: 'primary' | 'secondary' | 'outline'
+  size?: 'sm' | 'md' | 'lg'
+  loading?: boolean
+  icon?: React.ReactNode
 }
 
 export default function Button({
@@ -15,7 +15,8 @@ export default function Button({
   disabled,
   ...props
 }: ButtonProps) {
-  const baseStyles = 'rounded-lg font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-50'
+  const baseStyles =
+    'rounded-lg font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-50'
 
   const sizeStyles = {
     sm: 'px-4 py-2 text-sm',
@@ -26,7 +27,8 @@ export default function Button({
   const variantStyles = {
     primary: 'bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] active:scale-95',
     secondary: 'bg-[var(--secondary)] text-white hover:bg-[var(--secondary-hover)] active:scale-95',
-    outline: 'border-2 border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white active:scale-95',
+    outline:
+      'border-2 border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white active:scale-95',
   }
 
   return (

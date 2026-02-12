@@ -3,20 +3,20 @@ import { getUserVinyls, getUserVinylsCount } from '../lib/api/userVinyls'
 import type { UserVinylType, UserVinyl } from '@headbanger/shared'
 
 interface UseVinylsPaginationParams {
-  userId: string;
-  type: UserVinylType;
-  pageSize?: number;
+  userId: string
+  type: UserVinylType
+  pageSize?: number
 }
 
 interface UseVinylsPaginationReturn {
-  vinyls: UserVinyl[];
-  loading: boolean;
-  loadingMore: boolean;
-  hasMore: boolean;
-  error: Error | null;
-  total: number;
-  loadMore: () => Promise<void>;
-  refresh: () => Promise<void>;
+  vinyls: UserVinyl[]
+  loading: boolean
+  loadingMore: boolean
+  hasMore: boolean
+  error: Error | null
+  total: number
+  loadMore: () => Promise<void>
+  refresh: () => Promise<void>
 }
 
 export function useVinylsPagination({

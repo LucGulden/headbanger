@@ -3,17 +3,17 @@ import { searchAlbums } from '../lib/api/albums'
 import type { AlbumLight } from '@headbanger/shared'
 
 interface UseAlbumSearchParams {
-  query: string;
-  pageSize?: number;
+  query: string
+  pageSize?: number
 }
 
 interface UseAlbumSearchReturn {
-  albums: AlbumLight[];
-  loading: boolean;
-  loadingMore: boolean;
-  hasMore: boolean;
-  error: Error | null;
-  loadMore: () => Promise<void>;
+  albums: AlbumLight[]
+  loading: boolean
+  loadingMore: boolean
+  hasMore: boolean
+  error: Error | null
+  loadMore: () => Promise<void>
 }
 
 export function useAlbumSearch({
@@ -28,30 +28,33 @@ export function useAlbumSearch({
   const [offset, setOffset] = useState(0)
 
   // Recherche initiale
-  const search = useCallback(async (searchQuery: string) => {
-    if (!searchQuery || searchQuery.trim().length < 2) {
-      setAlbums([])
-      setHasMore(false)
-      setOffset(0)
-      return
-    }
+  const search = useCallback(
+    async (searchQuery: string) => {
+      if (!searchQuery || searchQuery.trim().length < 2) {
+        setAlbums([])
+        setHasMore(false)
+        setOffset(0)
+        return
+      }
 
-    setLoading(true)
-    setError(null)
+      setLoading(true)
+      setError(null)
 
-    try {
-      const results = await searchAlbums(searchQuery, pageSize, 0)
-      setAlbums(results)
-      setHasMore(results.length >= pageSize)
-      setOffset(results.length)
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Erreur lors de la recherche'))
-      setAlbums([])
-      setHasMore(false)
-    } finally {
-      setLoading(false)
-    }
-  }, [pageSize])
+      try {
+        const results = await searchAlbums(searchQuery, pageSize, 0)
+        setAlbums(results)
+        setHasMore(results.length >= pageSize)
+        setOffset(results.length)
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Erreur lors de la recherche'))
+        setAlbums([])
+        setHasMore(false)
+      } finally {
+        setLoading(false)
+      }
+    },
+    [pageSize],
+  )
 
   // Charger plus de résultats
   const loadMore = useCallback(async () => {

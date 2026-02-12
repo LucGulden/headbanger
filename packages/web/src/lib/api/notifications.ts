@@ -13,9 +13,11 @@ interface NotificationsOptions {
  * Récupère les notifications de l'utilisateur connecté avec pagination
  * Note: userId récupéré automatiquement via le JWT
  */
-export async function getNotifications(options: NotificationsOptions = {}): Promise<Notification[]> {
+export async function getNotifications(
+  options: NotificationsOptions = {},
+): Promise<Notification[]> {
   const params = new URLSearchParams()
-  
+
   if (options.limit) params.append('limit', String(options.limit))
   if (options.lastCreatedAt) params.append('lastCreatedAt', options.lastCreatedAt)
 

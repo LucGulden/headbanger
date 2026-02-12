@@ -6,7 +6,7 @@ import type { Notification } from '@headbanger/shared'
 interface NotificationsStore {
   unreadCount: number
   isInitialized: boolean
-  
+
   // Actions
   initialize: () => Promise<void>
   increment: () => void
@@ -44,8 +44,8 @@ export const useNotificationsStore = create<NotificationsStore>((set, get) => ({
       // ✅ AJOUTER : Écouter les suppressions de notifications
       const handleNotificationDeleted = (data: any) => {
         console.log('🗑️ Notification supprimée:', data)
-        set((state) => ({ 
-          unreadCount: Math.max(0, state.unreadCount - 1) // Décrémenter (min 0)
+        set((state) => ({
+          unreadCount: Math.max(0, state.unreadCount - 1), // Décrémenter (min 0)
         }))
       }
 
@@ -76,7 +76,7 @@ export const useNotificationsStore = create<NotificationsStore>((set, get) => ({
     socketClient.off('notification:read-all')
     socketClient.off('notification:deleted') // ← AJOUTER
 
-    set({ 
+    set({
       isInitialized: false,
       unreadCount: 0,
     })

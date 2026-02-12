@@ -5,7 +5,7 @@ import { getCurrentUser } from '../lib/api/users'
 interface UserStore {
   appUser: User | null
   isInitialized: boolean
-  
+
   // Actions
   initialize: () => Promise<void>
   setAppUser: (user: User | null) => void
@@ -27,7 +27,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
     try {
       // ✅ getCurrentUser utilise le userId du JWT cookie
       const user = await getCurrentUser()
-      set({ 
+      set({
         appUser: user,
         isInitialized: true,
       })
@@ -49,7 +49,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
   },
 
   cleanup: () => {
-    set({ 
+    set({
       appUser: null,
       isInitialized: false,
     })
