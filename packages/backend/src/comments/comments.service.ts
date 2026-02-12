@@ -2,7 +2,19 @@ import { Injectable, NotFoundException, BadRequestException, Logger } from '@nes
 import { Comment } from '@headbanger/shared';
 import { SupabaseService } from '../common/database/supabase.service';
 import { NotificationsService } from '../notifications/notifications.service';
-import { DbCommentWithUser } from '../common/database/database.types';
+
+type CommentQueryResult = {
+  id: string;
+  user_id: string;
+  post_id: string;
+  content: string;
+  created_at: string;
+  user: {
+    uid: string;
+    username: string;
+    photo_url: string | null;
+  }[];
+};
 
 @Injectable()
 export class CommentsService {
@@ -13,9 +25,6 @@ export class CommentsService {
     private readonly notificationsService: NotificationsService,
   ) {}
 
-  /**
-   * Récupère tous les commentaires d'un post
-   */
   async getPostComments(postId: string): Promise<Comment[]> {
     const supabase = this.supabaseService.getClient();
 
@@ -42,19 +51,17 @@ export class CommentsService {
       throw new Error(`Error fetching comments: ${error.message}`);
     }
 
-    return (data || []).map((comment) => this.transformCommentData(comment as DbCommentWithUser));
+    return (data as unknown as CommentQueryResult[]).map((comment) =>
+      this.transformCommentData(comment),
+    );
   }
 
-  /**
-   * Ajoute un commentaire à un post
-   */
   async addComment(
     token: string,
     postId: string,
     userId: string,
     content: string,
   ): Promise<Comment> {
-    // Valider le contenu
     if (!content || content.trim().length === 0) {
       throw new BadRequestException('Comment content cannot be empty');
     }
@@ -65,7 +72,6 @@ export class CommentsService {
 
     const supabase = this.supabaseService.getClientWithAuth(token);
 
-    // 1. Créer le commentaire
     const { data, error } = await supabase
       .from('comments')
       .insert({
@@ -93,21 +99,16 @@ export class CommentsService {
       throw new Error(`Error adding comment: ${error.message}`);
     }
 
-    const comment = this.transformCommentData(data as DbCommentWithUser);
+    const comment = this.transformCommentData(data as unknown as CommentQueryResult);
 
-    // 3. Créer la notification (async, non-bloquant)
     await this.createCommentNotification(token, userId, postId, data.id);
 
     return comment;
   }
 
-  /**
-   * Supprime un commentaire
-   */
   async deleteComment(token: string, commentId: string, userId: string): Promise<void> {
     const supabase = this.supabaseService.getClientWithAuth(token);
 
-    // Vérifier que le commentaire appartient à l'utilisateur
     const { data: comment, error: fetchError } = await supabase
       .from('comments')
       .select('user_id, post_id')
@@ -122,10 +123,8 @@ export class CommentsService {
       throw new BadRequestException('You can only delete your own comments');
     }
 
-    // 1. Supprimer la notification AVANT de supprimer le commentaire
     await this.notificationsService.deleteByComment(token, commentId);
 
-    // 2. Supprimer le commentaire
     const { error } = await supabase.from('comments').delete().eq('id', commentId);
 
     if (error) {
@@ -133,9 +132,6 @@ export class CommentsService {
     }
   }
 
-  /**
-   * Compte les commentaires d'un post
-   */
   async getCommentsCount(postId: string): Promise<number> {
     const supabase = this.supabaseService.getClient();
 
@@ -148,12 +144,9 @@ export class CommentsService {
       throw new Error(`Error counting comments: ${error.message}`);
     }
 
-    return count || 0;
+    return count ?? 0;
   }
 
-  /**
-   * Crée une notification de commentaire (privée, async)
-   */
   private async createCommentNotification(
     token: string,
     userId: string,
@@ -163,7 +156,6 @@ export class CommentsService {
     try {
       const supabase = this.supabaseService.getClientWithAuth(token);
 
-      // Récupérer l'auteur du post
       const { data: post, error } = await supabase
         .from('posts')
         .select('user_id')
@@ -175,39 +167,31 @@ export class CommentsService {
         return;
       }
 
-      // Ne pas notifier si on commente son propre post
-      if (userId === post.user_id) {
-        return;
-      }
+      if (userId === post.user_id) return;
 
-      // Créer la notification
       await this.notificationsService.createNotification(
         token,
-        post.user_id, // destinataire
+        post.user_id,
         'post_comment',
-        userId, // acteur
+        userId,
         postId,
         commentId,
       );
     } catch (error) {
       this.logger.error('Failed to create comment notification', error);
-      // Ne pas faire échouer le commentaire si la notification échoue
     }
   }
 
-  /**
-   * Transformation DB → Comment (camelCase)
-   */
-  private transformCommentData(data: DbCommentWithUser): Comment {
+  private transformCommentData(data: CommentQueryResult): Comment {
     return {
       id: data.id,
       postId: data.post_id,
       content: data.content,
       createdAt: data.created_at,
       user: {
-        uid: data.user?.uid || data.user_id,
-        username: data.user?.username || 'Unknown',
-        photoUrl: data.user?.photo_url || null,
+        uid: data.user[0]?.uid ?? data.user_id,
+        username: data.user[0]?.username ?? '',
+        photoUrl: data.user[0]?.photo_url ?? undefined,
       },
     };
   }

@@ -2,11 +2,76 @@ import { Injectable } from '@nestjs/common';
 import { Notification } from '@headbanger/shared';
 import { SupabaseService } from '../common/database/supabase.service';
 import { EventsService } from '../events/events.service';
-import {
-  DbNotificationWithRelations,
-  DbVinylArtist,
-  DbAlbumArtist,
-} from '../common/database/database.types';
+
+type ArtistNameJoin = { name: string }[];
+
+type NotificationQueryResult = {
+  id: string;
+  type: 'post_like' | 'post_comment' | 'new_follower';
+  read: boolean;
+  created_at: string;
+  actor: {
+    uid: string;
+    username: string;
+    first_name: string | null;
+    last_name: string | null;
+    photo_url: string | null;
+  }[];
+  post:
+    | {
+        id: string;
+        vinyl_id: string;
+        vinyl:
+          | {
+              id: string;
+              title: string;
+              cover_url: string | null;
+              vinyl_artists: { position: number; artist: ArtistNameJoin }[];
+              album:
+                | {
+                    id: string;
+                    title: string;
+                    album_artists: { position: number; artist: ArtistNameJoin }[];
+                  }[]
+                | null;
+            }[]
+          | null;
+      }[]
+    | null;
+  comment:
+    | {
+        id: string;
+        content: string;
+      }[]
+    | null;
+};
+
+// Requête allégée utilisée dans createNotification (sans le détail vinyl)
+type NotificationCreateQueryResult = {
+  id: string;
+  type: 'post_like' | 'post_comment' | 'new_follower';
+  read: boolean;
+  created_at: string;
+  actor: {
+    uid: string;
+    username: string;
+    first_name: string | null;
+    last_name: string | null;
+    photo_url: string | null;
+  }[];
+  post:
+    | {
+        id: string;
+        vinyl_id: string;
+      }[]
+    | null;
+  comment:
+    | {
+        id: string;
+        content: string;
+      }[]
+    | null;
+};
 
 @Injectable()
 export class NotificationsService {
@@ -15,9 +80,6 @@ export class NotificationsService {
     private readonly eventsService: EventsService,
   ) {}
 
-  /**
-   * Récupère les notifications d'un utilisateur avec pagination
-   */
   async getNotifications(
     token: string,
     userId: string,
@@ -69,7 +131,6 @@ export class NotificationsService {
       .order('created_at', { ascending: false })
       .limit(limit);
 
-    // Pagination cursor-based
     if (lastCreatedAt) {
       query = query.lt('created_at', lastCreatedAt);
     }
@@ -80,14 +141,11 @@ export class NotificationsService {
       throw new Error(`Error fetching notifications: ${error.message}`);
     }
 
-    return (data || []).map((notif) =>
-      this.transformNotificationData(notif as DbNotificationWithRelations),
+    return (data as unknown as NotificationQueryResult[]).map((notif) =>
+      this.transformNotificationData(notif),
     );
   }
 
-  /**
-   * Compte le nombre de notifications non lues
-   */
   async getUnreadCount(token: string, userId: string): Promise<number> {
     const supabase = this.supabaseService.getClientWithAuth(token);
 
@@ -101,12 +159,9 @@ export class NotificationsService {
       throw new Error(`Error counting unread notifications: ${error.message}`);
     }
 
-    return count || 0;
+    return count ?? 0;
   }
 
-  /**
-   * Marque toutes les notifications comme lues
-   */
   async markAllAsRead(token: string, userId: string): Promise<void> {
     const supabase = this.supabaseService.getClientWithAuth(token);
 
@@ -120,72 +175,9 @@ export class NotificationsService {
       throw new Error(`Error marking notifications as read: ${error.message}`);
     }
 
-    // 🆕 Émettre l'événement Socket.IO
     this.eventsService.emitToUser(userId, 'notification:read-all', { userId });
   }
 
-  /**
-   * Transformation DB → Notification (camelCase)
-   */
-  private transformNotificationData(data: DbNotificationWithRelations): Notification {
-    const notification: Notification = {
-      id: data.id,
-      type: data.type,
-      read: data.read,
-      createdAt: data.created_at,
-      actor: {
-        uid: data.actor?.uid || '',
-        username: data.actor?.username || 'Unknown',
-        firstName: data.actor?.first_name || null,
-        lastName: data.actor?.last_name || null,
-        photoUrl: data.actor?.photo_url || null,
-      },
-    };
-
-    // Si notification liée à un post
-    if (data.post) {
-      const vinyl = data.post.vinyl;
-
-      // Extraire les artistes du vinyl
-      const vinylArtists = (vinyl?.vinyl_artists || [])
-        .sort((a: DbVinylArtist, b: DbVinylArtist) => a.position - b.position)
-        .map((va: DbVinylArtist) => va.artist?.name)
-        .filter(Boolean);
-
-      // Extraire les artistes de l'album (fallback)
-      const albumArtists = (vinyl?.album?.album_artists || [])
-        .sort((a: DbAlbumArtist, b: DbAlbumArtist) => a.position - b.position)
-        .map((aa: DbAlbumArtist) => aa.artist?.name || aa.artists?.name)
-        .filter(Boolean);
-
-      const artist = vinylArtists.join(', ') || albumArtists.join(', ') || 'Artiste inconnu';
-
-      notification.post = {
-        id: data.post.id,
-        vinylId: data.post.vinyl_id,
-        vinyl: {
-          id: vinyl?.id || '',
-          title: vinyl?.title || 'Album inconnu',
-          artist: artist,
-          coverUrl: vinyl?.cover_url || null,
-        },
-      };
-    }
-
-    // Si notification liée à un commentaire
-    if (data.comment) {
-      notification.comment = {
-        id: data.comment.id,
-        content: data.comment.content,
-      };
-    }
-
-    return notification;
-  }
-
-  /**
-   * Crée une notification (utilisé par les autres services)
-   */
   async createNotification(
     token: string,
     userId: string,
@@ -207,48 +199,44 @@ export class NotificationsService {
       })
       .select(
         `
-      id,
-      type,
-      read,
-      created_at,
-      actor:users!notifications_actor_id_fkey (
-        uid,
-        username,
-        first_name,
-        last_name,
-        photo_url
-      ),
-      post:posts!notifications_post_id_fkey (
         id,
-        vinyl_id
-      ),
-      comment:comments!notifications_comment_id_fkey (
-        id,
-        content
-      )
-    `,
+        type,
+        read,
+        created_at,
+        actor:users!notifications_actor_id_fkey (
+          uid,
+          username,
+          first_name,
+          last_name,
+          photo_url
+        ),
+        post:posts!notifications_post_id_fkey (
+          id,
+          vinyl_id
+        ),
+        comment:comments!notifications_comment_id_fkey (
+          id,
+          content
+        )
+      `,
       )
       .single();
 
     if (error && error.code !== '23505') {
-      // 23505 = duplicate, on ignore (ON CONFLICT DO NOTHING)
       throw new Error(`Error creating notification: ${error.message}`);
     }
 
-    // 🆕 Émettre l'événement Socket.IO
     if (data) {
-      const notification = this.transformNotificationData(data as DbNotificationWithRelations);
+      const notification = this.transformNotificationCreateData(
+        data as unknown as NotificationCreateQueryResult,
+      );
       this.eventsService.emitToUser(userId, 'notification:new', notification);
     }
   }
 
-  /**
-   * Supprime les notifications liées à un like
-   */
   async deleteByLike(token: string, actorId: string, postId: string): Promise<void> {
     const supabase = this.supabaseService.getClientWithAuth(token);
 
-    // 1. Récupérer la notification AVANT de la supprimer
     const { data: notification } = await supabase
       .from('notifications')
       .select('user_id, read')
@@ -257,7 +245,6 @@ export class NotificationsService {
       .eq('post_id', postId)
       .single();
 
-    // 2. Supprimer la notification
     const { error } = await supabase
       .from('notifications')
       .delete()
@@ -265,11 +252,8 @@ export class NotificationsService {
       .eq('actor_id', actorId)
       .eq('post_id', postId);
 
-    if (error) {
-      throw new Error(`Error deleting like notification: ${error.message}`);
-    }
+    if (error) throw new Error(`Error deleting like notification: ${error.message}`);
 
-    // 3. Émettre l'événement SEULEMENT si la notification était non lue
     if (notification && !notification.read) {
       this.eventsService.emitToUser(notification.user_id, 'notification:deleted', {
         type: 'post_like',
@@ -279,13 +263,9 @@ export class NotificationsService {
     }
   }
 
-  /**
-   * Supprime les notifications liées à un commentaire
-   */
   async deleteByComment(token: string, commentId: string): Promise<void> {
     const supabase = this.supabaseService.getClientWithAuth(token);
 
-    // 1. Récupérer la notification AVANT de la supprimer
     const { data: notification } = await supabase
       .from('notifications')
       .select('user_id, read')
@@ -293,18 +273,14 @@ export class NotificationsService {
       .eq('comment_id', commentId)
       .single();
 
-    // 2. Supprimer la notification
     const { error } = await supabase
       .from('notifications')
       .delete()
       .eq('type', 'post_comment')
       .eq('comment_id', commentId);
 
-    if (error) {
-      throw new Error(`Error deleting comment notification: ${error.message}`);
-    }
+    if (error) throw new Error(`Error deleting comment notification: ${error.message}`);
 
-    // 3. Émettre l'événement SEULEMENT si la notification était non lue
     if (notification && !notification.read) {
       this.eventsService.emitToUser(notification.user_id, 'notification:deleted', {
         type: 'post_comment',
@@ -313,13 +289,9 @@ export class NotificationsService {
     }
   }
 
-  /**
-   * Supprime les notifications liées à un follow
-   */
   async deleteByFollow(token: string, followerId: string, followedId: string): Promise<void> {
     const supabase = this.supabaseService.getClientWithAuth(token);
 
-    // 1. Récupérer la notification AVANT de la supprimer
     const { data: notification } = await supabase
       .from('notifications')
       .select('user_id, read')
@@ -328,7 +300,6 @@ export class NotificationsService {
       .eq('user_id', followedId)
       .single();
 
-    // 2. Supprimer la notification
     const { error } = await supabase
       .from('notifications')
       .delete()
@@ -336,11 +307,8 @@ export class NotificationsService {
       .eq('actor_id', followerId)
       .eq('user_id', followedId);
 
-    if (error) {
-      throw new Error(`Error deleting follow notification: ${error.message}`);
-    }
+    if (error) throw new Error(`Error deleting follow notification: ${error.message}`);
 
-    // 3. Émettre l'événement SEULEMENT si la notification était non lue
     if (notification && !notification.read) {
       this.eventsService.emitToUser(notification.user_id, 'notification:deleted', {
         type: 'new_follower',
@@ -348,5 +316,91 @@ export class NotificationsService {
         followedId,
       });
     }
+  }
+
+  private transformNotificationData(data: NotificationQueryResult): Notification {
+    const notification: Notification = {
+      id: data.id,
+      type: data.type,
+      read: data.read,
+      createdAt: data.created_at,
+      actor: {
+        uid: data.actor[0]?.uid ?? '',
+        username: data.actor[0]?.username ?? 'Unknown',
+        firstName: data.actor[0]?.first_name ?? null,
+        lastName: data.actor[0]?.last_name ?? null,
+        photoUrl: data.actor[0]?.photo_url ?? null,
+      },
+    };
+
+    if (data.post?.[0]) {
+      const post = data.post[0];
+      const vinyl = post.vinyl?.[0];
+
+      const vinylArtists = (vinyl?.vinyl_artists || [])
+        .sort((a, b) => a.position - b.position)
+        .map((va) => va.artist[0]?.name)
+        .filter(Boolean);
+
+      const albumArtists = (vinyl?.album?.[0]?.album_artists || [])
+        .sort((a, b) => a.position - b.position)
+        .map((aa) => aa.artist[0]?.name)
+        .filter(Boolean);
+
+      const artist = vinylArtists.join(', ') || albumArtists.join(', ') || 'Artiste inconnu';
+
+      notification.post = {
+        id: post.id,
+        vinylId: post.vinyl_id,
+        vinyl: {
+          id: vinyl?.id ?? '',
+          title: vinyl?.title ?? 'Album inconnu',
+          artist,
+          coverUrl: vinyl?.cover_url ?? null,
+        },
+      };
+    }
+
+    if (data.comment?.[0]) {
+      notification.comment = {
+        id: data.comment[0].id,
+        content: data.comment[0].content,
+      };
+    }
+
+    return notification;
+  }
+
+  private transformNotificationCreateData(data: NotificationCreateQueryResult): Notification {
+    const notification: Notification = {
+      id: data.id,
+      type: data.type,
+      read: data.read,
+      createdAt: data.created_at,
+      actor: {
+        uid: data.actor[0]?.uid ?? '',
+        username: data.actor[0]?.username ?? 'Unknown',
+        firstName: data.actor[0]?.first_name ?? null,
+        lastName: data.actor[0]?.last_name ?? null,
+        photoUrl: data.actor[0]?.photo_url ?? null,
+      },
+    };
+
+    if (data.post?.[0]) {
+      notification.post = {
+        id: data.post[0].id,
+        vinylId: data.post[0].vinyl_id,
+        vinyl: { id: '', title: '', artist: '', coverUrl: null },
+      };
+    }
+
+    if (data.comment?.[0]) {
+      notification.comment = {
+        id: data.comment[0].id,
+        content: data.comment[0].content,
+      };
+    }
+
+    return notification;
   }
 }

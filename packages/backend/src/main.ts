@@ -13,7 +13,7 @@ async function bootstrap() {
   const port = configService.get('PORT') || 3001;
 
   // Plugin cookies Fastify
-  await app.register(fastifyCookie, {
+  await app.register(fastifyCookie as never, {
     secret: configService.get<string>('JWT_SECRET'),
   });
 
@@ -26,10 +26,10 @@ async function bootstrap() {
   });
 
   // Support multipart/form-data pour uploads
-  await app.register(multipart, {
+  await app.register(multipart as never, {
     limits: {
-      fileSize: 5 * 1024 * 1024, // 5MB max
-      files: 1, // 1 fichier à la fois
+      fileSize: 5 * 1024 * 1024,
+      files: 1,
     },
   });
 

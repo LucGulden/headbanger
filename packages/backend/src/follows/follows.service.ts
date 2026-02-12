@@ -212,10 +212,10 @@ export class FollowsService {
     return {
       uid: data.uid,
       username: data.username,
-      firstName: data.first_name,
-      lastName: data.last_name,
-      photoUrl: data.photo_url,
-      bio: data.bio || null, // 👈 Ajouter || null pour cohérence
+      firstName: data.first_name ?? undefined,
+      lastName: data.last_name ?? undefined,
+      photoUrl: data.photo_url ?? undefined,
+      bio: data.bio ?? undefined,
     };
   }
 }

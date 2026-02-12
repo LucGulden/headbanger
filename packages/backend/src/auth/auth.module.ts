@@ -16,12 +16,12 @@ import { SupabaseService } from '../common/database/supabase.service';
       inject: [ConfigService],
       useFactory: (configService: ConfigService): JwtModuleOptions => {
         const secret = configService.get<string>('JWT_SECRET');
-        const expiresIn = configService.get<string>('JWT_EXPIRES_IN') || '15m';
+        const expiresIn = configService.get<string>('JWT_EXPIRES_IN') ?? '15m';
 
         return {
           secret,
           signOptions: {
-            expiresIn,
+            expiresIn: expiresIn as NonNullable<JwtModuleOptions['signOptions']>['expiresIn'],
           },
           global: true,
         };

@@ -11,7 +11,7 @@ export interface AlbumLight {
   id: string;
   title: string;
   artists: ArtistLight[];
-  coverUrl: string;
+  coverUrl: string | null;
   year: number;
 }
 
@@ -19,7 +19,7 @@ export interface AlbumLight {
  * Album complet
  */
 export interface Album extends AlbumLight {
-    vinyls: VinylLight[];
+  vinyls: VinylLight[];
 }
 
 // ============================================
@@ -46,7 +46,7 @@ export interface VinylLight {
   id: string;
   title: string;
   artists: ArtistLight[];
-  coverUrl: string;
+  coverUrl: string | null;
   year: number;
   country: string;
   catalogNumber: string;
@@ -61,12 +61,12 @@ export interface Vinyl extends VinylLight {
 // ============================================
 // USER VINYLS
 // ============================================
-export type UserVinylType = 'collection' | 'wishlist';
+export type UserVinylType = "collection" | "wishlist";
 
 export interface UserVinyl {
   id: string;
   addedAt: string;
-  vinyl: Vinyl;
+  vinyl: VinylLight;
 }
 
 export interface VinylStats {
@@ -102,7 +102,7 @@ export interface FollowStats {
 // POSTS
 // ============================================
 // Type de post
-export type PostType = 'collection_add' | 'wishlist_add';
+export type PostType = "collection_add" | "wishlist_add";
 
 // Post avec tous les détails
 export interface PostWithDetails {
@@ -130,7 +130,7 @@ export interface Comment {
 // ============================================
 // NOTIFICATIONS
 // ============================================
-export type NotificationType = 'new_follower' | 'post_like' | 'post_comment';
+export type NotificationType = "new_follower" | "post_like" | "post_comment";
 
 // Actor dans les notifications (avec firstName/lastName)
 export interface NotificationActor {

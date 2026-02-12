@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { SupabaseService } from '../common/database/supabase.service';
 import { RedisService } from '../redis/redis.service';
-import { Session, SupabaseSession } from '../common/database/database.types';
+import { Session } from '../common/database/database.types';
 import { v4 as uuidv4 } from 'uuid';
 import * as crypto from 'crypto';
 
@@ -165,7 +165,7 @@ export class AuthService {
    */
   private async createSessionAndToken(
     userId: string,
-    supabaseSession: SupabaseSession,
+    supabaseSession: { access_token: string; refresh_token: string },
     ip?: string,
     userAgent?: string,
   ) {

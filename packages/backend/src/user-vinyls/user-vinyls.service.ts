@@ -1,10 +1,26 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
-import { Logger } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { UserVinyl, UserVinylType, VinylStats, ArtistLight } from '@headbanger/shared';
 import { SupabaseService } from '../common/database/supabase.service';
 import { VinylsService } from '../vinyls/vinyls.service';
-import { PostsService } from 'src/posts/posts.service';
-import { DbUserVinylData, DbVinylArtist } from '../common/database/database.types';
+import { PostsService } from '../posts/posts.service';
+
+type UserVinylQueryResult = {
+  id: string;
+  added_at: string;
+  release_id: string;
+  vinyls: {
+    id: string;
+    title: string;
+    cover_url: string;
+    year: number;
+    country: string;
+    catalog_number: string;
+    vinyl_artists: {
+      position: number;
+      artist: { id: string; name: string; image_url: string | null }[];
+    }[];
+  }[];
+};
 
 @Injectable()
 export class UserVinylsService {
@@ -16,9 +32,6 @@ export class UserVinylsService {
     private readonly postsService: PostsService,
   ) {}
 
-  /**
-   * Récupère les vinyles d'un utilisateur avec pagination cursor-based
-   */
   async getUserVinyls(
     userId: string,
     type: UserVinylType,
@@ -35,7 +48,12 @@ export class UserVinylsService {
         added_at,
         release_id,
         vinyls!user_vinyls_release_id_fkey(
-          *,
+          id,
+          title,
+          cover_url,
+          year,
+          country,
+          catalog_number,
           vinyl_artists(
             position,
             artist:artists(
@@ -52,23 +70,19 @@ export class UserVinylsService {
       .order('added_at', { ascending: false })
       .limit(limit);
 
-    // Cursor-based pagination
     if (lastAddedAt) {
       query = query.lt('added_at', lastAddedAt);
     }
 
     const { data, error } = await query;
 
-    if (error) {
-      throw new Error(`Error fetching user vinyls: ${error.message}`);
-    }
+    if (error) throw new Error(`Error fetching user vinyls: ${error.message}`);
 
-    return (data || []).map((item) => this.transformUserVinylData(item as DbUserVinylData));
+    return (data as unknown as UserVinylQueryResult[]).map((item) =>
+      this.transformUserVinylData(item),
+    );
   }
 
-  /**
-   * Compte le nombre total de vinyles
-   */
   async getUserVinylsCount(userId: string, type: UserVinylType): Promise<number> {
     const supabase = this.supabaseService.getClient();
 
@@ -78,16 +92,11 @@ export class UserVinylsService {
       .eq('user_id', userId)
       .eq('type', type);
 
-    if (error) {
-      throw new Error(`Error counting vinyls: ${error.message}`);
-    }
+    if (error) throw new Error(`Error counting vinyls: ${error.message}`);
 
-    return count || 0;
+    return count ?? 0;
   }
 
-  /**
-   * Vérifie si un vinyle existe déjà dans la collection/wishlist
-   */
   async hasVinyl(userId: string, vinylId: string, type: UserVinylType): Promise<boolean> {
     const supabase = this.supabaseService.getClient();
 
@@ -100,21 +109,15 @@ export class UserVinylsService {
       .single();
 
     if (error && error.code !== 'PGRST116') {
-      // PGRST116 = not found, c'est OK
       throw new Error(`Error checking vinyl: ${error.message}`);
     }
 
     return !!data;
   }
 
-  /**
-   * Ajoute un vinyle à la collection ou wishlist
-   */
   async addVinylToUser(userId: string, vinylId: string, type: UserVinylType): Promise<UserVinyl> {
-    // Vérifier que le vinyl existe
     await this.vinylsService.getById(vinylId);
 
-    // Vérifier si déjà présent
     const exists = await this.hasVinyl(userId, vinylId, type);
     if (exists) {
       throw new BadRequestException(
@@ -124,21 +127,21 @@ export class UserVinylsService {
 
     const supabase = this.supabaseService.getClient();
 
-    // 1. Ajouter le vinyl
     const { data, error } = await supabase
       .from('user_vinyls')
-      .insert({
-        user_id: userId,
-        release_id: vinylId,
-        type,
-      })
+      .insert({ user_id: userId, release_id: vinylId, type })
       .select(
         `
         id,
         added_at,
         release_id,
         vinyls!user_vinyls_release_id_fkey(
-          *,
+          id,
+          title,
+          cover_url,
+          year,
+          country,
+          catalog_number,
           vinyl_artists(
             position,
             artist:artists(
@@ -152,19 +155,13 @@ export class UserVinylsService {
       )
       .single();
 
-    if (error) {
-      throw new Error(`Error adding vinyl: ${error.message}`);
-    }
+    if (error) throw new Error(`Error adding vinyl: ${error.message}`);
 
-    // 2. Créer le post automatiquement (async, non-bloquant)
     this.createVinylPost(userId, vinylId, type);
 
-    return this.transformUserVinylData(data as DbUserVinylData);
+    return this.transformUserVinylData(data as unknown as UserVinylQueryResult);
   }
 
-  /**
-   * Crée un post automatiquement lors de l'ajout d'un vinyl (privée, async)
-   */
   private async createVinylPost(
     userId: string,
     vinylId: string,
@@ -178,9 +175,6 @@ export class UserVinylsService {
     }
   }
 
-  /**
-   * Retire un vinyle de la collection ou wishlist
-   */
   async removeVinylFromUser(userId: string, vinylId: string, type: UserVinylType): Promise<void> {
     const supabase = this.supabaseService.getClient();
 
@@ -191,77 +185,53 @@ export class UserVinylsService {
       .eq('release_id', vinylId)
       .eq('type', type);
 
-    if (error) {
-      throw new Error(`Error removing vinyl: ${error.message}`);
-    }
+    if (error) throw new Error(`Error removing vinyl: ${error.message}`);
   }
 
-  /**
-   * Déplace un vinyle de la wishlist vers la collection
-   */
   async moveToCollection(userId: string, vinylId: string): Promise<UserVinyl> {
-    // Vérifier qu'il est dans la wishlist
     const inWishlist = await this.hasVinyl(userId, vinylId, 'wishlist');
-    if (!inWishlist) {
-      throw new BadRequestException('This vinyl is not in your wishlist');
-    }
+    if (!inWishlist) throw new BadRequestException('This vinyl is not in your wishlist');
 
-    // Vérifier qu'il n'est pas déjà dans la collection
     const inCollection = await this.hasVinyl(userId, vinylId, 'collection');
-    if (inCollection) {
-      throw new BadRequestException('This vinyl is already in your collection');
-    }
+    if (inCollection) throw new BadRequestException('This vinyl is already in your collection');
 
-    // Retirer de la wishlist
     await this.removeVinylFromUser(userId, vinylId, 'wishlist');
-
-    // Ajouter à la collection
-    return await this.addVinylToUser(userId, vinylId, 'collection');
+    return this.addVinylToUser(userId, vinylId, 'collection');
   }
 
-  /**
-   * Obtient les statistiques des vinyles d'un utilisateur
-   */
   async getVinylStats(userId: string): Promise<VinylStats> {
     const [collectionCount, wishlistCount] = await Promise.all([
       this.getUserVinylsCount(userId, 'collection'),
       this.getUserVinylsCount(userId, 'wishlist'),
     ]);
 
-    return {
-      collectionCount,
-      wishlistCount,
-    };
+    return { collectionCount, wishlistCount };
   }
 
-  /**
-   * Transformation DB → UserVinyl (camelCase)
-   */
-  private transformUserVinylData(data: DbUserVinylData): UserVinyl {
-    const vinylData = data.vinyls;
+  private transformUserVinylData(data: UserVinylQueryResult): UserVinyl {
+    const vinylData = data.vinyls[0];
 
-    // Extraire et trier les artistes par position
-    const artists: ArtistLight[] = (vinylData.vinyl_artists || [])
-      .sort((a: DbVinylArtist, b: DbVinylArtist) => a.position - b.position)
-      .map((va: DbVinylArtist) => ({
-        id: va.artist?.id || '',
-        name: va.artist?.name || '',
-        imageUrl: va.artist?.image_url || null,
+    const artists: ArtistLight[] = (vinylData?.vinyl_artists || [])
+      .sort((a, b) => a.position - b.position)
+      .map((va) => ({
+        id: va.artist[0]?.id ?? '',
+        name: va.artist[0]?.name ?? '',
+        imageUrl: va.artist[0]?.image_url ?? null,
       }))
-      .filter((artist: ArtistLight) => artist.id && artist.name);
+      .filter((artist) => artist.id && artist.name);
 
     return {
       id: data.id,
       addedAt: data.added_at,
       vinyl: {
-        id: vinylData.id,
-        title: vinylData.title,
+        id: vinylData?.id ?? '',
+        title: vinylData?.title ?? '',
         artists:
           artists.length > 0 ? artists : [{ id: '', name: 'Artiste inconnu', imageUrl: null }],
-        coverUrl: vinylData.cover_url,
-        year: vinylData.year,
-        country: vinylData.country,
-        catalogNumber: vinylData.catalog_number,
+        coverUrl: vinylData?.cover_url ?? '',
+        year: vinylData?.year ?? 0,
+        country: vinylData?.country ?? '',
+        catalogNumber: vinylData?.catalog_number ?? '',
       },
     };
   }

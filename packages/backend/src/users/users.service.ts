@@ -141,10 +141,10 @@ export class UsersService {
     return {
       uid: data.uid,
       username: data.username,
-      firstName: data.first_name,
-      lastName: data.last_name,
-      photoUrl: data.photo_url,
-      bio: data.bio || null,
+      firstName: data.first_name ?? undefined,
+      lastName: data.last_name ?? undefined,
+      photoUrl: data.photo_url ?? undefined,
+      bio: data.bio ?? undefined,
     };
   }
 }

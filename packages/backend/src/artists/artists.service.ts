@@ -1,19 +1,29 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { AlbumLight, Artist, ArtistLight } from '@headbanger/shared';
 import { SupabaseService } from '../common/database/supabase.service';
-import { DbArtist, DbAlbumArtistWithAlbum, DbAlbumArtist } from '../common/database/database.types';
+import { DbArtist } from '../common/database/database.types';
+
+type ArtistAlbumsQueryResult = {
+  position: number;
+  album: {
+    id: string;
+    title: string;
+    cover_url: string | null;
+    year: number;
+    album_artists: {
+      position: number;
+      artist: { id: string; name: string; image_url: string | null }[];
+    }[];
+  }[];
+};
 
 @Injectable()
 export class ArtistsService {
   constructor(private readonly supabaseService: SupabaseService) {}
 
-  /**
-   * Récupère un artiste par son ID
-   */
   async getById(id: string): Promise<Artist> {
     const supabase = this.supabaseService.getClient();
 
-    // Récupère l'artiste
     const { data: artistData, error: artistError } = await supabase
       .from('artists')
       .select('id, name, image_url, spotify_id')
@@ -25,7 +35,6 @@ export class ArtistsService {
       throw new NotFoundException('Artist not found');
     }
 
-    // Récupérer les albums de cet artiste via la table de jointure
     const { data: albumArtistsData, error: albumsError } = await supabase
       .from('album_artists')
       .select(
@@ -38,7 +47,7 @@ export class ArtistsService {
           year,
           album_artists (
             position,
-            artists (
+            artist:artists (
               id,
               name,
               image_url
@@ -54,20 +63,14 @@ export class ArtistsService {
       console.error('Error fetching albums:', albumsError);
     }
 
-    // Transformer les données
     return this.transformArtistData(
       artistData as DbArtist,
-      (albumArtistsData || []) as DbAlbumArtistWithAlbum[],
+      (albumArtistsData || []) as unknown as ArtistAlbumsQueryResult[],
     );
   }
 
-  /**
-   * Recherche d'artistes par nom
-   */
   async search(query: string, limit: number = 20, offset: number = 0): Promise<ArtistLight[]> {
-    if (!query || query.trim().length < 2) {
-      return [];
-    }
+    if (!query || query.trim().length < 2) return [];
 
     const supabase = this.supabaseService.getClient();
     const searchTerm = `%${query.trim()}%`;
@@ -79,59 +82,48 @@ export class ArtistsService {
       .order('name', { ascending: true })
       .range(offset, offset + limit - 1);
 
-    if (error) {
-      throw new Error(`Error searching artists: ${error.message}`);
-    }
+    if (error) throw new Error(`Error searching artists: ${error.message}`);
 
     return data.map((artist) => this.transformArtistLightData(artist as DbArtist));
   }
 
-  /**
-   * Transforme les données de la DB en interface Artist
-   */
   private transformArtistData(
     artistData: DbArtist,
-    albumArtistsData: DbAlbumArtistWithAlbum[],
+    albumArtistsData: ArtistAlbumsQueryResult[],
   ): Artist {
-    // Extraire et transformer les albums
     const albums: AlbumLight[] = albumArtistsData
-      .filter((aa: DbAlbumArtistWithAlbum) => aa.album) // Filtrer les albums null
-      .map((aa: DbAlbumArtistWithAlbum) => {
-        const album = aa.album;
+      .filter((aa) => aa.album[0])
+      .map((aa) => {
+        const album = aa.album[0];
 
-        // Récupère et trie les artistes de l'album
         const artists: ArtistLight[] = (album.album_artists || [])
-          .sort((a: DbAlbumArtist, b: DbAlbumArtist) => a.position - b.position)
-          .map((artist: DbAlbumArtist) => ({
-            id: artist.artists?.id || artist.artist?.id || '',
-            name: artist.artists?.name || artist.artist?.name || '',
-            imageUrl: artist.artists?.image_url || artist.artist?.image_url || null,
+          .sort((a, b) => a.position - b.position)
+          .map((aa) => ({
+            id: aa.artist[0]?.id ?? '',
+            name: aa.artist[0]?.name ?? '',
+            imageUrl: aa.artist[0]?.image_url ?? null,
           }))
-          .filter((artist: ArtistLight) => artist.id && artist.name);
+          .filter((artist) => artist.id && artist.name);
 
         return {
           id: album.id,
           title: album.title,
           artists:
             artists.length > 0 ? artists : [{ id: '', name: 'Artiste inconnu', imageUrl: null }],
-          coverUrl: album.cover_url,
+          coverUrl: album.cover_url ?? '',
           year: album.year,
         };
       });
 
-    // Retourner l'artiste avec ses albums
     return {
       id: artistData.id,
       name: artistData.name,
       imageUrl: artistData.image_url,
-      spotifyId: artistData.spotify_id || null,
-      albums: albums,
+      spotifyId: artistData.spotify_id ?? null,
+      albums,
     };
   }
 
-  /**
-   * Transformation DB → ArtistLight (camelCase)
-   */
   private transformArtistLightData(data: DbArtist): ArtistLight {
     return {
       id: data.id,

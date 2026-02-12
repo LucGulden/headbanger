@@ -1,24 +1,40 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../common/database/supabase.service';
 import { Album, AlbumLight, ArtistLight, VinylLight } from '@headbanger/shared';
-import {
-  DbAlbumWithRelations,
-  DbVinylLight,
-  DbAlbumArtist,
-  DbVinylArtist,
-} from '../common/database/database.types';
+
+type ArtistJoin = { id: string; name: string; image_url: string | null }[];
+
+type AlbumQueryResult = {
+  id: string;
+  title: string;
+  cover_url: string | null;
+  year: number;
+  album_artists: {
+    position: number;
+    artist: ArtistJoin;
+  }[];
+};
+
+type VinylQueryResult = {
+  id: string;
+  title: string;
+  cover_url: string;
+  year: number;
+  country: string;
+  catalog_number: string;
+  vinyl_artists: {
+    position: number;
+    artist: ArtistJoin;
+  }[];
+};
 
 @Injectable()
 export class AlbumsService {
   constructor(private supabaseService: SupabaseService) {}
 
-  /**
-   * Récupère un album par son ID avec ses artistes et vinyles associés
-   */
   async findById(albumId: string): Promise<Album> {
     const supabase = this.supabaseService.getClient();
 
-    // Récupère l'album avec ses artistes via jointure
     const { data, error } = await supabase
       .from('albums')
       .select(
@@ -29,7 +45,7 @@ export class AlbumsService {
         year,
         album_artists!inner (
           position,
-          artists (
+          artist:artists (
             id,
             name,
             image_url
@@ -45,7 +61,6 @@ export class AlbumsService {
       throw new NotFoundException('Album not found');
     }
 
-    // Récupérer les vinyles associés à cet album
     const { data: vinylsData, error: vinylsError } = await supabase
       .from('vinyls')
       .select(
@@ -58,7 +73,7 @@ export class AlbumsService {
         catalog_number,
         vinyl_artists (
           position,
-          artists (
+          artist:artists (
             id,
             name,
             image_url
@@ -72,21 +87,14 @@ export class AlbumsService {
       console.error('Error fetching vinyls:', vinylsError);
     }
 
-    // Transforme les données DB en interface Album
     return this.transformAlbumData(
-      data as DbAlbumWithRelations,
-      (vinylsData || []) as DbVinylLight[],
+      data as unknown as AlbumQueryResult,
+      (vinylsData || []) as unknown as VinylQueryResult[],
     );
   }
 
-  /**
-   * Recherche d'albums par titre avec pagination offset-based
-   * Retourne AlbumLight[] (sans les vinyles pour optimiser les performances)
-   */
   async searchAlbums(query: string, limit: number = 20, offset: number = 0): Promise<AlbumLight[]> {
-    if (!query || query.trim().length < 2) {
-      return [];
-    }
+    if (!query || query.trim().length < 2) return [];
 
     const supabase = this.supabaseService.getClient();
     const searchTerm = `%${query.trim()}%`;
@@ -101,7 +109,7 @@ export class AlbumsService {
         year,
         album_artists (
           position,
-          artists (
+          artist:artists (
             id,
             name,
             image_url
@@ -113,48 +121,42 @@ export class AlbumsService {
       .order('title', { ascending: true })
       .range(offset, offset + limit - 1);
 
-    if (error) {
-      throw new Error(`Error searching albums: ${error.message}`);
-    }
+    if (error) throw new Error(`Error searching albums: ${error.message}`);
+    if (!data || data.length === 0) return [];
 
-    if (!data || data.length === 0) {
-      return [];
-    }
-
-    // Transformer en AlbumLight (sans charger les vinyles)
-    return data.map((albumData) => this.transformAlbumLightData(albumData as DbAlbumWithRelations));
+    return (data as unknown as AlbumQueryResult[]).map((albumData) =>
+      this.transformAlbumLightData(albumData),
+    );
   }
 
-  /**
-   * Transforme les données de la DB en interface Album (avec vinyles)
-   */
-  private transformAlbumData(data: DbAlbumWithRelations, vinylsData: DbVinylLight[]): Album {
-    // Récupère et trie les artistes de l'album par position
-    const artists: ArtistLight[] = (data.album_artists || [])
-      .sort((a: DbAlbumArtist, b: DbAlbumArtist) => a.position - b.position)
-      .map((aa: DbAlbumArtist) => ({
-        id: aa.artists?.id || aa.artist?.id || '',
-        name: aa.artists?.name || aa.artist?.name || '',
-        imageUrl: aa.artists?.image_url || aa.artist?.image_url || null,
+  private extractArtists(album_artists: AlbumQueryResult['album_artists']): ArtistLight[] {
+    return (album_artists || [])
+      .sort((a, b) => a.position - b.position)
+      .map((aa) => ({
+        id: aa.artist[0]?.id ?? '',
+        name: aa.artist[0]?.name ?? '',
+        imageUrl: aa.artist[0]?.image_url ?? null,
       }))
-      .filter((artist: ArtistLight) => artist.id && artist.name);
+      .filter((artist) => artist.id && artist.name);
+  }
 
-    // Transformer les vinyles
-    const vinyls: VinylLight[] = vinylsData.map((vinyl: DbVinylLight) => {
-      // Récupère les artistes du vinyle
+  private transformAlbumData(data: AlbumQueryResult, vinylsData: VinylQueryResult[]): Album {
+    const artists = this.extractArtists(data.album_artists);
+
+    const vinyls: VinylLight[] = vinylsData.map((vinyl) => {
       const vinylArtists: ArtistLight[] = (vinyl.vinyl_artists || [])
-        .sort((a: DbVinylArtist, b: DbVinylArtist) => a.position - b.position)
-        .map((va: DbVinylArtist) => ({
-          id: va.artist?.id || '',
-          name: va.artist?.name || '',
-          imageUrl: va.artist?.image_url || null,
+        .sort((a, b) => a.position - b.position)
+        .map((va) => ({
+          id: va.artist[0]?.id ?? '',
+          name: va.artist[0]?.name ?? '',
+          imageUrl: va.artist[0]?.image_url ?? null,
         }))
-        .filter((artist: ArtistLight) => artist.id && artist.name);
+        .filter((artist) => artist.id && artist.name);
 
       return {
         id: vinyl.id,
         title: vinyl.title,
-        artists: vinylArtists.length > 0 ? vinylArtists : artists, // Fallback sur les artistes de l'album
+        artists: vinylArtists.length > 0 ? vinylArtists : artists,
         coverUrl: vinyl.cover_url,
         year: vinyl.year,
         country: vinyl.country,
@@ -166,31 +168,20 @@ export class AlbumsService {
       id: data.id,
       title: data.title,
       artists: artists.length > 0 ? artists : [{ id: '', name: 'Artiste inconnu', imageUrl: null }],
-      coverUrl: data.cover_url,
-      vinyls: vinyls,
+      coverUrl: data.cover_url ?? '',
+      vinyls,
       year: data.year,
     };
   }
 
-  /**
-   * Transforme les données de la DB en interface AlbumLight (sans vinyles)
-   */
-  private transformAlbumLightData(data: DbAlbumWithRelations): AlbumLight {
-    // Récupère et trie les artistes de l'album par position
-    const artists: ArtistLight[] = (data.album_artists || [])
-      .sort((a: DbAlbumArtist, b: DbAlbumArtist) => a.position - b.position)
-      .map((aa: DbAlbumArtist) => ({
-        id: aa.artists?.id || aa.artist?.id || '',
-        name: aa.artists?.name || aa.artist?.name || '',
-        imageUrl: aa.artists?.image_url || aa.artist?.image_url || null,
-      }))
-      .filter((artist: ArtistLight) => artist.id && artist.name);
+  private transformAlbumLightData(data: AlbumQueryResult): AlbumLight {
+    const artists = this.extractArtists(data.album_artists);
 
     return {
       id: data.id,
       title: data.title,
       artists: artists.length > 0 ? artists : [{ id: '', name: 'Artiste inconnu', imageUrl: null }],
-      coverUrl: data.cover_url,
+      coverUrl: data.cover_url ?? '',
       year: data.year,
     };
   }
