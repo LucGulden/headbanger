@@ -1,31 +1,31 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { Vinyl, ArtistLight, AlbumLight } from '@headbanger/shared';
-import { SupabaseService } from '../common/database/supabase.service';
-import { DbVinyl } from '../common/database/database.types';
+import { Injectable, NotFoundException } from '@nestjs/common'
+import { Vinyl, ArtistLight, AlbumLight } from '@headbanger/shared'
+import { SupabaseService } from '../common/database/supabase.service'
+import { DbVinyl } from '../common/database/database.types'
 
 type VinylByIdQueryResult = DbVinyl & {
   vinyl_artists: {
-    position: number;
-    artist: { id: string; name: string; image_url: string | null }[];
-  }[];
+    position: number
+    artist: { id: string; name: string; image_url: string | null }[]
+  }[]
   albums: {
-    id: string;
-    title: string;
-    cover_url: string | null;
-    year: number;
+    id: string
+    title: string
+    cover_url: string | null
+    year: number
     album_artists: {
-      position: number;
-      artist: { id: string; name: string; image_url: string | null }[];
-    }[];
-  } | null;
-};
+      position: number
+      artist: { id: string; name: string; image_url: string | null }[]
+    }[]
+  } | null
+}
 
 @Injectable()
 export class VinylsService {
   constructor(private readonly supabaseService: SupabaseService) {}
 
   async getById(id: string): Promise<Vinyl> {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getClient()
 
     const { data, error } = await supabase
       .from('vinyls')
@@ -57,13 +57,13 @@ export class VinylsService {
       `,
       )
       .eq('id', id)
-      .single();
+      .single()
 
     if (error || !data) {
-      throw new NotFoundException(`Vinyl with ID ${id} not found`);
+      throw new NotFoundException(`Vinyl with ID ${id} not found`)
     }
 
-    return this.transformVinylData(data as unknown as VinylByIdQueryResult);
+    return this.transformVinylData(data as unknown as VinylByIdQueryResult)
   }
 
   private transformVinylData(data: VinylByIdQueryResult): Vinyl {
@@ -74,9 +74,9 @@ export class VinylsService {
         name: va.artist[0]?.name ?? '',
         imageUrl: va.artist[0]?.image_url ?? null,
       }))
-      .filter((artist) => artist.id && artist.name);
+      .filter((artist) => artist.id && artist.name)
 
-    const albumData = data.albums;
+    const albumData = data.albums
     const albumArtists: ArtistLight[] = (albumData?.album_artists || [])
       .sort((a, b) => a.position - b.position)
       .map((aa) => ({
@@ -84,7 +84,7 @@ export class VinylsService {
         name: aa.artist[0]?.name ?? '',
         imageUrl: aa.artist[0]?.image_url ?? null,
       }))
-      .filter((artist) => artist.id && artist.name);
+      .filter((artist) => artist.id && artist.name)
 
     const album: AlbumLight = {
       id: albumData?.id ?? '',
@@ -95,7 +95,7 @@ export class VinylsService {
           : [{ id: '', name: 'Artiste inconnu', imageUrl: null }],
       coverUrl: albumData?.cover_url ?? '',
       year: albumData?.year ?? 0,
-    };
+    }
 
     return {
       id: data.id,
@@ -111,6 +111,6 @@ export class VinylsService {
       country: data.country,
       format: data.format,
       album,
-    };
+    }
   }
 }

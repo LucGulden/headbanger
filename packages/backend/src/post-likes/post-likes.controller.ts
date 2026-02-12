@@ -1,9 +1,9 @@
-import { Controller, Post, Delete, Get, Param, UseGuards } from '@nestjs/common';
-import { PostLikesService } from './post-likes.service';
-import { AuthGuard } from '../auth/guards/auth.guard';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
-import { CurrentToken } from 'src/auth/decorators/current-token.decorator';
+import { Controller, Post, Delete, Get, Param, UseGuards } from '@nestjs/common'
+import { PostLikesService } from './post-likes.service'
+import { AuthGuard } from '../auth/guards/auth.guard'
+import { CurrentUser } from '../auth/decorators/current-user.decorator'
+import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator'
+import { CurrentToken } from 'src/auth/decorators/current-token.decorator'
 
 @Controller('post-likes')
 export class PostLikesController {
@@ -20,8 +20,8 @@ export class PostLikesController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('postId') postId: string,
   ): Promise<{ success: boolean }> {
-    await this.postLikesService.likePost(token, user.id, postId);
-    return { success: true };
+    await this.postLikesService.likePost(token, user.id, postId)
+    return { success: true }
   }
 
   /**
@@ -35,8 +35,8 @@ export class PostLikesController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('postId') postId: string,
   ): Promise<{ success: boolean }> {
-    await this.postLikesService.unlikePost(token, user.id, postId);
-    return { success: true };
+    await this.postLikesService.unlikePost(token, user.id, postId)
+    return { success: true }
   }
 
   /**
@@ -49,8 +49,8 @@ export class PostLikesController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('postId') postId: string,
   ): Promise<{ hasLiked: boolean }> {
-    const hasLiked = await this.postLikesService.hasLikedPost(user.id, postId);
-    return { hasLiked };
+    const hasLiked = await this.postLikesService.hasLikedPost(user.id, postId)
+    return { hasLiked }
   }
 
   /**
@@ -59,7 +59,7 @@ export class PostLikesController {
    */
   @Get('count/:postId')
   async getLikesCount(@Param('postId') postId: string): Promise<{ count: number }> {
-    const count = await this.postLikesService.getLikesCount(postId);
-    return { count };
+    const count = await this.postLikesService.getLikesCount(postId)
+    return { count }
   }
 }

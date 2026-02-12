@@ -1,10 +1,10 @@
-import { Injectable, BadRequestException, Logger } from '@nestjs/common';
-import { SupabaseService } from '../common/database/supabase.service';
-import { NotificationsService } from '../notifications/notifications.service';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common'
+import { SupabaseService } from '../common/database/supabase.service'
+import { NotificationsService } from '../notifications/notifications.service'
 
 @Injectable()
 export class PostLikesService {
-  private readonly logger = new Logger(PostLikesService.name);
+  private readonly logger = new Logger(PostLikesService.name)
 
   constructor(
     private readonly supabaseService: SupabaseService,
@@ -15,23 +15,23 @@ export class PostLikesService {
    * Ajoute un like à un post
    */
   async likePost(token: string, userId: string, postId: string): Promise<void> {
-    const supabase = this.supabaseService.getClientWithAuth(token);
+    const supabase = this.supabaseService.getClientWithAuth(token)
 
     // 1. Créer le like
     const { error } = await supabase.from('post_likes').insert({
       user_id: userId,
       post_id: postId,
-    });
+    })
 
     if (error) {
       if (error.code === '23505') {
-        throw new BadRequestException('You already liked this post');
+        throw new BadRequestException('You already liked this post')
       }
-      throw new Error(`Error liking post: ${error.message}`);
+      throw new Error(`Error liking post: ${error.message}`)
     }
 
     // 4. Créer la notification (async, non-bloquant)
-    await this.createLikeNotification(token, userId, postId);
+    await this.createLikeNotification(token, userId, postId)
   }
 
   /**
@@ -39,19 +39,19 @@ export class PostLikesService {
    */
   async unlikePost(token: string, userId: string, postId: string): Promise<void> {
     // 1. Supprimer la notification AVANT de supprimer le like
-    await this.notificationsService.deleteByLike(token, userId, postId);
+    await this.notificationsService.deleteByLike(token, userId, postId)
 
     // 2. Supprimer le like
-    const supabase = this.supabaseService.getClientWithAuth(token);
+    const supabase = this.supabaseService.getClientWithAuth(token)
 
     const { error } = await supabase
       .from('post_likes')
       .delete()
       .eq('user_id', userId)
-      .eq('post_id', postId);
+      .eq('post_id', postId)
 
     if (error) {
-      throw new Error(`Error unliking post: ${error.message}`);
+      throw new Error(`Error unliking post: ${error.message}`)
     }
   }
 
@@ -59,38 +59,38 @@ export class PostLikesService {
    * Vérifie si un utilisateur a liké un post
    */
   async hasLikedPost(userId: string, postId: string): Promise<boolean> {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getClient()
 
     const { data, error } = await supabase
       .from('post_likes')
       .select('id')
       .eq('user_id', userId)
       .eq('post_id', postId)
-      .single();
+      .single()
 
     if (error && error.code !== 'PGRST116') {
-      throw new Error(`Error checking like: ${error.message}`);
+      throw new Error(`Error checking like: ${error.message}`)
     }
 
-    return !!data;
+    return !!data
   }
 
   /**
    * Récupère le nombre de likes d'un post
    */
   async getLikesCount(postId: string): Promise<number> {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getClient()
 
     const { count, error } = await supabase
       .from('post_likes')
       .select('*', { count: 'exact', head: true })
-      .eq('post_id', postId);
+      .eq('post_id', postId)
 
     if (error) {
-      throw new Error(`Error counting likes: ${error.message}`);
+      throw new Error(`Error counting likes: ${error.message}`)
     }
 
-    return count || 0;
+    return count || 0
   }
 
   /**
@@ -102,23 +102,23 @@ export class PostLikesService {
     postId: string,
   ): Promise<void> {
     try {
-      const supabase = this.supabaseService.getClientWithAuth(token);
+      const supabase = this.supabaseService.getClientWithAuth(token)
 
       // Récupérer l'auteur du post
       const { data: post, error } = await supabase
         .from('posts')
         .select('user_id')
         .eq('id', postId)
-        .single();
+        .single()
 
       if (error || !post) {
-        this.logger.warn(`Post ${postId} not found for like notification`);
-        return;
+        this.logger.warn(`Post ${postId} not found for like notification`)
+        return
       }
 
       // Ne pas notifier si on like son propre post
       if (userId === post.user_id) {
-        return;
+        return
       }
 
       // Créer la notification
@@ -128,9 +128,9 @@ export class PostLikesService {
         'post_like',
         userId, // acteur
         postId,
-      );
+      )
     } catch (error) {
-      this.logger.error('Failed to create like notification', error);
+      this.logger.error('Failed to create like notification', error)
       // Ne pas faire échouer le like si la notification échoue
     }
   }

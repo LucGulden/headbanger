@@ -1,10 +1,10 @@
-import { Controller, Get, Post, Delete, Param, Body, UseGuards } from '@nestjs/common';
-import { Comment } from '@headbanger/shared';
-import { CommentsService } from './comments.service';
-import { AuthGuard } from '../auth/guards/auth.guard';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
-import { CurrentToken } from 'src/auth/decorators/current-token.decorator';
+import { Controller, Get, Post, Delete, Param, Body, UseGuards } from '@nestjs/common'
+import { Comment } from '@headbanger/shared'
+import { CommentsService } from './comments.service'
+import { AuthGuard } from '../auth/guards/auth.guard'
+import { CurrentUser } from '../auth/decorators/current-user.decorator'
+import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator'
+import { CurrentToken } from 'src/auth/decorators/current-token.decorator'
 
 @Controller('comments')
 export class CommentsController {
@@ -16,7 +16,7 @@ export class CommentsController {
    */
   @Get('post/:postId')
   async getPostComments(@Param('postId') postId: string): Promise<Comment[]> {
-    return this.commentsService.getPostComments(postId);
+    return this.commentsService.getPostComments(postId)
   }
 
   /**
@@ -25,8 +25,8 @@ export class CommentsController {
    */
   @Get('post/:postId/count')
   async getCommentsCount(@Param('postId') postId: string): Promise<{ count: number }> {
-    const count = await this.commentsService.getCommentsCount(postId);
-    return { count };
+    const count = await this.commentsService.getCommentsCount(postId)
+    return { count }
   }
 
   /**
@@ -42,7 +42,7 @@ export class CommentsController {
     @Body('postId') postId: string,
     @Body('content') content: string,
   ): Promise<Comment> {
-    return this.commentsService.addComment(token, postId, user.id, content);
+    return this.commentsService.addComment(token, postId, user.id, content)
   }
 
   /**
@@ -56,7 +56,7 @@ export class CommentsController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('id') id: string,
   ): Promise<{ success: boolean }> {
-    await this.commentsService.deleteComment(token, id, user.id);
-    return { success: true };
+    await this.commentsService.deleteComment(token, id, user.id)
+    return { success: true }
   }
 }

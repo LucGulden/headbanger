@@ -1,39 +1,39 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { SupabaseService } from '../common/database/supabase.service';
-import { Album, AlbumLight, ArtistLight, VinylLight } from '@headbanger/shared';
+import { Injectable, NotFoundException } from '@nestjs/common'
+import { SupabaseService } from '../common/database/supabase.service'
+import { Album, AlbumLight, ArtistLight, VinylLight } from '@headbanger/shared'
 
-type ArtistJoin = { id: string; name: string; image_url: string | null }[];
+type ArtistJoin = { id: string; name: string; image_url: string | null }[]
 
 type AlbumQueryResult = {
-  id: string;
-  title: string;
-  cover_url: string | null;
-  year: number;
+  id: string
+  title: string
+  cover_url: string | null
+  year: number
   album_artists: {
-    position: number;
-    artist: ArtistJoin;
-  }[];
-};
+    position: number
+    artist: ArtistJoin
+  }[]
+}
 
 type VinylQueryResult = {
-  id: string;
-  title: string;
-  cover_url: string;
-  year: number;
-  country: string;
-  catalog_number: string;
+  id: string
+  title: string
+  cover_url: string
+  year: number
+  country: string
+  catalog_number: string
   vinyl_artists: {
-    position: number;
-    artist: ArtistJoin;
-  }[];
-};
+    position: number
+    artist: ArtistJoin
+  }[]
+}
 
 @Injectable()
 export class AlbumsService {
   constructor(private supabaseService: SupabaseService) {}
 
   async findById(albumId: string): Promise<Album> {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getClient()
 
     const { data, error } = await supabase
       .from('albums')
@@ -54,11 +54,11 @@ export class AlbumsService {
       `,
       )
       .eq('id', albumId)
-      .single();
+      .single()
 
     if (error || !data) {
-      console.error('Album not found:', error);
-      throw new NotFoundException('Album not found');
+      console.error('Album not found:', error)
+      throw new NotFoundException('Album not found')
     }
 
     const { data: vinylsData, error: vinylsError } = await supabase
@@ -81,23 +81,23 @@ export class AlbumsService {
         )
       `,
       )
-      .eq('album_id', albumId);
+      .eq('album_id', albumId)
 
     if (vinylsError) {
-      console.error('Error fetching vinyls:', vinylsError);
+      console.error('Error fetching vinyls:', vinylsError)
     }
 
     return this.transformAlbumData(
       data as unknown as AlbumQueryResult,
       (vinylsData || []) as unknown as VinylQueryResult[],
-    );
+    )
   }
 
   async searchAlbums(query: string, limit: number = 20, offset: number = 0): Promise<AlbumLight[]> {
-    if (!query || query.trim().length < 2) return [];
+    if (!query || query.trim().length < 2) return []
 
-    const supabase = this.supabaseService.getClient();
-    const searchTerm = `%${query.trim()}%`;
+    const supabase = this.supabaseService.getClient()
+    const searchTerm = `%${query.trim()}%`
 
     const { data, error } = await supabase
       .from('albums')
@@ -119,14 +119,14 @@ export class AlbumsService {
       )
       .ilike('title', searchTerm)
       .order('title', { ascending: true })
-      .range(offset, offset + limit - 1);
+      .range(offset, offset + limit - 1)
 
-    if (error) throw new Error(`Error searching albums: ${error.message}`);
-    if (!data || data.length === 0) return [];
+    if (error) throw new Error(`Error searching albums: ${error.message}`)
+    if (!data || data.length === 0) return []
 
     return (data as unknown as AlbumQueryResult[]).map((albumData) =>
       this.transformAlbumLightData(albumData),
-    );
+    )
   }
 
   private extractArtists(album_artists: AlbumQueryResult['album_artists']): ArtistLight[] {
@@ -137,11 +137,11 @@ export class AlbumsService {
         name: aa.artist[0]?.name ?? '',
         imageUrl: aa.artist[0]?.image_url ?? null,
       }))
-      .filter((artist) => artist.id && artist.name);
+      .filter((artist) => artist.id && artist.name)
   }
 
   private transformAlbumData(data: AlbumQueryResult, vinylsData: VinylQueryResult[]): Album {
-    const artists = this.extractArtists(data.album_artists);
+    const artists = this.extractArtists(data.album_artists)
 
     const vinyls: VinylLight[] = vinylsData.map((vinyl) => {
       const vinylArtists: ArtistLight[] = (vinyl.vinyl_artists || [])
@@ -151,7 +151,7 @@ export class AlbumsService {
           name: va.artist[0]?.name ?? '',
           imageUrl: va.artist[0]?.image_url ?? null,
         }))
-        .filter((artist) => artist.id && artist.name);
+        .filter((artist) => artist.id && artist.name)
 
       return {
         id: vinyl.id,
@@ -161,8 +161,8 @@ export class AlbumsService {
         year: vinyl.year,
         country: vinyl.country,
         catalogNumber: vinyl.catalog_number,
-      };
-    });
+      }
+    })
 
     return {
       id: data.id,
@@ -171,11 +171,11 @@ export class AlbumsService {
       coverUrl: data.cover_url ?? '',
       vinyls,
       year: data.year,
-    };
+    }
   }
 
   private transformAlbumLightData(data: AlbumQueryResult): AlbumLight {
-    const artists = this.extractArtists(data.album_artists);
+    const artists = this.extractArtists(data.album_artists)
 
     return {
       id: data.id,
@@ -183,6 +183,6 @@ export class AlbumsService {
       artists: artists.length > 0 ? artists : [{ id: '', name: 'Artiste inconnu', imageUrl: null }],
       coverUrl: data.cover_url ?? '',
       year: data.year,
-    };
+    }
   }
 }

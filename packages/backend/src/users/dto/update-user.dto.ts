@@ -1,4 +1,4 @@
-import { IsString, IsOptional, MinLength, MaxLength, Matches } from 'class-validator';
+import { IsString, IsOptional, MinLength, MaxLength, Matches } from 'class-validator'
 
 export class UpdateUserDto {
   @IsOptional()
@@ -8,24 +8,24 @@ export class UpdateUserDto {
   @Matches(/^[a-zA-Z0-9_-]+$/, {
     message: 'Username can only contain letters, numbers, underscores and hyphens',
   })
-  username?: string;
+  username?: string
 
   @IsOptional()
   @IsString()
   @MaxLength(50)
-  firstName?: string;
+  firstName?: string
 
   @IsOptional()
   @IsString()
   @MaxLength(50)
-  lastName?: string;
+  lastName?: string
 
   @IsOptional()
   @IsString()
   @MaxLength(200, { message: 'Bio must not exceed 200 characters' })
-  bio?: string;
+  bio?: string
 
   @IsOptional()
   @IsString()
-  photoUrl?: string;
+  photoUrl?: string
 }

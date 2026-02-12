@@ -1,11 +1,11 @@
-import { Controller, Get, Put, Param, Query, Body, UseGuards } from '@nestjs/common';
-import { User } from '@headbanger/shared';
-import { UsersService } from './users.service';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { AuthGuard } from '../auth/guards/auth.guard';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
-import { CurrentToken } from 'src/auth/decorators/current-token.decorator';
+import { Controller, Get, Put, Param, Query, Body, UseGuards } from '@nestjs/common'
+import { User } from '@headbanger/shared'
+import { UsersService } from './users.service'
+import { UpdateUserDto } from './dto/update-user.dto'
+import { AuthGuard } from '../auth/guards/auth.guard'
+import { CurrentUser } from '../auth/decorators/current-user.decorator'
+import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator'
+import { CurrentToken } from 'src/auth/decorators/current-token.decorator'
 
 @Controller('users')
 export class UsersController {
@@ -18,7 +18,7 @@ export class UsersController {
   @Get('me')
   @UseGuards(AuthGuard)
   async getCurrentUser(@CurrentUser() user: AuthenticatedUser): Promise<User> {
-    return this.usersService.getUserByUid(user.id);
+    return this.usersService.getUserByUid(user.id)
   }
 
   /**
@@ -32,7 +32,7 @@ export class UsersController {
     @CurrentUser() user: AuthenticatedUser,
     @Body() updateDto: UpdateUserDto,
   ): Promise<User> {
-    return this.usersService.updateUserProfile(token, user.id, updateDto);
+    return this.usersService.updateUserProfile(token, user.id, updateDto)
   }
 
   /**
@@ -41,7 +41,7 @@ export class UsersController {
    */
   @Get('username/:username')
   async getUserByUsername(@Param('username') username: string): Promise<User> {
-    return this.usersService.getUserByUsername(username);
+    return this.usersService.getUserByUsername(username)
   }
 
   /**
@@ -58,7 +58,7 @@ export class UsersController {
       query,
       limit ? Number(limit) : 20,
       offset ? Number(offset) : 0,
-    );
+    )
   }
 
   /**
@@ -70,8 +70,8 @@ export class UsersController {
     @Query('username') username: string,
     @Query('excludeUserId') excludeUserId?: string,
   ): Promise<{ available: boolean }> {
-    const available = await this.usersService.checkUsernameAvailability(username, excludeUserId);
-    return { available };
+    const available = await this.usersService.checkUsernameAvailability(username, excludeUserId)
+    return { available }
   }
 
   /**
@@ -80,6 +80,6 @@ export class UsersController {
    */
   @Get(':uid')
   async getUserByUid(@Param('uid') uid: string): Promise<User> {
-    return this.usersService.getUserByUid(uid);
+    return this.usersService.getUserByUid(uid)
   }
 }

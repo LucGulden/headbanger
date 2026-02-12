@@ -1,9 +1,9 @@
-import { Controller, Post, Delete, UseGuards, BadRequestException, Req } from '@nestjs/common';
-import { AuthGuard } from '../auth/guards/auth.guard';
-import { AuthenticatedUser, CurrentUser } from '../auth/decorators/current-user.decorator';
-import { CurrentToken } from '../auth/decorators/current-token.decorator';
-import { StorageService } from './storage.service';
-import type { FastifyRequest } from 'fastify';
+import { Controller, Post, Delete, UseGuards, BadRequestException, Req } from '@nestjs/common'
+import { AuthGuard } from '../auth/guards/auth.guard'
+import { AuthenticatedUser, CurrentUser } from '../auth/decorators/current-user.decorator'
+import { CurrentToken } from '../auth/decorators/current-token.decorator'
+import { StorageService } from './storage.service'
+import type { FastifyRequest } from 'fastify'
 
 @Controller('storage')
 @UseGuards(AuthGuard)
@@ -21,18 +21,18 @@ export class StorageController {
     @Req() req: FastifyRequest,
   ) {
     // Fastify multipart : récupérer le fichier
-    const data = await req.file();
+    const data = await req.file()
 
     if (!data) {
-      throw new BadRequestException('Aucun fichier fourni');
+      throw new BadRequestException('Aucun fichier fourni')
     }
 
     // Convertir le stream en buffer
-    const buffer = await data.toBuffer();
+    const buffer = await data.toBuffer()
 
-    const url = await this.storageService.uploadAvatar(token, user.id, buffer, data.mimetype);
+    const url = await this.storageService.uploadAvatar(token, user.id, buffer, data.mimetype)
 
-    return { url };
+    return { url }
   }
 
   /**
@@ -41,7 +41,7 @@ export class StorageController {
    */
   @Delete('avatar')
   async deleteAvatar(@CurrentToken() token: string, @CurrentUser() user: AuthenticatedUser) {
-    await this.storageService.deleteAvatar(token, user.id);
-    return { success: true };
+    await this.storageService.deleteAvatar(token, user.id)
+    return { success: true }
   }
 }

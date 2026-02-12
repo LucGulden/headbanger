@@ -1,6 +1,6 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
-import { AlbumsService } from './albums.service';
-import { Album, AlbumLight } from '@headbanger/shared';
+import { Controller, Get, Param, Query } from '@nestjs/common'
+import { AlbumsService } from './albums.service'
+import { Album, AlbumLight } from '@headbanger/shared'
 
 @Controller('albums')
 export class AlbumsController {
@@ -17,10 +17,10 @@ export class AlbumsController {
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
   ): Promise<AlbumLight[]> {
-    const limitNum = limit ? parseInt(limit, 10) : 20;
-    const offsetNum = offset ? parseInt(offset, 10) : 0;
+    const limitNum = limit ? parseInt(limit, 10) : 20
+    const offsetNum = offset ? parseInt(offset, 10) : 0
 
-    return this.albumsService.searchAlbums(query, limitNum, offsetNum);
+    return this.albumsService.searchAlbums(query, limitNum, offsetNum)
   }
 
   /**
@@ -30,6 +30,6 @@ export class AlbumsController {
    */
   @Get(':id')
   async getById(@Param('id') id: string): Promise<Album> {
-    return this.albumsService.findById(id);
+    return this.albumsService.findById(id)
   }
 }

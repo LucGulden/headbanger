@@ -1,20 +1,20 @@
-import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { Injectable } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
 @Injectable()
 export class SupabaseService {
-  private supabase: SupabaseClient;
+  private supabase: SupabaseClient
 
   constructor(private configService: ConfigService) {
-    const supabaseUrl = this.configService.get<string>('SUPABASE_URL');
-    const supabaseAnonKey = this.configService.get<string>('SUPABASE_ANON_KEY');
+    const supabaseUrl = this.configService.get<string>('SUPABASE_URL')
+    const supabaseAnonKey = this.configService.get<string>('SUPABASE_ANON_KEY')
 
     if (!supabaseUrl || !supabaseAnonKey) {
-      throw new Error('Missing Supabase configuration');
+      throw new Error('Missing Supabase configuration')
     }
 
-    this.supabase = createClient(supabaseUrl, supabaseAnonKey);
+    this.supabase = createClient(supabaseUrl, supabaseAnonKey)
   }
 
   /**
@@ -22,11 +22,11 @@ export class SupabaseService {
    * pour respecter les RLS policies
    */
   getClientWithAuth(userJwt: string): SupabaseClient {
-    const supabaseUrl = this.configService.get<string>('SUPABASE_URL');
-    const supabaseAnonKey = this.configService.get<string>('SUPABASE_ANON_KEY');
+    const supabaseUrl = this.configService.get<string>('SUPABASE_URL')
+    const supabaseAnonKey = this.configService.get<string>('SUPABASE_ANON_KEY')
 
     if (!supabaseUrl || !supabaseAnonKey) {
-      throw new Error('Missing Supabase configuration');
+      throw new Error('Missing Supabase configuration')
     }
 
     return createClient(supabaseUrl, supabaseAnonKey, {
@@ -35,13 +35,13 @@ export class SupabaseService {
           Authorization: `Bearer ${userJwt}`,
         },
       },
-    });
+    })
   }
 
   /**
    * Client Supabase anonyme (pour les requêtes publiques)
    */
   getClient(): SupabaseClient {
-    return this.supabase;
+    return this.supabase
   }
 }

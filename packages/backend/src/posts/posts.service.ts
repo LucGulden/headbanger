@@ -1,46 +1,46 @@
-import { Injectable } from '@nestjs/common';
-import { PostWithDetails, PostType, ArtistLight } from '@headbanger/shared';
-import { SupabaseService } from '../common/database/supabase.service';
-import { DbComment, DbLike } from '../common/database/database.types';
+import { Injectable } from '@nestjs/common'
+import { PostWithDetails, PostType, ArtistLight } from '@headbanger/shared'
+import { SupabaseService } from '../common/database/supabase.service'
+import { DbComment, DbLike } from '../common/database/database.types'
 
-type ArtistJoin = { id: string; name: string; image_url: string | null }[];
+type ArtistJoin = { id: string; name: string; image_url: string | null }[]
 
 type PostQueryResult = {
-  id: string;
-  user_id: string;
-  vinyl_id: string;
-  type: PostType;
-  created_at: string;
+  id: string
+  user_id: string
+  vinyl_id: string
+  type: PostType
+  created_at: string
   user: {
-    uid: string;
-    username: string;
-    photo_url: string | null;
-  }[];
+    uid: string
+    username: string
+    photo_url: string | null
+  }[]
   vinyl: {
-    id: string;
-    title: string;
-    cover_url: string;
-    year: number;
-    country: string;
-    catalog_number: string;
-    album_id: string;
+    id: string
+    title: string
+    cover_url: string
+    year: number
+    country: string
+    catalog_number: string
+    album_id: string
     vinyl_artists: {
-      position: number;
-      artist: ArtistJoin;
-    }[];
+      position: number
+      artist: ArtistJoin
+    }[]
     album:
       | {
-          id: string;
-          title: string;
-          cover_url: string | null;
+          id: string
+          title: string
+          cover_url: string | null
           album_artists: {
-            position: number;
-            artist: ArtistJoin;
-          }[];
+            position: number
+            artist: ArtistJoin
+          }[]
         }[]
-      | null;
-  }[];
-};
+      | null
+  }[]
+}
 
 @Injectable()
 export class PostsService {
@@ -51,21 +51,21 @@ export class PostsService {
     limit: number = 20,
     lastCreatedAt?: string,
   ): Promise<PostWithDetails[]> {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getClient()
 
     const { data: followsData, error: followsError } = await supabase
       .from('follows')
       .select('following_id')
-      .eq('follower_id', userId);
+      .eq('follower_id', userId)
 
     if (followsError) {
-      throw new Error(`Error fetching follows: ${followsError.message}`);
+      throw new Error(`Error fetching follows: ${followsError.message}`)
     }
 
-    const userIds = followsData.map((f) => f.following_id);
-    userIds.push(userId);
+    const userIds = followsData.map((f) => f.following_id)
+    userIds.push(userId)
 
-    return this.fetchPostsByUserIds(userIds, limit, lastCreatedAt);
+    return this.fetchPostsByUserIds(userIds, limit, lastCreatedAt)
   }
 
   async getProfileFeed(
@@ -73,7 +73,7 @@ export class PostsService {
     limit: number = 20,
     lastCreatedAt?: string,
   ): Promise<PostWithDetails[]> {
-    return this.fetchPostsByUserIds([userId], limit, lastCreatedAt);
+    return this.fetchPostsByUserIds([userId], limit, lastCreatedAt)
   }
 
   private async fetchPostsByUserIds(
@@ -81,9 +81,9 @@ export class PostsService {
     limit: number,
     lastCreatedAt?: string,
   ): Promise<PostWithDetails[]> {
-    if (userIds.length === 0) return [];
+    if (userIds.length === 0) return []
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getClient()
 
     let query = supabase
       .from('posts')
@@ -133,47 +133,46 @@ export class PostsService {
       )
       .in('user_id', userIds)
       .order('created_at', { ascending: false })
-      .limit(limit);
+      .limit(limit)
 
     if (lastCreatedAt) {
-      query = query.lt('created_at', lastCreatedAt);
+      query = query.lt('created_at', lastCreatedAt)
     }
 
-    const { data, error } = await query;
+    const { data, error } = await query
 
-    if (error) throw new Error(`Error fetching posts: ${error.message}`);
-    if (!data || data.length === 0) return [];
+    if (error) throw new Error(`Error fetching posts: ${error.message}`)
+    if (!data || data.length === 0) return []
 
-    const postIds = data.map((post) => post.id);
+    const postIds = data.map((post) => post.id)
 
     const { data: likesData } = await supabase
       .from('post_likes')
       .select('post_id')
-      .in('post_id', postIds);
+      .in('post_id', postIds)
 
     const { data: commentsData } = await supabase
       .from('comments')
       .select('post_id')
-      .in('post_id', postIds);
+      .in('post_id', postIds)
 
-    const likesCountMap = new Map<string, number>();
-    const commentsCountMap = new Map<string, number>();
+    const likesCountMap = new Map<string, number>()
+    const commentsCountMap = new Map<string, number>()
 
-    ((likesData as DbLike[]) ?? []).forEach((like) => {
-      likesCountMap.set(like.post_id, (likesCountMap.get(like.post_id) ?? 0) + 1);
-    });
-
-    ((commentsData as DbComment[]) ?? []).forEach((comment) => {
-      commentsCountMap.set(comment.post_id, (commentsCountMap.get(comment.post_id) ?? 0) + 1);
-    });
+    ;((likesData as DbLike[]) ?? []).forEach((like) => {
+      likesCountMap.set(like.post_id, (likesCountMap.get(like.post_id) ?? 0) + 1)
+    })
+    ;((commentsData as DbComment[]) ?? []).forEach((comment) => {
+      commentsCountMap.set(comment.post_id, (commentsCountMap.get(comment.post_id) ?? 0) + 1)
+    })
 
     return (data as unknown as PostQueryResult[]).map((post) =>
       this.transformPostData(post, likesCountMap, commentsCountMap),
-    );
+    )
   }
 
   async createPost(userId: string, vinylId: string, type: PostType): Promise<PostWithDetails> {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getClient()
 
     const { data, error } = await supabase
       .from('posts')
@@ -222,18 +221,18 @@ export class PostsService {
         )
       `,
       )
-      .single();
+      .single()
 
-    if (error) throw new Error(`Error creating post: ${error.message}`);
+    if (error) throw new Error(`Error creating post: ${error.message}`)
 
-    const likesCountMap = new Map<string, number>([[data.id, 0]]);
-    const commentsCountMap = new Map<string, number>([[data.id, 0]]);
+    const likesCountMap = new Map<string, number>([[data.id, 0]])
+    const commentsCountMap = new Map<string, number>([[data.id, 0]])
 
     return this.transformPostData(
       data as unknown as PostQueryResult,
       likesCountMap,
       commentsCountMap,
-    );
+    )
   }
 
   private transformPostData(
@@ -241,8 +240,8 @@ export class PostsService {
     likesCountMap: Map<string, number>,
     commentsCountMap: Map<string, number>,
   ): PostWithDetails {
-    const vinyl = data.vinyl[0];
-    const album = vinyl?.album?.[0] ?? null;
+    const vinyl = data.vinyl[0]
+    const album = vinyl?.album?.[0] ?? null
 
     const vinylArtists: ArtistLight[] = (vinyl?.vinyl_artists || [])
       .sort((a, b) => a.position - b.position)
@@ -251,9 +250,9 @@ export class PostsService {
         name: va.artist[0]?.name ?? '',
         imageUrl: va.artist[0]?.image_url ?? null,
       }))
-      .filter((artist) => artist.id && artist.name);
+      .filter((artist) => artist.id && artist.name)
 
-    let artists = vinylArtists;
+    let artists = vinylArtists
 
     if (artists.length === 0) {
       artists = (album?.album_artists || [])
@@ -263,11 +262,11 @@ export class PostsService {
           name: aa.artist[0]?.name ?? '',
           imageUrl: aa.artist[0]?.image_url ?? null,
         }))
-        .filter((artist) => artist.id && artist.name);
+        .filter((artist) => artist.id && artist.name)
     }
 
     if (artists.length === 0) {
-      artists = [{ id: '', name: 'Artiste inconnu', imageUrl: null }];
+      artists = [{ id: '', name: 'Artiste inconnu', imageUrl: null }]
     }
 
     return {
@@ -291,6 +290,6 @@ export class PostsService {
         country: vinyl?.country ?? '',
         catalogNumber: vinyl?.catalog_number ?? '',
       },
-    };
+    }
   }
 }

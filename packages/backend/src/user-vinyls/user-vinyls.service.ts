@@ -1,30 +1,30 @@
-import { Injectable, BadRequestException, Logger } from '@nestjs/common';
-import { UserVinyl, UserVinylType, VinylStats, ArtistLight } from '@headbanger/shared';
-import { SupabaseService } from '../common/database/supabase.service';
-import { VinylsService } from '../vinyls/vinyls.service';
-import { PostsService } from '../posts/posts.service';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common'
+import { UserVinyl, UserVinylType, VinylStats, ArtistLight } from '@headbanger/shared'
+import { SupabaseService } from '../common/database/supabase.service'
+import { VinylsService } from '../vinyls/vinyls.service'
+import { PostsService } from '../posts/posts.service'
 
 type UserVinylQueryResult = {
-  id: string;
-  added_at: string;
-  release_id: string;
+  id: string
+  added_at: string
+  release_id: string
   vinyls: {
-    id: string;
-    title: string;
-    cover_url: string;
-    year: number;
-    country: string;
-    catalog_number: string;
+    id: string
+    title: string
+    cover_url: string
+    year: number
+    country: string
+    catalog_number: string
     vinyl_artists: {
-      position: number;
-      artist: { id: string; name: string; image_url: string | null }[];
-    }[];
-  }[];
-};
+      position: number
+      artist: { id: string; name: string; image_url: string | null }[]
+    }[]
+  }[]
+}
 
 @Injectable()
 export class UserVinylsService {
-  private readonly logger = new Logger(UserVinylsService.name);
+  private readonly logger = new Logger(UserVinylsService.name)
 
   constructor(
     private readonly supabaseService: SupabaseService,
@@ -38,7 +38,7 @@ export class UserVinylsService {
     limit: number = 20,
     lastAddedAt?: string,
   ): Promise<UserVinyl[]> {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getClient()
 
     let query = supabase
       .from('user_vinyls')
@@ -68,37 +68,37 @@ export class UserVinylsService {
       .eq('user_id', userId)
       .eq('type', type)
       .order('added_at', { ascending: false })
-      .limit(limit);
+      .limit(limit)
 
     if (lastAddedAt) {
-      query = query.lt('added_at', lastAddedAt);
+      query = query.lt('added_at', lastAddedAt)
     }
 
-    const { data, error } = await query;
+    const { data, error } = await query
 
-    if (error) throw new Error(`Error fetching user vinyls: ${error.message}`);
+    if (error) throw new Error(`Error fetching user vinyls: ${error.message}`)
 
     return (data as unknown as UserVinylQueryResult[]).map((item) =>
       this.transformUserVinylData(item),
-    );
+    )
   }
 
   async getUserVinylsCount(userId: string, type: UserVinylType): Promise<number> {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getClient()
 
     const { count, error } = await supabase
       .from('user_vinyls')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
-      .eq('type', type);
+      .eq('type', type)
 
-    if (error) throw new Error(`Error counting vinyls: ${error.message}`);
+    if (error) throw new Error(`Error counting vinyls: ${error.message}`)
 
-    return count ?? 0;
+    return count ?? 0
   }
 
   async hasVinyl(userId: string, vinylId: string, type: UserVinylType): Promise<boolean> {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getClient()
 
     const { data, error } = await supabase
       .from('user_vinyls')
@@ -106,26 +106,26 @@ export class UserVinylsService {
       .eq('user_id', userId)
       .eq('release_id', vinylId)
       .eq('type', type)
-      .single();
+      .single()
 
     if (error && error.code !== 'PGRST116') {
-      throw new Error(`Error checking vinyl: ${error.message}`);
+      throw new Error(`Error checking vinyl: ${error.message}`)
     }
 
-    return !!data;
+    return !!data
   }
 
   async addVinylToUser(userId: string, vinylId: string, type: UserVinylType): Promise<UserVinyl> {
-    await this.vinylsService.getById(vinylId);
+    await this.vinylsService.getById(vinylId)
 
-    const exists = await this.hasVinyl(userId, vinylId, type);
+    const exists = await this.hasVinyl(userId, vinylId, type)
     if (exists) {
       throw new BadRequestException(
         `This vinyl is already in your ${type === 'collection' ? 'collection' : 'wishlist'}`,
-      );
+      )
     }
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getClient()
 
     const { data, error } = await supabase
       .from('user_vinyls')
@@ -153,13 +153,13 @@ export class UserVinylsService {
         )
       `,
       )
-      .single();
+      .single()
 
-    if (error) throw new Error(`Error adding vinyl: ${error.message}`);
+    if (error) throw new Error(`Error adding vinyl: ${error.message}`)
 
-    this.createVinylPost(userId, vinylId, type);
+    this.createVinylPost(userId, vinylId, type)
 
-    return this.transformUserVinylData(data as unknown as UserVinylQueryResult);
+    return this.transformUserVinylData(data as unknown as UserVinylQueryResult)
   }
 
   private async createVinylPost(
@@ -168,48 +168,48 @@ export class UserVinylsService {
     type: UserVinylType,
   ): Promise<void> {
     try {
-      const postType = type === 'collection' ? 'collection_add' : 'wishlist_add';
-      await this.postsService.createPost(userId, vinylId, postType);
+      const postType = type === 'collection' ? 'collection_add' : 'wishlist_add'
+      await this.postsService.createPost(userId, vinylId, postType)
     } catch (error) {
-      this.logger.error('Failed to create post for vinyl add', error);
+      this.logger.error('Failed to create post for vinyl add', error)
     }
   }
 
   async removeVinylFromUser(userId: string, vinylId: string, type: UserVinylType): Promise<void> {
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getClient()
 
     const { error } = await supabase
       .from('user_vinyls')
       .delete()
       .eq('user_id', userId)
       .eq('release_id', vinylId)
-      .eq('type', type);
+      .eq('type', type)
 
-    if (error) throw new Error(`Error removing vinyl: ${error.message}`);
+    if (error) throw new Error(`Error removing vinyl: ${error.message}`)
   }
 
   async moveToCollection(userId: string, vinylId: string): Promise<UserVinyl> {
-    const inWishlist = await this.hasVinyl(userId, vinylId, 'wishlist');
-    if (!inWishlist) throw new BadRequestException('This vinyl is not in your wishlist');
+    const inWishlist = await this.hasVinyl(userId, vinylId, 'wishlist')
+    if (!inWishlist) throw new BadRequestException('This vinyl is not in your wishlist')
 
-    const inCollection = await this.hasVinyl(userId, vinylId, 'collection');
-    if (inCollection) throw new BadRequestException('This vinyl is already in your collection');
+    const inCollection = await this.hasVinyl(userId, vinylId, 'collection')
+    if (inCollection) throw new BadRequestException('This vinyl is already in your collection')
 
-    await this.removeVinylFromUser(userId, vinylId, 'wishlist');
-    return this.addVinylToUser(userId, vinylId, 'collection');
+    await this.removeVinylFromUser(userId, vinylId, 'wishlist')
+    return this.addVinylToUser(userId, vinylId, 'collection')
   }
 
   async getVinylStats(userId: string): Promise<VinylStats> {
     const [collectionCount, wishlistCount] = await Promise.all([
       this.getUserVinylsCount(userId, 'collection'),
       this.getUserVinylsCount(userId, 'wishlist'),
-    ]);
+    ])
 
-    return { collectionCount, wishlistCount };
+    return { collectionCount, wishlistCount }
   }
 
   private transformUserVinylData(data: UserVinylQueryResult): UserVinyl {
-    const vinylData = data.vinyls[0];
+    const vinylData = data.vinyls[0]
 
     const artists: ArtistLight[] = (vinylData?.vinyl_artists || [])
       .sort((a, b) => a.position - b.position)
@@ -218,7 +218,7 @@ export class UserVinylsService {
         name: va.artist[0]?.name ?? '',
         imageUrl: va.artist[0]?.image_url ?? null,
       }))
-      .filter((artist) => artist.id && artist.name);
+      .filter((artist) => artist.id && artist.name)
 
     return {
       id: data.id,
@@ -233,6 +233,6 @@ export class UserVinylsService {
         country: vinylData?.country ?? '',
         catalogNumber: vinylData?.catalog_number ?? '',
       },
-    };
+    }
   }
 }

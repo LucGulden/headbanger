@@ -1,6 +1,6 @@
-import { Controller, Get, Param } from '@nestjs/common';
-import { Vinyl } from '@headbanger/shared';
-import { VinylsService } from './vinyls.service';
+import { Controller, Get, Param } from '@nestjs/common'
+import { Vinyl } from '@headbanger/shared'
+import { VinylsService } from './vinyls.service'
 
 @Controller('vinyls')
 export class VinylsController {
@@ -12,6 +12,6 @@ export class VinylsController {
    */
   @Get(':id')
   async getById(@Param('id') id: string): Promise<Vinyl> {
-    return this.vinylsService.getById(id);
+    return this.vinylsService.getById(id)
   }
 }

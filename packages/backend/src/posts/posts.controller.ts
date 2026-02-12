@@ -1,9 +1,9 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
-import { PostWithDetails } from '@headbanger/shared';
-import { PostsService } from './posts.service';
-import { AuthGuard } from '../auth/guards/auth.guard';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common'
+import { PostWithDetails } from '@headbanger/shared'
+import { PostsService } from './posts.service'
+import { AuthGuard } from '../auth/guards/auth.guard'
+import { CurrentUser } from '../auth/decorators/current-user.decorator'
+import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator'
 
 @Controller('posts')
 export class PostsController {
@@ -21,7 +21,7 @@ export class PostsController {
     @Query('limit') limit?: number,
     @Query('lastCreatedAt') lastCreatedAt?: string,
   ): Promise<PostWithDetails[]> {
-    return this.postsService.getGlobalFeed(user.id, limit ? Number(limit) : 20, lastCreatedAt);
+    return this.postsService.getGlobalFeed(user.id, limit ? Number(limit) : 20, lastCreatedAt)
   }
 
   /**
@@ -35,6 +35,6 @@ export class PostsController {
     @Query('limit') limit?: number,
     @Query('lastCreatedAt') lastCreatedAt?: string,
   ): Promise<PostWithDetails[]> {
-    return this.postsService.getProfileFeed(userId, limit ? Number(limit) : 20, lastCreatedAt);
+    return this.postsService.getProfileFeed(userId, limit ? Number(limit) : 20, lastCreatedAt)
   }
 }

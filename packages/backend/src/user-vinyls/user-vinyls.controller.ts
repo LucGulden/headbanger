@@ -1,10 +1,10 @@
-import { Controller, Get, Post, Delete, Param, Query, Body, UseGuards } from '@nestjs/common';
-import { UserVinyl, VinylStats } from '@headbanger/shared';
-import type { UserVinylType } from '@headbanger/shared';
-import { UserVinylsService } from './user-vinyls.service';
-import { AuthGuard } from '../auth/guards/auth.guard';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
+import { Controller, Get, Post, Delete, Param, Query, Body, UseGuards } from '@nestjs/common'
+import { UserVinyl, VinylStats } from '@headbanger/shared'
+import type { UserVinylType } from '@headbanger/shared'
+import { UserVinylsService } from './user-vinyls.service'
+import { AuthGuard } from '../auth/guards/auth.guard'
+import { CurrentUser } from '../auth/decorators/current-user.decorator'
+import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator'
 
 @Controller('user-vinyls')
 @UseGuards(AuthGuard) // Tous les endpoints sont protégés
@@ -27,7 +27,7 @@ export class UserVinylsController {
       type,
       limit ? Number(limit) : 20,
       lastAddedAt,
-    );
+    )
   }
 
   /**
@@ -39,8 +39,8 @@ export class UserVinylsController {
     @Param('userId') userId: string,
     @Query('type') type: UserVinylType,
   ): Promise<{ count: number }> {
-    const count = await this.userVinylsService.getUserVinylsCount(userId, type);
-    return { count };
+    const count = await this.userVinylsService.getUserVinylsCount(userId, type)
+    return { count }
   }
 
   /**
@@ -49,7 +49,7 @@ export class UserVinylsController {
    */
   @Get('user/:userId/stats')
   async getVinylStatsByUserId(@Param('userId') userId: string): Promise<VinylStats> {
-    return this.userVinylsService.getVinylStats(userId);
+    return this.userVinylsService.getVinylStats(userId)
   }
 
   /**
@@ -62,8 +62,8 @@ export class UserVinylsController {
     @Param('vinylId') vinylId: string,
     @Query('type') type: UserVinylType,
   ): Promise<{ has: boolean }> {
-    const has = await this.userVinylsService.hasVinyl(user.id, vinylId, type);
-    return { has };
+    const has = await this.userVinylsService.hasVinyl(user.id, vinylId, type)
+    return { has }
   }
 
   /**
@@ -77,7 +77,7 @@ export class UserVinylsController {
     @Body('vinylId') vinylId: string,
     @Body('type') type: UserVinylType,
   ): Promise<UserVinyl> {
-    return this.userVinylsService.addVinylToUser(user.id, vinylId, type);
+    return this.userVinylsService.addVinylToUser(user.id, vinylId, type)
   }
 
   /**
@@ -90,8 +90,8 @@ export class UserVinylsController {
     @Param('vinylId') vinylId: string,
     @Query('type') type: UserVinylType,
   ): Promise<{ success: boolean }> {
-    await this.userVinylsService.removeVinylFromUser(user.id, vinylId, type);
-    return { success: true };
+    await this.userVinylsService.removeVinylFromUser(user.id, vinylId, type)
+    return { success: true }
   }
 
   /**
@@ -103,6 +103,6 @@ export class UserVinylsController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('vinylId') vinylId: string,
   ): Promise<UserVinyl> {
-    return this.userVinylsService.moveToCollection(user.id, vinylId);
+    return this.userVinylsService.moveToCollection(user.id, vinylId)
   }
 }

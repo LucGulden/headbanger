@@ -1,6 +1,6 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
-import { Artist, ArtistLight } from '@headbanger/shared';
-import { ArtistsService } from './artists.service';
+import { Controller, Get, Param, Query } from '@nestjs/common'
+import { Artist, ArtistLight } from '@headbanger/shared'
+import { ArtistsService } from './artists.service'
 
 @Controller('artists')
 export class ArtistsController {
@@ -12,7 +12,7 @@ export class ArtistsController {
    */
   @Get(':id')
   async getById(@Param('id') id: string): Promise<Artist> {
-    return this.artistsService.getById(id);
+    return this.artistsService.getById(id)
   }
 
   /**
@@ -29,6 +29,6 @@ export class ArtistsController {
       query,
       limit ? Number(limit) : 20,
       offset ? Number(offset) : 0,
-    );
+    )
   }
 }
