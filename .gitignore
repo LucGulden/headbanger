@@ -28,6 +28,7 @@ dist-ssr
 pnpm-lock.yaml
 packages/*/node_modules
 packages/*/dist
+packages/*/coverage
 packages/*/build
 *.tsbuildinfo
 .pnpm-store/
