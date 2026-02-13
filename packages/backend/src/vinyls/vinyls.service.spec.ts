@@ -232,19 +232,13 @@ describe('VinylsService', () => {
       expect(res.coverUrl).toBeNull()
     })
 
-    it('applique les valeurs par défaut si albums est null', async () => {
+    it('lève une erreur si albums est null — intégrité des données', async () => {
       mockSupabaseClient.single.mockResolvedValue({
         data: makeVinylDbResult({ albums: null }),
         error: null,
       })
 
-      const res = await service.getById('v1')
-
-      expect(res.album.id).toBe('')
-      expect(res.album.title).toBe('Album inconnu')
-      expect(res.album.coverUrl).toBe('')
-      expect(res.album.year).toBe(0)
-      expect(res.album.artists[0].name).toBe('Artiste inconnu')
+      await expect(service.getById('v1')).rejects.toThrow('Album not found for vinyl v1')
     })
   })
 

@@ -108,9 +108,9 @@ export class AlbumsService {
     return (album_artists || [])
       .sort((a, b) => a.position - b.position)
       .map((aa) => ({
-        id: aa.artist[0]?.id ?? '',
-        name: aa.artist[0]?.name ?? '',
-        imageUrl: aa.artist[0]?.image_url ?? null,
+        id: aa.artist[0]?.id,
+        name: aa.artist[0]?.name,
+        imageUrl: aa.artist[0]?.image_url,
       }))
       .filter((artist) => artist.id && artist.name)
   }
@@ -122,9 +122,9 @@ export class AlbumsService {
       const vinylArtists: ArtistLight[] = (vinyl.vinyl_artists || [])
         .sort((a, b) => a.position - b.position)
         .map((va) => ({
-          id: va.artist[0]?.id ?? '',
-          name: va.artist[0]?.name ?? '',
-          imageUrl: va.artist[0]?.image_url ?? null,
+          id: va.artist[0]?.id,
+          name: va.artist[0]?.name,
+          imageUrl: va.artist[0]?.image_url,
         }))
         .filter((artist) => artist.id && artist.name)
 
@@ -143,7 +143,7 @@ export class AlbumsService {
       id: data.id,
       title: data.title,
       artists: artists.length > 0 ? artists : [{ id: '', name: 'Artiste inconnu', imageUrl: null }],
-      coverUrl: data.cover_url ?? '',
+      coverUrl: data.cover_url,
       vinyls,
       year: data.year,
     }
@@ -156,7 +156,7 @@ export class AlbumsService {
       id: data.id,
       title: data.title,
       artists: artists.length > 0 ? artists : [{ id: '', name: 'Artiste inconnu', imageUrl: null }],
-      coverUrl: data.cover_url ?? '',
+      coverUrl: data.cover_url,
       year: data.year,
     }
   }

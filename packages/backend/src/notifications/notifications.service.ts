@@ -256,11 +256,11 @@ export class NotificationsService {
       read: data.read,
       createdAt: data.created_at,
       actor: {
-        uid: data.actor[0]?.uid ?? '',
-        username: data.actor[0]?.username ?? 'Unknown',
-        firstName: data.actor[0]?.first_name ?? null,
-        lastName: data.actor[0]?.last_name ?? null,
-        photoUrl: data.actor[0]?.photo_url ?? null,
+        uid: data.actor[0]?.uid,
+        username: data.actor[0]?.username,
+        firstName: data.actor[0]?.first_name,
+        lastName: data.actor[0]?.last_name,
+        photoUrl: data.actor[0]?.photo_url,
       },
     }
 
@@ -280,14 +280,18 @@ export class NotificationsService {
 
       const artist = vinylArtists.join(', ') || albumArtists.join(', ') || 'Artiste inconnu'
 
+      if (!vinyl) {
+        throw new Error(`Vinyl not found for post ${post.id} — data integrity issue`)
+      }
+
       notification.post = {
         id: post.id,
         vinylId: post.vinyl_id,
         vinyl: {
-          id: vinyl?.id ?? '',
-          title: vinyl?.title ?? 'Album inconnu',
+          id: vinyl?.id,
+          title: vinyl?.title,
           artist,
-          coverUrl: vinyl?.cover_url ?? null,
+          coverUrl: vinyl?.cover_url,
         },
       }
     }
@@ -309,11 +313,11 @@ export class NotificationsService {
       read: data.read,
       createdAt: data.created_at,
       actor: {
-        uid: data.actor[0]?.uid ?? '',
-        username: data.actor[0]?.username ?? 'Unknown',
-        firstName: data.actor[0]?.first_name ?? null,
-        lastName: data.actor[0]?.last_name ?? null,
-        photoUrl: data.actor[0]?.photo_url ?? null,
+        uid: data.actor[0]?.uid,
+        username: data.actor[0]?.username,
+        firstName: data.actor[0]?.first_name,
+        lastName: data.actor[0]?.last_name,
+        photoUrl: data.actor[0]?.photo_url,
       },
     }
 

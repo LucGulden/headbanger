@@ -9,7 +9,7 @@ export const createSupabaseMock = (responses: SupabaseMockResponses) => {
     eq: jest.fn().mockReturnThis(),
     single: jest.fn().mockImplementation(async () => {
       const res = responses['vinyls:getById']
-      return res ?? { data: null, error: 'Not mocked' }
+      return res
     }),
   }
 }

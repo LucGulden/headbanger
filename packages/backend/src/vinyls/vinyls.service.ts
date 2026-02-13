@@ -53,9 +53,9 @@ export class VinylsService {
     const vinylArtists: ArtistLight[] = (data.vinyl_artists || [])
       .sort((a, b) => a.position - b.position)
       .map((va) => ({
-        id: va.artist[0]?.id ?? '',
-        name: va.artist[0]?.name ?? '',
-        imageUrl: va.artist[0]?.image_url ?? null,
+        id: va.artist[0]?.id,
+        name: va.artist[0]?.name,
+        imageUrl: va.artist[0]?.image_url,
       }))
       .filter((artist) => artist.id && artist.name)
 
@@ -63,21 +63,25 @@ export class VinylsService {
     const albumArtists: ArtistLight[] = (albumData?.album_artists || [])
       .sort((a, b) => a.position - b.position)
       .map((aa) => ({
-        id: aa.artist[0]?.id ?? '',
-        name: aa.artist[0]?.name ?? '',
-        imageUrl: aa.artist[0]?.image_url ?? null,
+        id: aa.artist[0]?.id,
+        name: aa.artist[0]?.name,
+        imageUrl: aa.artist[0]?.image_url,
       }))
       .filter((artist) => artist.id && artist.name)
 
+    if (!albumData) {
+      throw new Error(`Album not found for vinyl ${data.id} — data integrity issue`)
+    }
+
     const album: AlbumLight = {
-      id: albumData?.id ?? '',
-      title: albumData?.title ?? 'Album inconnu',
+      id: albumData?.id,
+      title: albumData?.title,
       artists:
         albumArtists.length > 0
           ? albumArtists
           : [{ id: '', name: 'Artiste inconnu', imageUrl: null }],
-      coverUrl: albumData?.cover_url ?? '',
-      year: albumData?.year ?? 0,
+      coverUrl: albumData?.cover_url,
+      year: albumData?.year,
     }
 
     return {

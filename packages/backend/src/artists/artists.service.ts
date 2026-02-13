@@ -86,9 +86,9 @@ export class ArtistsService {
         const artists: ArtistLight[] = (album.album_artists || [])
           .sort((a, b) => a.position - b.position)
           .map((aa) => ({
-            id: aa.artist[0]?.id ?? '',
-            name: aa.artist[0]?.name ?? '',
-            imageUrl: aa.artist[0]?.image_url ?? null,
+            id: aa.artist[0]?.id,
+            name: aa.artist[0]?.name,
+            imageUrl: aa.artist[0]?.image_url,
           }))
           .filter((artist) => artist.id && artist.name)
 
@@ -97,7 +97,7 @@ export class ArtistsService {
           title: album.title,
           artists:
             artists.length > 0 ? artists : [{ id: '', name: 'Artiste inconnu', imageUrl: null }],
-          coverUrl: album.cover_url ?? '',
+          coverUrl: album.cover_url,
           year: album.year,
         }
       })
@@ -106,7 +106,7 @@ export class ArtistsService {
       id: artistData.id,
       name: artistData.name,
       imageUrl: artistData.image_url,
-      spotifyId: artistData.spotify_id ?? null,
+      spotifyId: artistData.spotify_id,
       albums,
     }
   }

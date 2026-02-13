@@ -398,6 +398,23 @@ describe('NotificationsService', () => {
         'Error fetching notifications: DB error',
       )
     })
+
+    it('lève une erreur si vinyl est null pour un post — intégrité des données', async () => {
+      const notif = makeNotifDbResult({
+        post: [
+          {
+            id: 'p1',
+            vinyl_id: 'v1',
+            vinyl: [],
+          },
+        ],
+      })
+      mockAuthFrom.mockReturnValue(makeLimitChain({ data: [notif], error: null }))
+
+      await expect(service.getNotifications(TOKEN, USER_ID)).rejects.toThrow(
+        'Vinyl not found for post p1 — data integrity issue',
+      )
+    })
   })
 
   // -----------------------------------------------------------------------
