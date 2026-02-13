@@ -25,7 +25,6 @@ dist-ssr
 *.sw?
 
 # Monorepo
-pnpm-lock.yaml
 packages/*/node_modules
 packages/*/dist
 packages/*/build
