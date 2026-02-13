@@ -398,7 +398,7 @@ describe('UsersService', () => {
   // -----------------------------------------------------------------------
 
   describe('updateUserProfile — mapping snake_case', () => {
-    const setupUpdate = (dto: UpdateUserDto) => {
+    const setupUpdate = () => {
       jest.spyOn(service, 'checkUsernameAvailability').mockResolvedValue(true)
       const chain = makeUpdateChain({ data: makeDbUser(), error: null })
       mockAuthFrom.mockReturnValue(chain)
@@ -406,7 +406,7 @@ describe('UsersService', () => {
     }
 
     it('convertit username correctement', async () => {
-      const chain = setupUpdate({ username: 'nouveau' })
+      const chain = setupUpdate()
 
       await service.updateUserProfile(TOKEN, USER_ID, { username: 'nouveau' })
 
@@ -414,7 +414,7 @@ describe('UsersService', () => {
     })
 
     it('convertit firstName en first_name', async () => {
-      const chain = setupUpdate({ firstName: 'John' })
+      const chain = setupUpdate()
 
       await service.updateUserProfile(TOKEN, USER_ID, { firstName: 'John' })
 
@@ -422,7 +422,7 @@ describe('UsersService', () => {
     })
 
     it('convertit lastName en last_name', async () => {
-      const chain = setupUpdate({ lastName: 'Coltrane' })
+      const chain = setupUpdate()
 
       await service.updateUserProfile(TOKEN, USER_ID, { lastName: 'Coltrane' })
 
@@ -430,7 +430,7 @@ describe('UsersService', () => {
     })
 
     it('convertit photoUrl en photo_url', async () => {
-      const chain = setupUpdate({ photoUrl: 'new.png' })
+      const chain = setupUpdate()
 
       await service.updateUserProfile(TOKEN, USER_ID, { photoUrl: 'new.png' })
 
@@ -438,7 +438,7 @@ describe('UsersService', () => {
     })
 
     it("n'inclut pas les champs undefined dans la mise à jour", async () => {
-      const chain = setupUpdate({ bio: 'Nouvelle bio' })
+      const chain = setupUpdate()
 
       await service.updateUserProfile(TOKEN, USER_ID, { bio: 'Nouvelle bio' })
 
@@ -449,7 +449,7 @@ describe('UsersService', () => {
     })
 
     it('inclut tous les champs si tous sont fournis', async () => {
-      const chain = setupUpdate({})
+      const chain = setupUpdate()
       const dto: UpdateUserDto = {
         username: 'nouveau',
         firstName: 'John',

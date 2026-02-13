@@ -87,7 +87,10 @@ describe('CommentsService', () => {
   let service: CommentsService
 
   beforeEach(async () => {
-    jest.clearAllMocks()
+    mockAuthFrom.mockReset()
+    mockAuthSingle.mockReset()
+    mockNotificationsService.createNotification.mockReset()
+    mockNotificationsService.deleteByComment.mockReset()
 
     // Comportement par défaut de anonEq : retourne this pour le chaînage
     mockAnonEq.mockReturnValue(anonCommentsChain)
@@ -184,11 +187,6 @@ describe('CommentsService', () => {
 
     it('accepte un content de exactement 500 caractères', async () => {
       const content = 'a'.repeat(500)
-
-      mockAuthFrom.mockReturnValue(authInsertChain)
-      mockAuthSingle.mockResolvedValue({ data: makeCommentDbResult({ content }), error: null })
-
-      // createCommentNotification → from('posts')
       mockAuthFrom.mockImplementationOnce(() => authInsertChain)
       mockAuthFrom.mockImplementationOnce(() => authSelectChain)
       mockAuthSingle
@@ -254,8 +252,10 @@ describe('CommentsService', () => {
     })
 
     it("ne crée pas de notification si l'auteur du post est le même", async () => {
-      // Réinitialise pour ce cas précis
-      jest.clearAllMocks()
+      mockAuthFrom.mockReset()
+      mockAuthSingle.mockReset()
+      mockNotificationsService.createNotification.mockReset()
+
       mockAuthFrom.mockImplementationOnce(() => authInsertChain)
       mockAuthFrom.mockImplementationOnce(() => authSelectChain)
       mockAuthSingle

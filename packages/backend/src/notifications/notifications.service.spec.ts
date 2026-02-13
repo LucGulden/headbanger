@@ -55,7 +55,7 @@ const makeSelectSingleChain = (result: object) => ({
   single: jest.fn().mockResolvedValue(result),
 })
 
-/** Chaîne pour le delete dans deleteBy* */
+/** Chaîne pour le delete avec 3 .eq() — deleteByLike, deleteByFollow */
 const makeDeleteEqChain = (result: object) => {
   const lastEq = jest.fn().mockResolvedValue(result)
   return {
@@ -65,26 +65,47 @@ const makeDeleteEqChain = (result: object) => {
   }
 }
 
+/** Chaîne pour le delete avec 2 .eq() — deleteByComment */
+const makeDeleteDoubleEqChain = (result: object) => {
+  const lastEq = jest.fn().mockResolvedValue(result)
+  return {
+    delete: jest.fn().mockReturnThis(),
+    eq: jest.fn().mockReturnValue({ eq: lastEq }),
+    lastEq,
+  }
+}
+
 // -------------------------------------------------------------------------
 // Fixtures
 // -------------------------------------------------------------------------
 
-const makeNotifDbResult = (
-  overrides: Partial<NotificationQueryResult> = {},
-): NotificationQueryResult => ({
-  id: 'n1',
-  type: 'post_like',
-  read: false,
-  created_at: '2024-01-01T10:00:00Z',
-  user_id: 'u1',
-  actor_id: 'u2',
-  actor: [
-    { uid: 'u2', username: 'bill', first_name: 'Bill', last_name: 'Evans', photo_url: 'bill.png' },
-  ],
-  post: [],
-  comment: [],
-  ...overrides,
-})
+/**
+ * La DB renvoie user_id et actor_id à plat sur la ligne, mais NotificationQueryResult
+ * ne les expose pas dans le type partagé (ils sont implicites via les jointures).
+ * Le cast `as unknown as NotificationQueryResult` évite le contrôle d'excès de
+ * propriétés TypeScript tout en gardant les données de test correctes.
+ */
+const makeNotifDbResult = (overrides: object = {}): NotificationQueryResult =>
+  ({
+    id: 'n1',
+    type: 'post_like',
+    read: false,
+    created_at: '2024-01-01T10:00:00Z',
+    user_id: 'u1',
+    actor_id: 'u2',
+    actor: [
+      {
+        uid: 'u2',
+        username: 'bill',
+        first_name: 'Bill',
+        last_name: 'Evans',
+        photo_url: 'bill.png',
+      },
+    ],
+    post: [],
+    comment: [],
+    ...overrides,
+  }) as unknown as NotificationQueryResult
 
 const makeNotifWithPost = (): NotificationQueryResult =>
   makeNotifDbResult({
@@ -145,6 +166,7 @@ describe('NotificationsService', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks()
+    mockAuthFrom.mockReset()
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -627,7 +649,7 @@ describe('NotificationsService', () => {
     const setupDeleteByComment = (notifData: object | null, deleteResult: object) => {
       mockAuthFrom
         .mockReturnValueOnce(makeSelectSingleChain({ data: notifData, error: null }))
-        .mockReturnValueOnce(makeDeleteEqChain(deleteResult))
+        .mockReturnValueOnce(makeDeleteDoubleEqChain(deleteResult))
     }
 
     it('émet notification:deleted si la notification est non lue', async () => {

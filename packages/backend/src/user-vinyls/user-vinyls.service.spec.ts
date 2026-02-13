@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { BadRequestException } from '@nestjs/common'
+import { BadRequestException, Logger } from '@nestjs/common'
 import { UserVinylsService } from './user-vinyls.service'
 import { SupabaseService } from '../common/database/supabase.service'
 import { VinylsService } from '../vinyls/vinyls.service'
@@ -130,6 +130,7 @@ describe('UserVinylsService', () => {
   let service: UserVinylsService
 
   beforeEach(async () => {
+    jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined)
     jest.clearAllMocks()
 
     const module: TestingModule = await Test.createTestingModule({

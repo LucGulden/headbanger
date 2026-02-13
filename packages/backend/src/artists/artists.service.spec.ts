@@ -72,14 +72,12 @@ const makeAlbumArtistsResult = (
 // -------------------------------------------------------------------------
 // Suite
 // -------------------------------------------------------------------------
-beforeEach(() => {
-  jest.spyOn(console, 'error').mockImplementation(() => {})
-})
 
 describe('ArtistsService', () => {
   let service: ArtistsService
 
   beforeEach(async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {})
     jest.clearAllMocks()
 
     mockFrom.mockImplementation((table: string) => {

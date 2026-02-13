@@ -63,7 +63,7 @@ const makePostDbResult = (overrides: Partial<PostQueryResult> = {}): PostQueryRe
   id: 'post1',
   user_id: 'u1',
   vinyl_id: 'v1',
-  type: 'listened',
+  type: 'collection_add',
   created_at: '2024-01-01T10:00:00Z',
   user: [{ uid: 'u1', username: 'miles', photo_url: 'avatar.png' }],
   vinyl: [
@@ -122,6 +122,7 @@ describe('PostsService', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks()
+    mockAnonFrom.mockReset()
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [PostsService, { provide: SupabaseService, useValue: mockSupabaseService }],
@@ -329,7 +330,7 @@ describe('PostsService', () => {
 
       expect(res[0].id).toBe('post1')
       expect(res[0].userId).toBe('u1')
-      expect(res[0].type).toBe('listened')
+      expect(res[0].type).toBe('collection_add')
       expect(res[0].createdAt).toBe('2024-01-01T10:00:00Z')
     })
 
@@ -469,20 +470,20 @@ describe('PostsService', () => {
       const insertChain = makeInsertSingleChain({ data: makePostDbResult(), error: null })
       mockAnonFrom.mockReturnValue(insertChain)
 
-      await service.createPost('u1', 'v1', 'listened')
+      await service.createPost('u1', 'v1', 'collection_add')
 
       expect(mockAnonFrom).toHaveBeenCalledWith('posts')
       expect(insertChain.insert).toHaveBeenCalledWith({
         user_id: 'u1',
         vinyl_id: 'v1',
-        type: 'listened',
+        type: 'collection_add',
       })
     })
 
     it('retourne 0 pour likesCount et commentsCount', async () => {
       mockAnonFrom.mockReturnValue(makeInsertSingleChain({ data: makePostDbResult(), error: null }))
 
-      const res = await service.createPost('u1', 'v1', 'listened')
+      const res = await service.createPost('u1', 'v1', 'collection_add')
 
       expect(res.likesCount).toBe(0)
       expect(res.commentsCount).toBe(0)
@@ -491,11 +492,11 @@ describe('PostsService', () => {
     it('mappe les champs du post créé', async () => {
       mockAnonFrom.mockReturnValue(makeInsertSingleChain({ data: makePostDbResult(), error: null }))
 
-      const res = await service.createPost('u1', 'v1', 'listened')
+      const res = await service.createPost('u1', 'v1', 'collection_add')
 
       expect(res.id).toBe('post1')
       expect(res.userId).toBe('u1')
-      expect(res.type).toBe('listened')
+      expect(res.type).toBe('collection_add')
       expect(res.user.username).toBe('miles')
       expect(res.vinyl.title).toBe('Kind of Blue')
     })
@@ -505,7 +506,7 @@ describe('PostsService', () => {
         makeInsertSingleChain({ data: null, error: { message: 'insert error' } }),
       )
 
-      await expect(service.createPost('u1', 'v1', 'listened')).rejects.toThrow(
+      await expect(service.createPost('u1', 'v1', 'collection_add')).rejects.toThrow(
         'Error creating post: insert error',
       )
     })

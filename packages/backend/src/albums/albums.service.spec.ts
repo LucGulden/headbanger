@@ -69,6 +69,7 @@ describe('AlbumsService', () => {
   let service: AlbumsService
 
   beforeEach(async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {})
     jest.clearAllMocks()
 
     mockFrom.mockImplementation((table: string) => {
@@ -270,21 +271,18 @@ describe('AlbumsService', () => {
 
   describe('findById — erreurs', () => {
     it('lève NotFoundException si Supabase retourne une erreur sur album', async () => {
-      jest.spyOn(console, 'error').mockImplementation(() => {})
       mockSingle.mockResolvedValue({ data: null, error: { message: 'not found' } })
 
       await expect(service.findById('xxx')).rejects.toBeInstanceOf(NotFoundException)
     })
 
     it('lève NotFoundException si data est null sans erreur', async () => {
-      jest.spyOn(console, 'error').mockImplementation(() => {})
       mockSingle.mockResolvedValue({ data: null, error: null })
 
       await expect(service.findById('xxx')).rejects.toBeInstanceOf(NotFoundException)
     })
 
     it("ne lève pas d'exception si la requête vinyls échoue", async () => {
-      jest.spyOn(console, 'error').mockImplementation(() => {})
       mockSingle.mockResolvedValue({ data: makeAlbumQueryResult(), error: null })
       mockVinylsEq.mockResolvedValue({ data: null, error: { message: 'vinyls error' } })
 
