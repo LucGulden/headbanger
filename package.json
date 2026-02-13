@@ -6,6 +6,7 @@
   "workspaces": [
     "packages/*"
   ],
+  "packageManager": "pnpm@10.28.2",
   "scripts": {
     "dev:web": "pnpm --filter @headbanger/web dev",
     "dev:backend": "pnpm --filter @headbanger/backend start:dev",
