@@ -1,6 +1,6 @@
 import request from 'supertest'
 import { INestApplication } from '@nestjs/common'
-import { createAppWithSupabaseMock } from '../utils/create-app-with-mocks'
+import { createTestApp } from '../utils/create-app-with-mocks'
 
 describe('Vinyls E2E', () => {
   let app: INestApplication
@@ -10,27 +10,29 @@ describe('Vinyls E2E', () => {
   })
 
   it('GET /vinyls/:id → retourne un vinyl transformé', async () => {
-    app = await createAppWithSupabaseMock({
-      'vinyls:getById': {
-        data: {
-          id: '123',
-          title: 'Test Vinyl',
-          cover_url: null,
-          year: 2000,
-          label: null,
-          catalog_number: null,
-          country: null,
-          format: null,
-          vinyl_artists: [],
-          albums: {
-            id: 'alb1',
-            title: 'Album 1',
+    app = await createTestApp({
+      supabase: {
+        'vinyls:select:single': {
+          data: {
+            id: '123',
+            title: 'Test Vinyl',
             cover_url: null,
             year: 2000,
-            album_artists: [],
+            label: null,
+            catalog_number: null,
+            country: null,
+            format: null,
+            vinyl_artists: [],
+            albums: {
+              id: 'alb1',
+              title: 'Album 1',
+              cover_url: null,
+              year: 2000,
+              album_artists: [],
+            },
           },
+          error: null,
         },
-        error: null,
       },
     })
 
@@ -41,10 +43,12 @@ describe('Vinyls E2E', () => {
   })
 
   it('GET /vinyls/:id → 404 si introuvable', async () => {
-    app = await createAppWithSupabaseMock({
-      'vinyls:getById': {
-        data: null,
-        error: 'not found',
+    app = await createTestApp({
+      supabase: {
+        'vinyls:select:single': {
+          data: null,
+          error: { message: 'Row not found', code: 'PGRST116', details: null, hint: null },
+        },
       },
     })
 
