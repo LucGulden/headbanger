@@ -3,24 +3,7 @@ import { UserVinyl, UserVinylType, VinylStats, ArtistLight } from '@headbanger/s
 import { SupabaseService } from '../common/database/supabase.service'
 import { VinylsService } from '../vinyls/vinyls.service'
 import { PostsService } from '../posts/posts.service'
-
-type UserVinylQueryResult = {
-  id: string
-  added_at: string
-  release_id: string
-  vinyls: {
-    id: string
-    title: string
-    cover_url: string
-    year: number
-    country: string
-    catalog_number: string
-    vinyl_artists: {
-      position: number
-      artist: { id: string; name: string; image_url: string | null }[]
-    }[]
-  }[]
-}
+import { UserVinylQueryResult } from './user-vinyls.types'
 
 @Injectable()
 export class UserVinylsService {

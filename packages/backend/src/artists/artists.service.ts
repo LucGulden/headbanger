@@ -2,20 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common'
 import { AlbumLight, Artist, ArtistLight } from '@headbanger/shared'
 import { SupabaseService } from '../common/database/supabase.service'
 import { DbArtist } from '../common/database/database.types'
-
-type ArtistAlbumsQueryResult = {
-  position: number
-  album: {
-    id: string
-    title: string
-    cover_url: string | null
-    year: number
-    album_artists: {
-      position: number
-      artist: { id: string; name: string; image_url: string | null }[]
-    }[]
-  }[]
-}
+import { ArtistAlbumsQueryResult } from './artists.types'
 
 @Injectable()
 export class ArtistsService {
