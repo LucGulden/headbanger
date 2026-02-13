@@ -611,7 +611,6 @@ describe('UserVinylsService', () => {
 
       await service.getVinylStats(USER_ID)
 
-      // Les deux appels ont eu lieu (Promise.all)
       expect(calls).toHaveLength(2)
       expect(calls).toContain('collection')
       expect(calls).toContain('wishlist')
@@ -619,19 +618,40 @@ describe('UserVinylsService', () => {
   })
 
   // -----------------------------------------------------------------------
-  // transformUserVinylData
+  // transformUserVinylData — erreurs intégrité
   // -----------------------------------------------------------------------
+
   describe('transformUserVinylData — erreurs intégrité', () => {
     it('lève une erreur si vinyls[0] est absent — intégrité des données', async () => {
-      // setupGetUserVinyls avec un item dont vinyls est []
-      // à adapter selon tes chain factories existantes
+      mockAnonFrom.mockReturnValue(
+        makeLimitChain({
+          data: [makeUserVinylDbResult({ vinyls: [] })],
+          error: null,
+        }),
+      )
+
       await expect(service.getUserVinyls(USER_ID, 'collection')).rejects.toThrow(
         'Vinyl missing in user_vinyls',
       )
     })
 
     it('lève une erreur si artist[0] est absent dans vinyl_artists — intégrité des données', async () => {
-      // vinyl présent mais vinyl_artists: [{ position: 1, artist: [] }]
+      mockAnonFrom.mockReturnValue(
+        makeLimitChain({
+          data: [
+            makeUserVinylDbResult({
+              vinyls: [
+                {
+                  ...makeUserVinylDbResult().vinyls[0],
+                  vinyl_artists: [{ position: 1, artist: [] }],
+                },
+              ],
+            }),
+          ],
+          error: null,
+        }),
+      )
+
       await expect(service.getUserVinyls(USER_ID, 'collection')).rejects.toThrow(
         'Artist missing in vinyl_artists join — data integrity issue',
       )

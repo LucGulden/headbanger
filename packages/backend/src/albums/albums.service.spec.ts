@@ -135,7 +135,7 @@ describe('AlbumsService', () => {
 
       const res = await service.findById('alb1')
 
-      expect(res.coverUrl).toBe('')
+      expect(res.coverUrl).toBeNull()
     })
 
     it('trie les album_artists par position', async () => {
