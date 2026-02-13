@@ -89,9 +89,17 @@
     "testEnvironment": "node",
     "coverageThreshold": {
       "global": {
-        "lines": 70,
-        "functions": 70
+        "statements": 95,
+        "functions": 95,
+        "lines": 95,
+        "branches": 85
       }
-    }
+    },
+    "coveragePathIgnorePatterns": [
+      "main\\.ts$",
+      "\\.module\\.ts$",
+      "\\.dto\\.ts$",
+      "src/auth/decorators/"
+    ]
   }
 }
