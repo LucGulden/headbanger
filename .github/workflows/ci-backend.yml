@@ -5,6 +5,7 @@ on:
     branches: [main, develop]
   push:
     branches: [main, develop]
+  workflow_dispatch:
 
 jobs:
   install:
@@ -42,7 +43,7 @@ jobs:
           key: node-modules-${{ hashFiles('**/pnpm-lock.yaml') }}
       - run: pnpm --filter backend lint
       - run: pnpm --filter backend format:check
-      - run: pnpm --filter backend typecheck   # à ajouter (voir plus bas)
+      - run: pnpm --filter backend typecheck
 
   test-unit:
     needs: install
