@@ -64,7 +64,7 @@ jobs:
       - run: pnpm --filter backend test:cov
       - uses: actions/upload-artifact@v4
         with:
-          name: coverage
+          name: coverage-unit
           path: packages/backend/coverage
 
   test-e2e:
@@ -83,7 +83,11 @@ jobs:
             node_modules
             packages/*/node_modules
           key: node-modules-${{ hashFiles('**/pnpm-lock.yaml') }}
-      - run: pnpm --filter backend test:e2e
+      - run: pnpm --filter backend test:e2e:cov
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-e2e
+          path: packages/backend/coverage-e2e
 
   build:
     needs: [quality, test-unit, test-e2e]

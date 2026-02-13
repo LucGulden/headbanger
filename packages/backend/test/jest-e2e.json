@@ -1,22 +1,29 @@
 {
   "moduleFileExtensions": ["js", "json", "ts"],
-  "rootDir": ".",
-  "testEnvironment": "node",
-  "testRegex": ".e2e-spec.ts$",
+  "rootDir": "..",
+  "testRegex": "test/e2e/.*\\.e2e-spec\\.ts$",
   "transform": {
-    "^.+\\.(t|j)s$": [
-      "ts-jest",
-      {
-        "useESM": true,
-        "tsconfig": "<rootDir>/../tsconfig.json"
-      }
-    ]
+    "^.+\\.(t|j)s$": "ts-jest"
   },
-  "extensionsToTreatAsEsm": [".ts"],
-  "transformIgnorePatterns": [
-    "node_modules/(?!uuid)"
+  "testEnvironment": "node",
+  "testTimeout": 30000,
+  "collectCoverageFrom": [
+    "src/**/*.(t|j)s",
+    "!src/**/*.spec.ts",
+    "!src/**/*.module.ts",
+    "!src/**/*.dto.ts",
+    "!src/main.ts",
+    "!src/auth/decorators/**"
   ],
-  "moduleNameMapper": {
-    "^(\\.{1,2}/.*)\\.js$": "$1"
-  }
+  "coverageDirectory": "coverage-e2e",
+  "coverageReporters": ["text", "lcov", "html"],
+  "coverageThreshold": {
+    "global": {
+      "statements": 50,
+      "functions": 50,
+      "lines": 50,
+      "branches": 30
+    }
+  },
+  "setupFilesAfterEnv": ["<rootDir>/test/setup-e2e.ts"]
 }

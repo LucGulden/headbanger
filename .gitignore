@@ -29,6 +29,7 @@ packages/*/node_modules
 packages/*/dist
 packages/*/build
 packages/*/coverage
+packages/*/coverage-e2e
 *.tsbuildinfo
 .pnpm-store/
 .pnpm-debug.log
