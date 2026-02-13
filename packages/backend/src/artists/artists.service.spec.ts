@@ -244,16 +244,16 @@ describe('ArtistsService', () => {
       expect(res.albums[0].artists[0]).toEqual({ id: '', name: 'Artiste inconnu', imageUrl: null })
     })
 
-    it('ignore les entrées album_artists sans album[0]', async () => {
+    it('lève une erreur si album est absent dans le join — intégrité des données', async () => {
       mockSingle.mockResolvedValue({ data: makeDbArtist(), error: null })
       mockOrder.mockResolvedValue({
         data: [makeAlbumArtistsResult({ album: [] })],
         error: null,
       })
 
-      const res = await service.getById('a1')
-
-      expect(res.albums).toHaveLength(0)
+      await expect(service.getById('a1')).rejects.toThrow(
+        'Album missing in album_artists join — data integrity issue',
+      )
     })
 
     it('gère cover_url null sur un album', async () => {
@@ -307,6 +307,30 @@ describe('ArtistsService', () => {
       const res = await service.getById('a1')
 
       expect(res.albums).toHaveLength(0)
+    })
+
+    it('lève une erreur si artist[0] est absent dans album_artists — intégrité des données', async () => {
+      mockSingle.mockResolvedValue({ data: makeDbArtist(), error: null })
+      mockOrder.mockResolvedValue({
+        data: [
+          makeAlbumArtistsResult({
+            album: [
+              {
+                id: 'alb1',
+                title: 'Album Test',
+                cover_url: null,
+                year: 2000,
+                album_artists: [{ position: 1, artist: [] }],
+              },
+            ],
+          }),
+        ],
+        error: null,
+      })
+
+      await expect(service.getById('a1')).rejects.toThrow(
+        'Artist missing in album_artists join — data integrity issue',
+      )
     })
   })
 

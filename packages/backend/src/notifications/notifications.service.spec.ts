@@ -298,7 +298,7 @@ describe('NotificationsService', () => {
                   { position: 2, artist: [{ name: 'Bill Evans' }] },
                   { position: 1, artist: [{ name: 'Miles Davis' }] },
                 ],
-                album: [],
+                album: [{ id: 'alb1', title: 'Album', album_artists: [] }],
               },
             ],
           },
@@ -413,6 +413,71 @@ describe('NotificationsService', () => {
 
       await expect(service.getNotifications(TOKEN, USER_ID)).rejects.toThrow(
         'Vinyl not found for post p1 — data integrity issue',
+      )
+    })
+    it('lève une erreur si actor[0] est absent — intégrité des données', async () => {
+      mockAuthFrom.mockReturnValue(
+        makeLimitChain({ data: [makeNotifDbResult({ actor: [] })], error: null }),
+      )
+
+      await expect(service.getNotifications(TOKEN, USER_ID)).rejects.toThrow(
+        'Actor missing in notification n1 — data integrity issue',
+      )
+    })
+
+    it('lève une erreur si artist[0] est absent dans vinyl_artists — intégrité des données', async () => {
+      const notif = makeNotifDbResult({
+        post: [
+          {
+            id: 'p1',
+            vinyl_id: 'v1',
+            vinyl: [
+              {
+                id: 'v1',
+                title: 'Album',
+                cover_url: null,
+                vinyl_artists: [{ position: 1, artist: [] }],
+                album: [{ id: 'alb1', title: 'Album', album_artists: [] }],
+              },
+            ],
+          },
+        ],
+      })
+      mockAuthFrom.mockReturnValue(makeLimitChain({ data: [notif], error: null }))
+
+      await expect(service.getNotifications(TOKEN, USER_ID)).rejects.toThrow(
+        'Artist missing in vinyl_artists join — data integrity issue',
+      )
+    })
+
+    it('lève une erreur si artist[0] est absent dans album_artists — intégrité des données', async () => {
+      const notif = makeNotifDbResult({
+        post: [
+          {
+            id: 'p1',
+            vinyl_id: 'v1',
+            vinyl: [
+              {
+                id: 'v1',
+                title: 'Album',
+                cover_url: null,
+                vinyl_artists: [],
+                album: [
+                  {
+                    id: 'alb1',
+                    title: 'Album',
+                    album_artists: [{ position: 1, artist: [] }],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      })
+      mockAuthFrom.mockReturnValue(makeLimitChain({ data: [notif], error: null }))
+
+      await expect(service.getNotifications(TOKEN, USER_ID)).rejects.toThrow(
+        'Artist missing in album_artists join — data integrity issue',
       )
     })
   })

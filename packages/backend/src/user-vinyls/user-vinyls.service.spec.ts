@@ -617,4 +617,24 @@ describe('UserVinylsService', () => {
       expect(calls).toContain('wishlist')
     })
   })
+
+  // -----------------------------------------------------------------------
+  // transformUserVinylData
+  // -----------------------------------------------------------------------
+  describe('transformUserVinylData — erreurs intégrité', () => {
+    it('lève une erreur si vinyls[0] est absent — intégrité des données', async () => {
+      // setupGetUserVinyls avec un item dont vinyls est []
+      // à adapter selon tes chain factories existantes
+      await expect(service.getUserVinyls(USER_ID, 'collection')).rejects.toThrow(
+        'Vinyl missing in user_vinyls',
+      )
+    })
+
+    it('lève une erreur si artist[0] est absent dans vinyl_artists — intégrité des données', async () => {
+      // vinyl présent mais vinyl_artists: [{ position: 1, artist: [] }]
+      await expect(service.getUserVinyls(USER_ID, 'collection')).rejects.toThrow(
+        'Artist missing in vinyl_artists join — data integrity issue',
+      )
+    })
+  })
 })

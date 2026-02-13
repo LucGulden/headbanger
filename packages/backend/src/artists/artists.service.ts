@@ -78,29 +78,36 @@ export class ArtistsService {
     artistData: DbArtist,
     albumArtistsData: ArtistAlbumsQueryResult[],
   ): Artist {
-    const albums: AlbumLight[] = albumArtistsData
-      .filter((aa) => aa.album[0])
-      .map((aa) => {
-        const album = aa.album[0]
+    const albums: AlbumLight[] = albumArtistsData.map((aa) => {
+      const album = aa.album[0]
+      if (!album) {
+        throw new Error(`Album missing in album_artists join — data integrity issue`)
+      }
 
-        const artists: ArtistLight[] = (album.album_artists || [])
-          .sort((a, b) => a.position - b.position)
-          .map((aa) => ({
-            id: aa.artist[0]?.id,
-            name: aa.artist[0]?.name,
-            imageUrl: aa.artist[0]?.image_url,
-          }))
-          .filter((artist) => artist.id && artist.name)
+      const artists: ArtistLight[] = (album.album_artists || [])
+        .sort((a, b) => a.position - b.position)
+        .map((aa) => {
+          const artist = aa.artist[0]
+          if (!artist) {
+            throw new Error(`Artist missing in album_artists join — data integrity issue`)
+          }
+          return {
+            id: artist.id,
+            name: artist.name,
+            imageUrl: artist.image_url,
+          }
+        })
+        .filter((artist) => artist.id && artist.name)
 
-        return {
-          id: album.id,
-          title: album.title,
-          artists:
-            artists.length > 0 ? artists : [{ id: '', name: 'Artiste inconnu', imageUrl: null }],
-          coverUrl: album.cover_url,
-          year: album.year,
-        }
-      })
+      return {
+        id: album.id,
+        title: album.title,
+        artists:
+          artists.length > 0 ? artists : [{ id: '', name: 'Artiste inconnu', imageUrl: null }],
+        coverUrl: album.cover_url,
+        year: album.year,
+      }
+    })
 
     return {
       id: artistData.id,

@@ -193,28 +193,37 @@ export class UserVinylsService {
 
   private transformUserVinylData(data: UserVinylQueryResult): UserVinyl {
     const vinylData = data.vinyls[0]
+    if (!vinylData) {
+      throw new Error(`Vinyl missing in user_vinyls ${data.id} join — data integrity issue`)
+    }
 
-    const artists: ArtistLight[] = (vinylData?.vinyl_artists || [])
+    const artists: ArtistLight[] = (vinylData.vinyl_artists || [])
       .sort((a, b) => a.position - b.position)
-      .map((va) => ({
-        id: va.artist[0]?.id,
-        name: va.artist[0]?.name,
-        imageUrl: va.artist[0]?.image_url,
-      }))
+      .map((va) => {
+        const artist = va.artist[0]
+        if (!artist) {
+          throw new Error(`Artist missing in vinyl_artists join — data integrity issue`)
+        }
+        return {
+          id: artist.id,
+          name: artist.name,
+          imageUrl: artist.image_url,
+        }
+      })
       .filter((artist) => artist.id && artist.name)
 
     return {
       id: data.id,
       addedAt: data.added_at,
       vinyl: {
-        id: vinylData?.id,
-        title: vinylData?.title,
+        id: vinylData.id,
+        title: vinylData.title,
         artists:
           artists.length > 0 ? artists : [{ id: '', name: 'Artiste inconnu', imageUrl: null }],
-        coverUrl: vinylData?.cover_url,
-        year: vinylData?.year,
-        country: vinylData?.country,
-        catalogNumber: vinylData?.catalog_number,
+        coverUrl: vinylData.cover_url,
+        year: vinylData.year,
+        country: vinylData.country,
+        catalogNumber: vinylData.catalog_number,
       },
     }
   }

@@ -159,6 +159,17 @@ describe('CommentsService', () => {
         'Error fetching comments: DB error',
       )
     })
+
+    it('lève une erreur si user[0] est absent — intégrité des données', async () => {
+      mockAnonOrder.mockResolvedValue({
+        data: [makeCommentDbResult({ user: [] })],
+        error: null,
+      })
+
+      await expect(service.getPostComments(POST_ID)).rejects.toThrow(
+        'User missing in comment c1 join — data integrity issue',
+      )
+    })
   })
 
   // -----------------------------------------------------------------------

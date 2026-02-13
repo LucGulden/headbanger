@@ -107,11 +107,17 @@ export class AlbumsService {
   private extractArtists(album_artists: AlbumQueryResult['album_artists']): ArtistLight[] {
     return (album_artists || [])
       .sort((a, b) => a.position - b.position)
-      .map((aa) => ({
-        id: aa.artist[0]?.id,
-        name: aa.artist[0]?.name,
-        imageUrl: aa.artist[0]?.image_url,
-      }))
+      .map((aa) => {
+        const artist = aa.artist[0]
+        if (!artist) {
+          throw new Error(`Artist missing in album_artists join — data integrity issue`)
+        }
+        return {
+          id: artist.id,
+          name: artist.name,
+          imageUrl: artist.image_url,
+        }
+      })
       .filter((artist) => artist.id && artist.name)
   }
 
@@ -121,11 +127,17 @@ export class AlbumsService {
     const vinyls: VinylLight[] = vinylsData.map((vinyl) => {
       const vinylArtists: ArtistLight[] = (vinyl.vinyl_artists || [])
         .sort((a, b) => a.position - b.position)
-        .map((va) => ({
-          id: va.artist[0]?.id,
-          name: va.artist[0]?.name,
-          imageUrl: va.artist[0]?.image_url,
-        }))
+        .map((va) => {
+          const artist = va.artist[0]
+          if (!artist) {
+            throw new Error(`Artist missing in vinyl_artists join — data integrity issue`)
+          }
+          return {
+            id: artist.id,
+            name: artist.name,
+            imageUrl: artist.image_url,
+          }
+        })
         .filter((artist) => artist.id && artist.name)
 
       return {

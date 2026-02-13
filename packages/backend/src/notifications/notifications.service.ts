@@ -250,17 +250,22 @@ export class NotificationsService {
   }
 
   private transformNotificationData(data: NotificationQueryResult): Notification {
+    const actor = data.actor[0]
+    if (!actor) {
+      throw new Error(`Actor missing in notification ${data.id} — data integrity issue`)
+    }
+
     const notification: Notification = {
       id: data.id,
       type: data.type,
       read: data.read,
       createdAt: data.created_at,
       actor: {
-        uid: data.actor[0]?.uid,
-        username: data.actor[0]?.username,
-        firstName: data.actor[0]?.first_name,
-        lastName: data.actor[0]?.last_name,
-        photoUrl: data.actor[0]?.photo_url,
+        uid: actor.uid,
+        username: actor.username,
+        firstName: actor.first_name,
+        lastName: actor.last_name,
+        photoUrl: actor.photo_url,
       },
     }
 
@@ -268,30 +273,47 @@ export class NotificationsService {
       const post = data.post[0]
       const vinyl = post.vinyl?.[0]
 
-      const vinylArtists = (vinyl?.vinyl_artists || [])
-        .sort((a, b) => a.position - b.position)
-        .map((va) => va.artist[0]?.name)
-        .filter(Boolean)
-
-      const albumArtists = (vinyl?.album?.[0]?.album_artists || [])
-        .sort((a, b) => a.position - b.position)
-        .map((aa) => aa.artist[0]?.name)
-        .filter(Boolean)
-
-      const artist = vinylArtists.join(', ') || albumArtists.join(', ') || 'Artiste inconnu'
-
       if (!vinyl) {
         throw new Error(`Vinyl not found for post ${post.id} — data integrity issue`)
       }
+
+      const vinylArtists = (vinyl.vinyl_artists || [])
+        .sort((a, b) => a.position - b.position)
+        .map((va) => {
+          const artist = va.artist[0]
+          if (!artist) {
+            throw new Error(`Artist missing in vinyl_artists join — data integrity issue`)
+          }
+          return artist.name
+        })
+        .filter(Boolean)
+
+      const album = vinyl.album?.[0]
+      if (!album) {
+        throw new Error(`Album missing in vinyl ${vinyl.id} join — data integrity issue`)
+      }
+
+      const albumArtists = (album.album_artists || [])
+        .sort((a, b) => a.position - b.position)
+        .map((aa) => {
+          const artist = aa.artist[0]
+          if (!artist) {
+            throw new Error(`Artist missing in album_artists join — data integrity issue`)
+          }
+          return artist.name
+        })
+        .filter(Boolean)
+
+      const artist = vinylArtists.join(', ') || albumArtists.join(', ') || 'Artiste inconnu'
 
       notification.post = {
         id: post.id,
         vinylId: post.vinyl_id,
         vinyl: {
-          id: vinyl?.id,
-          title: vinyl?.title,
+          id: vinyl.id,
+          title: vinyl.title,
           artist,
-          coverUrl: vinyl?.cover_url,
+          coverUrl: vinyl.cover_url ?? null,
         },
       }
     }
@@ -307,17 +329,22 @@ export class NotificationsService {
   }
 
   private transformNotificationCreateData(data: NotificationCreateQueryResult): Notification {
+    const actor = data.actor[0]
+    if (!actor) {
+      throw new Error(`Actor missing in notification ${data.id} — data integrity issue`)
+    }
+
     const notification: Notification = {
       id: data.id,
       type: data.type,
       read: data.read,
       createdAt: data.created_at,
       actor: {
-        uid: data.actor[0]?.uid,
-        username: data.actor[0]?.username,
-        firstName: data.actor[0]?.first_name,
-        lastName: data.actor[0]?.last_name,
-        photoUrl: data.actor[0]?.photo_url,
+        uid: actor.uid,
+        username: actor.username,
+        firstName: actor.first_name,
+        lastName: actor.last_name,
+        photoUrl: actor.photo_url,
       },
     }
 

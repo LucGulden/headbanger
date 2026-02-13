@@ -240,6 +240,38 @@ describe('VinylsService', () => {
 
       await expect(service.getById('v1')).rejects.toThrow('Album not found for vinyl v1')
     })
+
+    it('lève une erreur si artist[0] est absent dans vinyl_artists — intégrité des données', async () => {
+      mockSupabaseClient.single.mockResolvedValue({
+        data: makeVinylDbResult({
+          vinyl_artists: [{ position: 1, artist: [] }],
+        }),
+        error: null,
+      })
+
+      await expect(service.getById('v1')).rejects.toThrow(
+        'Artist missing in vinyl_artists join — data integrity issue',
+      )
+    })
+
+    it('lève une erreur si artist[0] est absent dans album_artists — intégrité des données', async () => {
+      mockSupabaseClient.single.mockResolvedValue({
+        data: makeVinylDbResult({
+          albums: {
+            id: 'alb1',
+            title: 'Kind of Blue',
+            cover_url: null,
+            year: 1959,
+            album_artists: [{ position: 1, artist: [] }],
+          },
+        }),
+        error: null,
+      })
+
+      await expect(service.getById('v1')).rejects.toThrow(
+        'Artist missing in album_artists join — data integrity issue',
+      )
+    })
   })
 
   // -----------------------------------------------------------------------

@@ -239,7 +239,6 @@ describe('AlbumsService', () => {
 
       const res = await service.findById('alb1')
 
-      // fallback = artistes de l'album, déjà triés par position
       expect(res.vinyls[0].artists[0].name).toBe('Miles Davis')
       expect(res.vinyls[0].artists[1].name).toBe('Bill Evans')
     })
@@ -289,6 +288,32 @@ describe('AlbumsService', () => {
       const res = await service.findById('alb1')
 
       expect(res.vinyls).toHaveLength(0)
+    })
+
+    it('lève une erreur si artist[0] est absent dans album_artists — intégrité des données', async () => {
+      mockSingle.mockResolvedValue({
+        data: makeAlbumQueryResult({
+          album_artists: [{ position: 1, artist: [] }],
+        }),
+        error: null,
+      })
+      mockVinylsEq.mockResolvedValue({ data: [], error: null })
+
+      await expect(service.findById('alb1')).rejects.toThrow(
+        'Artist missing in album_artists join — data integrity issue',
+      )
+    })
+
+    it('lève une erreur si artist[0] est absent dans vinyl_artists — intégrité des données', async () => {
+      mockSingle.mockResolvedValue({ data: makeAlbumQueryResult(), error: null })
+      mockVinylsEq.mockResolvedValue({
+        data: [makeVinylQueryResult({ vinyl_artists: [{ position: 1, artist: [] }] })],
+        error: null,
+      })
+
+      await expect(service.findById('alb1')).rejects.toThrow(
+        'Artist missing in vinyl_artists join — data integrity issue',
+      )
     })
   })
 

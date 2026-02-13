@@ -202,28 +202,52 @@ export class PostsService {
     likesCountMap: Map<string, number>,
     commentsCountMap: Map<string, number>,
   ): PostWithDetails {
-    const vinyl = data.vinyl[0]
-    const album = vinyl?.album?.[0]
+    const user = data.user[0]
+    if (!user) {
+      throw new Error(`User missing in post ${data.id} join — data integrity issue`)
+    }
 
-    const vinylArtists: ArtistLight[] = (vinyl?.vinyl_artists || [])
+    const vinyl = data.vinyl[0]
+    if (!vinyl) {
+      throw new Error(`Vinyl missing in post ${data.id} join — data integrity issue`)
+    }
+
+    const album = vinyl.album?.[0]
+    if (!album) {
+      throw new Error(`Album missing in vinyl ${vinyl.id} join — data integrity issue`)
+    }
+
+    const vinylArtists: ArtistLight[] = (vinyl.vinyl_artists || [])
       .sort((a, b) => a.position - b.position)
-      .map((va) => ({
-        id: va.artist[0]?.id,
-        name: va.artist[0]?.name,
-        imageUrl: va.artist[0]?.image_url,
-      }))
+      .map((va) => {
+        const artist = va.artist[0]
+        if (!artist) {
+          throw new Error(`Artist missing in vinyl_artists join — data integrity issue`)
+        }
+        return {
+          id: artist.id,
+          name: artist.name,
+          imageUrl: artist.image_url,
+        }
+      })
       .filter((artist) => artist.id && artist.name)
 
     let artists = vinylArtists
 
     if (artists.length === 0) {
-      artists = (album?.album_artists || [])
+      artists = (album.album_artists || [])
         .sort((a, b) => a.position - b.position)
-        .map((aa) => ({
-          id: aa.artist[0]?.id,
-          name: aa.artist[0]?.name,
-          imageUrl: aa.artist[0]?.image_url,
-        }))
+        .map((aa) => {
+          const artist = aa.artist[0]
+          if (!artist) {
+            throw new Error(`Artist missing in album_artists join — data integrity issue`)
+          }
+          return {
+            id: artist.id,
+            name: artist.name,
+            imageUrl: artist.image_url,
+          }
+        })
         .filter((artist) => artist.id && artist.name)
     }
 
@@ -239,18 +263,18 @@ export class PostsService {
       likesCount: likesCountMap.get(data.id) ?? 0,
       commentsCount: commentsCountMap.get(data.id) ?? 0,
       user: {
-        uid: data.user[0]?.uid,
-        username: data.user[0]?.username,
-        photoUrl: data.user[0]?.photo_url,
+        uid: user.uid,
+        username: user.username,
+        photoUrl: user.photo_url,
       },
       vinyl: {
-        id: vinyl?.id,
-        title: vinyl?.title,
+        id: vinyl.id,
+        title: vinyl.title,
         artists,
-        coverUrl: vinyl?.cover_url,
-        year: vinyl?.year,
-        country: vinyl?.country,
-        catalogNumber: vinyl?.catalog_number,
+        coverUrl: vinyl.cover_url,
+        year: vinyl.year,
+        country: vinyl.country,
+        catalogNumber: vinyl.catalog_number,
       },
     }
   }
