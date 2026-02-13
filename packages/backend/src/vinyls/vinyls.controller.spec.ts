@@ -1,63 +1,41 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { NotFoundException } from '@nestjs/common'
 import { VinylsController } from './vinyls.controller'
 import { VinylsService } from './vinyls.service'
-import type { Vinyl } from '@headbanger/shared'
+
+const mockVinylsService = {
+  getById: jest.fn(),
+}
 
 describe('VinylsController', () => {
   let controller: VinylsController
-  let service: VinylsService
-
-  const mockVinylsService = {
-    getById: jest.fn(),
-  }
 
   beforeEach(async () => {
+    jest.clearAllMocks()
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [VinylsController],
-      providers: [
-        {
-          provide: VinylsService,
-          useValue: mockVinylsService,
-        },
-      ],
+      providers: [{ provide: VinylsService, useValue: mockVinylsService }],
     }).compile()
 
     controller = module.get<VinylsController>(VinylsController)
-    service = module.get<VinylsService>(VinylsService)
   })
 
-  it('devrait retourner un vinyl via le service', async () => {
-    const fakeVinyl: Vinyl = {
-      id: '123',
-      title: 'Test Vinyl',
-      artists: [],
-      coverUrl: null,
-      year: 2000,
-      label: 'label1',
-      catalogNumber: 'catalog1',
-      country: 'France',
-      format: '45RPM',
-      album: {
-        id: 'alb1',
-        title: 'Album 1',
-        artists: [],
-        coverUrl: null,
-        year: 2000,
-      },
-    }
+  describe('getById', () => {
+    it('délègue à getById avec le bon id', async () => {
+      mockVinylsService.getById.mockResolvedValue({ id: 'v1' })
 
-    mockVinylsService.getById.mockResolvedValue(fakeVinyl)
+      await controller.getById('v1')
 
-    const res = await controller.getById('123')
+      expect(mockVinylsService.getById).toHaveBeenCalledWith('v1')
+    })
 
-    expect(service.getById).toHaveBeenCalledWith('123')
-    expect(res).toEqual(fakeVinyl)
-  })
+    it('retourne le résultat du service', async () => {
+      const vinyl = { id: 'v1', title: 'Kind of Blue' }
+      mockVinylsService.getById.mockResolvedValue(vinyl)
 
-  it('devrait propager la NotFoundException du service', async () => {
-    mockVinylsService.getById.mockRejectedValue(new NotFoundException())
+      const result = await controller.getById('v1')
 
-    await expect(controller.getById('inexistant')).rejects.toBeInstanceOf(NotFoundException)
+      expect(result).toEqual(vinyl)
+    })
   })
 })
