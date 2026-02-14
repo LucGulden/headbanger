@@ -5,6 +5,7 @@ import { AuthGuard } from '../auth/guards/auth.guard'
 import { CurrentUser } from '../auth/decorators/current-user.decorator'
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator'
 import { CurrentToken } from '../auth/decorators/current-token.decorator'
+import { CsrfGuard } from '../auth/guards/csrf.guard'
 
 @Controller('comments')
 export class CommentsController {
@@ -35,7 +36,7 @@ export class CommentsController {
    * Body: { postId: string, content: string }
    */
   @Post()
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, CsrfGuard)
   async addComment(
     @CurrentToken() token: string,
     @CurrentUser() user: AuthenticatedUser,
@@ -50,7 +51,7 @@ export class CommentsController {
    * Supprime un commentaire (seulement le sien)
    */
   @Delete(':id')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, CsrfGuard)
   async deleteComment(
     @CurrentToken() token: string,
     @CurrentUser() user: AuthenticatedUser,

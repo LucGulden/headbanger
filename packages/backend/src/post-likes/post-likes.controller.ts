@@ -4,6 +4,7 @@ import { AuthGuard } from '../auth/guards/auth.guard'
 import { CurrentUser } from '../auth/decorators/current-user.decorator'
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator'
 import { CurrentToken } from '../auth/decorators/current-token.decorator'
+import { CsrfGuard } from '../auth/guards/csrf.guard'
 
 @Controller('post-likes')
 export class PostLikesController {
@@ -14,7 +15,7 @@ export class PostLikesController {
    * Ajoute un like à un post
    */
   @Post(':postId')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, CsrfGuard)
   async likePost(
     @CurrentToken() token: string,
     @CurrentUser() user: AuthenticatedUser,
@@ -29,7 +30,7 @@ export class PostLikesController {
    * Retire un like d'un post
    */
   @Delete(':postId')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, CsrfGuard)
   async unlikePost(
     @CurrentToken() token: string,
     @CurrentUser() user: AuthenticatedUser,

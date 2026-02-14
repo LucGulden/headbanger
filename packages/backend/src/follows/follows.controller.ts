@@ -5,6 +5,7 @@ import { AuthGuard } from '../auth/guards/auth.guard'
 import { CurrentUser } from '../auth/decorators/current-user.decorator'
 import { CurrentToken } from '../auth/decorators/current-token.decorator'
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator'
+import { CsrfGuard } from '../auth/guards/csrf.guard'
 
 @Controller('follows')
 export class FollowsController {
@@ -38,7 +39,7 @@ export class FollowsController {
    * Suivre un utilisateur
    */
   @Post(':userId')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, CsrfGuard)
   async followUser(
     @CurrentToken() token: string,
     @CurrentUser() user: AuthenticatedUser,
@@ -53,7 +54,7 @@ export class FollowsController {
    * Ne plus suivre un utilisateur
    */
   @Delete(':userId')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, CsrfGuard)
   async unfollowUser(
     @CurrentToken() token: string,
     @CurrentUser() user: AuthenticatedUser,

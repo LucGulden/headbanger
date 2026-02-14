@@ -18,6 +18,7 @@ import { CurrentSession } from './decorators/current-session.decorator'
 import { SignUpDto } from './dto/signup.dto'
 import { LoginDto } from './dto/login.dto'
 import { Session, AuthenticatedUser } from '../common/database/database.types'
+import { CsrfGuard } from './guards/csrf.guard'
 
 // Options cookies communes
 const getCookieOptions = (isProduction: boolean) => ({
@@ -96,7 +97,7 @@ export class AuthController {
   }
 
   @Post('logout')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, CsrfGuard)
   @HttpCode(HttpStatus.OK)
   async logout(@CurrentSession() session: Session, @Res() reply: FastifyReply) {
     await this.authService.logout(session.id)

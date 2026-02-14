@@ -5,9 +5,9 @@ import { UserVinylsService } from './user-vinyls.service'
 import { AuthGuard } from '../auth/guards/auth.guard'
 import { CurrentUser } from '../auth/decorators/current-user.decorator'
 import type { AuthenticatedUser } from '../auth/decorators/current-user.decorator'
+import { CsrfGuard } from '../auth/guards/csrf.guard'
 
 @Controller('user-vinyls')
-@UseGuards(AuthGuard) // Tous les endpoints sont protégés
 export class UserVinylsController {
   constructor(private readonly userVinylsService: UserVinylsService) {}
 
@@ -16,6 +16,7 @@ export class UserVinylsController {
    * Récupère les vinyles d'un utilisateur spécifique (PUBLIC)
    */
   @Get('user/:userId')
+  @UseGuards(AuthGuard)
   async getUserVinylsByUserId(
     @Param('userId') userId: string,
     @Query('type') type: UserVinylType,
@@ -35,6 +36,7 @@ export class UserVinylsController {
    * Compte les vinyles d'un utilisateur spécifique (PUBLIC)
    */
   @Get('user/:userId/count')
+  @UseGuards(AuthGuard)
   async getUserVinylsCountByUserId(
     @Param('userId') userId: string,
     @Query('type') type: UserVinylType,
@@ -48,6 +50,7 @@ export class UserVinylsController {
    * Statistiques d'un utilisateur spécifique (PUBLIC)
    */
   @Get('user/:userId/stats')
+  @UseGuards(AuthGuard)
   async getVinylStatsByUserId(@Param('userId') userId: string): Promise<VinylStats> {
     return this.userVinylsService.getVinylStats(userId)
   }
@@ -57,6 +60,7 @@ export class UserVinylsController {
    * Vérifie si un vinyl est dans la collection/wishlist
    */
   @Get('check/:vinylId')
+  @UseGuards(AuthGuard)
   async hasVinyl(
     @CurrentUser() user: AuthenticatedUser,
     @Param('vinylId') vinylId: string,
@@ -72,6 +76,7 @@ export class UserVinylsController {
    * Body: { vinylId: string, type: 'collection' | 'wishlist' }
    */
   @Post()
+  @UseGuards(AuthGuard, CsrfGuard)
   async addVinylToUser(
     @CurrentUser() user: AuthenticatedUser,
     @Body('vinylId') vinylId: string,
@@ -85,6 +90,7 @@ export class UserVinylsController {
    * Retire un vinyl de la collection/wishlist
    */
   @Delete(':vinylId')
+  @UseGuards(AuthGuard, CsrfGuard)
   async removeVinylFromUser(
     @CurrentUser() user: AuthenticatedUser,
     @Param('vinylId') vinylId: string,
@@ -99,6 +105,7 @@ export class UserVinylsController {
    * Déplace un vinyl de la wishlist vers la collection
    */
   @Post(':vinylId/move-to-collection')
+  @UseGuards(AuthGuard, CsrfGuard)
   async moveToCollection(
     @CurrentUser() user: AuthenticatedUser,
     @Param('vinylId') vinylId: string,

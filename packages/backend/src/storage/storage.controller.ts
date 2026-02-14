@@ -4,9 +4,9 @@ import { AuthenticatedUser, CurrentUser } from '../auth/decorators/current-user.
 import { CurrentToken } from '../auth/decorators/current-token.decorator'
 import { StorageService } from './storage.service'
 import type { FastifyRequest } from 'fastify'
+import { CsrfGuard } from '../auth/guards/csrf.guard'
 
 @Controller('storage')
-@UseGuards(AuthGuard)
 export class StorageController {
   constructor(private readonly storageService: StorageService) {}
 
@@ -15,6 +15,7 @@ export class StorageController {
    * POST /storage/upload/avatar
    */
   @Post('upload/avatar')
+  @UseGuards(AuthGuard, CsrfGuard)
   async uploadAvatar(
     @CurrentToken() token: string,
     @CurrentUser() user: AuthenticatedUser,
@@ -40,6 +41,7 @@ export class StorageController {
    * DELETE /storage/avatar
    */
   @Delete('avatar')
+  @UseGuards(AuthGuard, CsrfGuard)
   async deleteAvatar(@CurrentToken() token: string, @CurrentUser() user: AuthenticatedUser) {
     await this.storageService.deleteAvatar(token, user.id)
     return { success: true }

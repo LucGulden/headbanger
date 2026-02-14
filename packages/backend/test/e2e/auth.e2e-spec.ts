@@ -316,7 +316,10 @@ describe('Auth (e2e)', () => {
       seedSession()
       const cookie = createValidCookie()
 
-      const res = await request(app.getHttpServer()).post('/auth/logout').set('Cookie', cookie)
+      const res = await request(app.getHttpServer())
+        .post('/auth/logout')
+        .set('Cookie', cookie)
+        .set('x-csrf-token', testRedisSession.csrfToken)
 
       expect(res.status).toBe(200)
       expect(res.body).toEqual({ success: true })
@@ -350,6 +353,27 @@ describe('Auth (e2e)', () => {
         .set('Cookie', 'auth_token=not.a.jwt.token')
 
       expect(res.status).toBe(401)
+    })
+
+    it('403 → cookie valide, session active, mais header x-csrf-token absent', async () => {
+      seedSession()
+      const cookie = createValidCookie()
+
+      const res = await request(app.getHttpServer()).post('/auth/logout').set('Cookie', cookie)
+
+      expect(res.status).toBe(403)
+    })
+
+    it('403 → cookie valide, session active, mais x-csrf-token invalide', async () => {
+      seedSession()
+      const cookie = createValidCookie()
+
+      const res = await request(app.getHttpServer())
+        .post('/auth/logout')
+        .set('Cookie', cookie)
+        .set('x-csrf-token', 'wrong-csrf-token')
+
+      expect(res.status).toBe(403)
     })
   })
 
