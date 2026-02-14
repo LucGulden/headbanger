@@ -85,6 +85,48 @@ export const postDbFixture = {
   vinyl: [vinylJoinFixture],
 }
 
+/** Post avec vinyl_artists peuplé (couvre les lignes 221-233 et branche false de 239) */
+export const postWithVinylArtistDbFixture = {
+  id: 'post-2',
+  user_id: TEST_USER_ID,
+  vinyl_id: 'vinyl-1',
+  type: 'collection_add',
+  created_at: '2024-01-01T00:00:00.000Z',
+  user: [{ uid: TEST_USER_ID, username: 'testuser', photo_url: null }],
+  vinyl: [
+    {
+      ...vinylJoinFixture,
+      vinyl_artists: [
+        { position: 1, artist: [{ id: 'artist-1', name: 'Test Artist', image_url: null }] },
+      ],
+    },
+  ],
+}
+
+/** Post sans aucun artiste → fallback "Artiste inconnu" (ligne 255) */
+export const postWithNoArtistDbFixture = {
+  id: 'post-3',
+  user_id: TEST_USER_ID,
+  vinyl_id: 'vinyl-1',
+  type: 'collection_add',
+  created_at: '2024-01-01T00:00:00.000Z',
+  user: [{ uid: TEST_USER_ID, username: 'testuser', photo_url: null }],
+  vinyl: [
+    {
+      ...vinylJoinFixture,
+      vinyl_artists: [],
+      album: [
+        {
+          id: 'album-1',
+          title: 'Test Album',
+          cover_url: null,
+          album_artists: [],
+        },
+      ],
+    },
+  ],
+}
+
 // ─── Comments ─────────────────────────────────────────────────────────────────
 
 export const commentDbFixture = {
