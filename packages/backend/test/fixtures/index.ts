@@ -116,6 +116,83 @@ export const notificationDbFixture = {
   comment: null,
 }
 
+/** Notification avec post (pour tester transformNotificationData branch post) */
+export const notificationWithPostDbFixture = {
+  id: 'notif-post-1',
+  type: 'post_like',
+  read: false,
+  created_at: '2024-01-01T00:00:00.000Z',
+  actor: [
+    {
+      uid: TEST_USER_ID_2,
+      username: 'testuser2',
+      first_name: 'Test',
+      last_name: 'User2',
+      photo_url: null,
+    },
+  ],
+  post: [
+    {
+      id: 'post-id-00000000-0000-0000-0000-000000000001',
+      vinyl_id: 'vinyl-1',
+      vinyl: [
+        {
+          id: 'vinyl-1',
+          title: 'Test Vinyl',
+          cover_url: null,
+          vinyl_artists: [{ position: 1, artist: [{ name: 'Test Artist' }] }],
+          album: [
+            {
+              id: 'album-1',
+              title: 'Test Album',
+              album_artists: [{ position: 1, artist: [{ name: 'Test Artist' }] }],
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  comment: null,
+}
+
+/** Notification avec commentaire (pour tester transformNotificationData branch comment) */
+export const notificationWithCommentDbFixture = {
+  id: 'notif-comment-1',
+  type: 'post_comment',
+  read: false,
+  created_at: '2024-01-01T00:00:00.000Z',
+  actor: [
+    {
+      uid: TEST_USER_ID_2,
+      username: 'testuser2',
+      first_name: 'Test',
+      last_name: 'User2',
+      photo_url: null,
+    },
+  ],
+  post: null,
+  comment: [{ id: 'comment-id-00000000-0000-0000-0000-000000000001', content: 'Super vinyle !' }],
+}
+
+/** Résultat d'un insert:single notification (pour tester createNotification) */
+export const notificationCreateDbFixture = {
+  id: 'notif-new-1',
+  type: 'post_like',
+  read: false,
+  created_at: '2024-01-01T00:00:00.000Z',
+  actor: [
+    {
+      uid: TEST_USER_ID,
+      username: 'testuser',
+      first_name: 'Test',
+      last_name: 'User',
+      photo_url: null,
+    },
+  ],
+  post: [{ id: 'post-id-00000000-0000-0000-0000-000000000001', vinyl_id: 'vinyl-1' }],
+  comment: null,
+}
+
 // ─── User Vinyls ──────────────────────────────────────────────────────────────
 
 export const userVinylDbFixture = {

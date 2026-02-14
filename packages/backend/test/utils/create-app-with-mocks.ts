@@ -68,6 +68,7 @@ export async function createTestApp(options: CreateAppOptions = {}): Promise<INe
     .compile()
 
   const app = moduleFixture.createNestApplication()
+  app.useLogger(false)
   await app.init()
   return app
 }
