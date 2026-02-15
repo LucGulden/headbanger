@@ -45,7 +45,9 @@ export type SupabaseMockResult = SupabaseSingleResult | SupabaseArrayResult | Su
  *   'posts:insert:single'
  *   'post_likes:delete'
  */
-export type SupabaseMockResponses = Partial<Record<string, SupabaseMockResult>>
+export type SupabaseMockResponses = Partial<
+  Record<string, SupabaseMockResult | SupabaseMockResult[]>
+>
 
 type QueryOperation =
   | 'select:many'
@@ -175,7 +177,15 @@ class QueryBuilder implements PromiseLike<SupabaseMockResult> {
 
   private _resolve(): Promise<SupabaseMockResult> {
     const key = `${this._table}:${this._operation}`
-    const response = this._responses[key] ?? this._getDefault()
+    const configured = this._responses[key]
+
+    if (Array.isArray(configured)) {
+      // Consomme les réponses séquentiellement, reste sur la dernière
+      const result = configured.length > 1 ? configured.shift()! : configured[0]
+      return Promise.resolve(result)
+    }
+
+    const response = configured ?? this._getDefault()
     return Promise.resolve(response)
   }
 

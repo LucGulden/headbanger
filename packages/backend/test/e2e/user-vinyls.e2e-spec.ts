@@ -45,6 +45,35 @@ describe('UserVinyls E2E', () => {
 
       expect(res.body).toEqual([])
     })
+
+    it('500 → erreur Supabase sur getUserVinyls (ligne 57)', async () => {
+      app = await createTestApp({
+        supabase: {
+          'user_vinyls:select:many': {
+            data: null,
+            error: { message: 'DB error', code: '500', details: null, hint: null },
+          },
+        },
+      })
+
+      await request(app.getHttpServer())
+        .get(`/user-vinyls/user/${TEST_USER_ID}?type=collection`)
+        .expect(500)
+    })
+
+    it('accepte le query param lastAddedAt (branche if lastAddedAt)', async () => {
+      app = await createTestApp({
+        supabase: {
+          'user_vinyls:select:many': { data: [], error: null },
+        },
+      })
+
+      await request(app.getHttpServer())
+        .get(
+          `/user-vinyls/user/${TEST_USER_ID}?type=collection&lastAddedAt=2024-01-01T00:00:00.000Z`,
+        )
+        .expect(200)
+    })
   })
 
   // ─── GET /user-vinyls/user/:userId/count ──────────────────────────────────────
@@ -62,6 +91,22 @@ describe('UserVinyls E2E', () => {
         .expect(200)
 
       expect(res.body).toEqual({ count: 12 })
+    })
+
+    it('500 → erreur Supabase sur getUserVinylsCount (ligne 95)', async () => {
+      app = await createTestApp({
+        supabase: {
+          'user_vinyls:select:count': {
+            count: null,
+            data: null,
+            error: { message: 'DB error', code: '500', details: null, hint: null },
+          },
+        },
+      })
+
+      await request(app.getHttpServer())
+        .get(`/user-vinyls/user/${TEST_USER_ID}/count?type=collection`)
+        .expect(500)
     })
   })
 
@@ -117,6 +162,21 @@ describe('UserVinyls E2E', () => {
         .expect(200)
 
       expect(res.body).toEqual({ has: false })
+    })
+
+    it('500 → erreur non-PGRST116 sur hasVinyl (branche error code != PGRST116)', async () => {
+      app = await createTestApp({
+        supabase: {
+          'user_vinyls:select:single': {
+            data: null,
+            error: { message: 'DB error', code: '500', details: null, hint: null },
+          },
+        },
+      })
+
+      await request(app.getHttpServer())
+        .get(`/user-vinyls/check/${VINYL_ID}?type=collection`)
+        .expect(500)
     })
   })
 
@@ -179,6 +239,53 @@ describe('UserVinyls E2E', () => {
         .send({ vinylId: 'does-not-exist', type: 'collection' })
         .expect(404)
     })
+
+    it('500 → erreur Supabase sur insert dans addVinylToUser (ligne 157)', async () => {
+      app = await createTestApp({
+        supabase: {
+          'vinyls:select:single': { data: vinylDbFixture, error: null },
+          'user_vinyls:select:single': {
+            data: null,
+            error: { message: 'Row not found', code: 'PGRST116', details: null, hint: null },
+          },
+          'user_vinyls:insert:single': {
+            data: null,
+            error: { message: 'DB error', code: '500', details: null, hint: null },
+          },
+        },
+      })
+
+      await request(app.getHttpServer())
+        .post('/user-vinyls')
+        .send({ vinylId: VINYL_ID, type: 'collection' })
+        .expect(500)
+    })
+
+    it("createVinylPost catchr l'erreur silencieusement si createPost échoue (lignes 181-182)", async () => {
+      app = await createTestApp({
+        supabase: {
+          'vinyls:select:single': { data: vinylDbFixture, error: null },
+          'user_vinyls:select:single': {
+            data: null,
+            error: { message: 'Row not found', code: 'PGRST116', details: null, hint: null },
+          },
+          'user_vinyls:insert:single': { data: userVinylDbFixture, error: null },
+          // posts:insert:single absent → mock retourne l'erreur par défaut silencieusement
+          'posts:insert:single': {
+            data: null,
+            error: { message: 'DB error', code: '500', details: null, hint: null },
+          },
+        },
+      })
+
+      // Même si createPost échoue, addVinylToUser doit retourner 201
+      const res = await request(app.getHttpServer())
+        .post('/user-vinyls')
+        .send({ vinylId: VINYL_ID, type: 'wishlist' })
+        .expect(201)
+
+      expect(res.body).toHaveProperty('id', 'uv-1')
+    })
   })
 
   // ─── DELETE /user-vinyls/:vinylId ─────────────────────────────────────────────
@@ -196,6 +303,21 @@ describe('UserVinyls E2E', () => {
         .expect(200)
 
       expect(res.body).toEqual({ success: true })
+    })
+
+    it('500 → erreur Supabase sur removeVinylFromUser (ligne 197)', async () => {
+      app = await createTestApp({
+        supabase: {
+          'user_vinyls:delete': {
+            data: null,
+            error: { message: 'DB error', code: '500', details: null, hint: null },
+          },
+        },
+      })
+
+      await request(app.getHttpServer())
+        .delete(`/user-vinyls/${VINYL_ID}?type=collection`)
+        .expect(500)
     })
   })
 
@@ -231,6 +353,36 @@ describe('UserVinyls E2E', () => {
       await request(app.getHttpServer())
         .post(`/user-vinyls/${VINYL_ID}/move-to-collection`)
         .expect(400)
+    })
+
+    it('déplace un vinyl de la wishlist vers la collection (201)', async () => {
+      app = await createTestApp({
+        supabase: {
+          // hasVinyl(wishlist) → true, hasVinyl(collection) → false,
+          // puis hasVinyl dans addVinylToUser → false (pas encore dans collection)
+          'user_vinyls:select:single': [
+            { data: { id: 'uv-1' }, error: null }, // hasVinyl(wishlist) = true
+            {
+              data: null,
+              error: { message: 'Row not found', code: 'PGRST116', details: null, hint: null },
+            }, // hasVinyl(collection) = false
+            {
+              data: null,
+              error: { message: 'Row not found', code: 'PGRST116', details: null, hint: null },
+            }, // hasVinyl dans addVinylToUser = false
+          ],
+          'user_vinyls:delete': { data: null, error: null },
+          'vinyls:select:single': { data: vinylDbFixture, error: null },
+          'user_vinyls:insert:single': { data: userVinylDbFixture, error: null },
+        },
+      })
+
+      const res = await request(app.getHttpServer())
+        .post(`/user-vinyls/${VINYL_ID}/move-to-collection`)
+        .expect(201)
+
+      expect(res.body).toHaveProperty('id', 'uv-1')
+      expect(res.body.vinyl).toHaveProperty('title', 'Test Vinyl')
     })
   })
 })
