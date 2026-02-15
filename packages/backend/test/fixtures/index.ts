@@ -27,6 +27,13 @@ export const artistJoinFixture = {
   artist: [{ id: 'artist-1', name: 'Test Artist', image_url: null }],
 }
 
+export const artistDbFixture = {
+  id: 'artist-1',
+  name: 'The Beatles',
+  image_url: 'https://example.com/beatles.jpg',
+  spotify_id: 'spotify-123',
+}
+
 // ─── Albums ───────────────────────────────────────────────────────────────────
 
 export const albumJoinFixture = {
@@ -36,6 +43,48 @@ export const albumJoinFixture = {
   year: 2020,
   album_artists: [artistJoinFixture],
 }
+
+/** Vinyles associés à un album (pour GET /albums/:id) */
+export const albumVinylsFixture = [
+  {
+    id: 'vinyl-1',
+    title: 'Test Vinyl (UK Press)',
+    cover_url: null,
+    year: 2020,
+    country: 'UK',
+    catalog_number: 'CAT-001',
+    vinyl_artists: [],
+  },
+]
+
+/** Album sans artistes → déclenche le fallback "Artiste inconnu" */
+export const albumNoArtistsFixture = {
+  id: 'album-no-artists',
+  title: 'Mystery Album',
+  cover_url: null,
+  year: 2000,
+  album_artists: [],
+}
+
+export const albumArtistsDbFixture = [
+  {
+    position: 1,
+    album: [
+      {
+        id: 'album-1',
+        title: 'Abbey Road',
+        cover_url: null,
+        year: 1969,
+        album_artists: [
+          {
+            position: 1,
+            artist: [{ id: 'artist-1', name: 'The Beatles', image_url: null }],
+          },
+        ],
+      },
+    ],
+  },
+]
 
 // ─── Vinyls ───────────────────────────────────────────────────────────────────
 

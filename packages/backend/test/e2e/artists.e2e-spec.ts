@@ -1,35 +1,7 @@
 import request from 'supertest'
 import { INestApplication } from '@nestjs/common'
 import { createTestApp } from '../utils/create-app-with-mocks'
-
-// ─── Fixtures locales ─────────────────────────────────────────────────────────
-
-const artistDbFixture = {
-  id: 'artist-1',
-  name: 'The Beatles',
-  image_url: 'https://example.com/beatles.jpg',
-  spotify_id: 'spotify-123',
-}
-
-const albumArtistsDbFixture = [
-  {
-    position: 1,
-    album: [
-      {
-        id: 'album-1',
-        title: 'Abbey Road',
-        cover_url: null,
-        year: 1969,
-        album_artists: [
-          {
-            position: 1,
-            artist: [{ id: 'artist-1', name: 'The Beatles', image_url: null }],
-          },
-        ],
-      },
-    ],
-  },
-]
+import { artistDbFixture, albumArtistsDbFixture } from '../fixtures'
 
 describe('Artists E2E', () => {
   let app: INestApplication
