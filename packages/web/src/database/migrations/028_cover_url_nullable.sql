@@ -1,0 +1,1 @@
+ALTER TABLE vinyls ALTER COLUMN cover_url DROP NOT NULL;
