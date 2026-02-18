@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { getVinylById } from '../lib/api/vinyls'
@@ -9,109 +9,153 @@ import {
   addVinylToUser,
 } from '../lib/api/userVinyls'
 import type { Vinyl } from '@headbanger/shared'
-import VinylImage from '../components/VinylImage'
-import Button from '../components/Button'
-import LoadingSpinner from '../components/LoadingSpinner'
+import VinylCover from '../components/VinylCover'
+import { getHueFromString } from '../utils/hue'
+import { useAnimFade } from '../hooks/useAnimFade'
+import '../styles/vinyl.css'
+
+type TabId = 'tracklist' | 'details' | 'stats'
 
 export default function VinylPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
 
-  // États du vinyle
   const [vinyl, setVinyl] = useState<Vinyl | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // États de possession
   const [inCollection, setInCollection] = useState(false)
   const [inWishlist, setInWishlist] = useState(false)
   const [checkingOwnership, setCheckingOwnership] = useState(false)
 
-  // États d'actions
   const [isMoving, setIsMoving] = useState(false)
   const [isRemoving, setIsRemoving] = useState(false)
   const [isAdding, setIsAdding] = useState(false)
 
-  // Charger le vinyle
+  const [activeTab, setActiveTab] = useState<TabId>('tracklist')
+
+  // Tabs indicator
+  const tabsNavRef = useRef<HTMLDivElement>(null)
+  const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 })
+
+  // Vinyl disc spin on hover
+  const discRef = useRef<HTMLDivElement>(null)
+  const rotationRef = useRef(0)
+  const spinningRef = useRef(false)
+  const animFrameRef = useRef<number>(0)
+
+  useAnimFade([!!vinyl])
+
   useEffect(() => {
     if (!id) {
       navigate('/')
       return
     }
-
-    const loadVinyl = async () => {
+    const load = async () => {
       try {
         setLoading(true)
         setError(null)
         const data = await getVinylById(id)
-
         if (!data) {
-          setError('Vinyle introuvable')
+          setError('Vinyl not found')
           return
         }
-
         setVinyl(data)
-      } catch (err) {
-        console.error('Error loading vinyl:', err)
-        setError('Erreur lors du chargement du vinyle')
+      } catch {
+        setError('Error loading vinyl')
       } finally {
         setLoading(false)
       }
     }
-
-    loadVinyl()
+    load()
   }, [id, navigate])
 
-  // Vérifier la possession si connecté
   useEffect(() => {
     if (!user || !vinyl) {
       setInCollection(false)
       setInWishlist(false)
       return
     }
-
-    let isMounted = true
-
-    const checkOwnership = async () => {
+    let mounted = true
+    const check = async () => {
       try {
         setCheckingOwnership(true)
         const [inCol, inWish] = await Promise.all([
           hasVinyl(vinyl.id, 'collection'),
           hasVinyl(vinyl.id, 'wishlist'),
         ])
-
-        if (isMounted) {
+        if (mounted) {
           setInCollection(inCol)
           setInWishlist(inWish)
         }
       } catch (err) {
-        console.error('Erreur vérification statut:', err)
+        console.error(err)
       } finally {
-        if (isMounted) {
-          setCheckingOwnership(false)
-        }
+        if (mounted) setCheckingOwnership(false)
       }
     }
-
-    checkOwnership()
-
+    check()
     return () => {
-      isMounted = false
+      mounted = false
     }
   }, [user, vinyl])
+
+  // Position the tab indicator
+  const positionIndicator = useCallback((btn: HTMLButtonElement) => {
+    setIndicatorStyle({ left: btn.offsetLeft, width: btn.offsetWidth })
+  }, [])
+
+  useEffect(() => {
+    if (!tabsNavRef.current) return
+    const activeBtn = tabsNavRef.current.querySelector<HTMLButtonElement>(
+      '.vinyl-tabs__btn.is-active',
+    )
+    if (activeBtn) positionIndicator(activeBtn)
+  }, [activeTab, positionIndicator])
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (!tabsNavRef.current) return
+      const activeBtn = tabsNavRef.current.querySelector<HTMLButtonElement>(
+        '.vinyl-tabs__btn.is-active',
+      )
+      if (activeBtn) positionIndicator(activeBtn)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [positionIndicator])
+
+  // Disc spin
+  const spin = useCallback(() => {
+    rotationRef.current += 0.5
+    if (discRef.current) {
+      discRef.current.style.transform = `rotate(${rotationRef.current}deg)`
+    }
+    if (spinningRef.current) {
+      animFrameRef.current = requestAnimationFrame(spin)
+    }
+  }, [])
+
+  const handleCoverMouseEnter = () => {
+    spinningRef.current = true
+    spin()
+  }
+
+  const handleCoverMouseLeave = () => {
+    spinningRef.current = false
+    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
+  }
 
   // Actions
   const handleAddToCollection = async () => {
     if (!vinyl) return
-
     try {
       setIsAdding(true)
       await addVinylToUser(vinyl.id, 'collection')
       setInCollection(true)
-    } catch (err) {
-      console.error('Erreur ajout collection:', err)
-      alert("Erreur lors de l'ajout à la collection")
+    } catch {
+      alert('Error adding to collection')
     } finally {
       setIsAdding(false)
     }
@@ -119,14 +163,12 @@ export default function VinylPage() {
 
   const handleAddToWishlist = async () => {
     if (!vinyl) return
-
     try {
       setIsAdding(true)
       await addVinylToUser(vinyl.id, 'wishlist')
       setInWishlist(true)
-    } catch (err) {
-      console.error('Erreur ajout wishlist:', err)
-      alert("Erreur lors de l'ajout à la wishlist")
+    } catch {
+      alert('Error adding to wishlist')
     } finally {
       setIsAdding(false)
     }
@@ -134,15 +176,13 @@ export default function VinylPage() {
 
   const handleMoveToCollection = async () => {
     if (!vinyl) return
-
     try {
       setIsMoving(true)
       await moveToCollection(vinyl.id)
       setInWishlist(false)
       setInCollection(true)
-    } catch (err) {
-      console.error('Erreur déplacement:', err)
-      alert('Erreur lors du déplacement vers la collection')
+    } catch {
+      alert('Error moving to collection')
     } finally {
       setIsMoving(false)
     }
@@ -150,14 +190,12 @@ export default function VinylPage() {
 
   const handleRemoveFromCollection = async () => {
     if (!vinyl) return
-
     try {
       setIsRemoving(true)
       await removeVinylFromUser(vinyl.id, 'collection')
       setInCollection(false)
-    } catch (err) {
-      console.error('Erreur suppression:', err)
-      alert('Erreur lors de la suppression')
+    } catch {
+      alert('Error removing from collection')
     } finally {
       setIsRemoving(false)
     }
@@ -165,396 +203,666 @@ export default function VinylPage() {
 
   const handleRemoveFromWishlist = async () => {
     if (!vinyl) return
-
     try {
       setIsRemoving(true)
       await removeVinylFromUser(vinyl.id, 'wishlist')
       setInWishlist(false)
-    } catch (err) {
-      console.error('Erreur suppression:', err)
-      alert('Erreur lors de la suppression')
+    } catch {
+      alert('Error removing from wishlist')
     } finally {
       setIsRemoving(false)
     }
   }
 
-  // Rendu des actions selon l'état
-  const renderActions = () => {
-    // Si non connecté
-    if (!user) {
-      return (
-        <div className="rounded-lg border border-[var(--primary)]/20 bg-[var(--primary)]/5 p-6 text-center">
-          <p className="mb-4 text-[var(--foreground-muted)]">
-            Connectez-vous pour ajouter ce vinyle à votre collection ou wishlist
-          </p>
-          <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-            <Button
-              onClick={() => navigate('/login')}
-              variant="primary"
-              className="w-full sm:w-auto"
-            >
-              Se connecter
-            </Button>
-            <Button
-              onClick={() => navigate('/signup')}
-              variant="outline"
-              className="w-full sm:w-auto"
-            >
-              Créer un compte
-            </Button>
-          </div>
-        </div>
-      )
-    }
-
-    // Si en train de vérifier
-    if (checkingOwnership) {
-      return (
-        <div className="flex justify-center py-4">
-          <LoadingSpinner />
-        </div>
-      )
-    }
-
-    // Si en collection
-    if (inCollection) {
-      return (
-        <div className="space-y-3">
-          <div className="flex justify-end">
-            <Button
-              onClick={handleRemoveFromCollection}
-              variant="outline"
-              disabled={isRemoving}
-              className="w-full border-red-500/30 text-red-500 hover:border-red-500 hover:bg-red-500/10 sm:w-auto"
-            >
-              {isRemoving ? (
-                <>
-                  <svg className="mr-2 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                  Suppression...
-                </>
-              ) : (
-                <>
-                  <svg
-                    className="mr-2 h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                  </svg>
-                  Retirer de ma collection
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      )
-    }
-
-    // Si en wishlist
-    if (inWishlist) {
-      return (
-        <div className="space-y-3">
-          <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-4">
-            <p className="mb-3 text-sm text-blue-400">
-              Ce vinyle est dans votre wishlist. Le déplacer vers la collection le retirera
-              automatiquement de la wishlist.
-            </p>
-            <Button
-              onClick={handleMoveToCollection}
-              variant="primary"
-              disabled={isMoving}
-              className="w-full sm:w-auto"
-            >
-              {isMoving ? (
-                <>
-                  <svg className="mr-2 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                  Déplacement...
-                </>
-              ) : (
-                <>
-                  <svg
-                    className="mr-2 h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  J'ai acheté !
-                </>
-              )}
-            </Button>
-          </div>
-          <div className="flex justify-end">
-            <Button
-              onClick={handleRemoveFromWishlist}
-              variant="outline"
-              disabled={isMoving || isRemoving}
-              className="w-full border-red-500/30 text-red-500 hover:border-red-500 hover:bg-red-500/10 sm:w-auto"
-            >
-              {isRemoving ? (
-                <>
-                  <svg className="mr-2 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                  Suppression...
-                </>
-              ) : (
-                <>
-                  <svg
-                    className="mr-2 h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                  </svg>
-                  Retirer de ma wishlist
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      )
-    }
-
-    // Ni collection ni wishlist → 2 boutons d'ajout
+  if (loading) {
     return (
-      <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-        <Button
-          onClick={handleAddToCollection}
-          variant="primary"
-          disabled={isAdding}
-          className="w-full sm:w-auto"
-        >
-          {isAdding ? (
-            <>
-              <svg className="mr-2 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                />
-              </svg>
-              Ajout...
-            </>
-          ) : (
-            'Ajouter à ma collection'
-          )}
-        </Button>
-        <Button
-          onClick={handleAddToWishlist}
-          variant="outline"
-          disabled={isAdding}
-          className="w-full sm:w-auto"
-        >
-          {isAdding ? (
-            <>
-              <svg className="mr-2 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                />
-              </svg>
-              Ajout...
-            </>
-          ) : (
-            'Ajouter à ma wishlist'
-          )}
-        </Button>
-      </div>
+      <main className="vinyl-page">
+        <div className="vinyl-hero">
+          <div className="vinyl-hero__inner">
+            <div className="vinyl-hero__cover-wrap">
+              <div className="vinyl-hero__cover" style={{ background: 'var(--surface-2)' }} />
+            </div>
+            <div className="vinyl-hero__info">
+              <div
+                style={{
+                  height: '1rem',
+                  background: 'var(--surface-2)',
+                  borderRadius: 4,
+                  width: '40%',
+                  marginBottom: '1rem',
+                }}
+              />
+              <div
+                style={{
+                  height: '2.5rem',
+                  background: 'var(--surface-2)',
+                  borderRadius: 4,
+                  width: '70%',
+                  marginBottom: '0.75rem',
+                }}
+              />
+              <div
+                style={{
+                  height: '1.2rem',
+                  background: 'var(--surface-2)',
+                  borderRadius: 4,
+                  width: '30%',
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      </main>
     )
   }
 
-  // Loading
-  if (loading) {
-    return <LoadingSpinner fullScreen />
-  }
-
-  // Error ou vinyle introuvable
   if (error || !vinyl) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4 px-4">
-        <p className="text-foreground-muted text-lg text-center">{error || 'Vinyle introuvable'}</p>
-        <button onClick={() => navigate(-1)} className="text-primary hover:underline">
-          ← Retour
+      <main className="vinyl-page">
+        <div
+          className="feed-empty"
+          style={{
+            minHeight: '60vh',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <h2 className="feed-empty__title">{error || 'Vinyl not found'}</h2>
+          <button className="btn btn--ghost" onClick={() => navigate(-1)}>
+            ← Go back
+          </button>
+        </div>
+      </main>
+    )
+  }
+
+  const coverHue = getHueFromString(vinyl.id)
+  const artistNames = vinyl.artists.map((a) => a.name).join(', ')
+
+  const renderActions = () => {
+    if (!user) {
+      return (
+        <div className="vinyl-hero__actions anim-fade" data-delay="5">
+          <button
+            className="btn btn--primary vinyl-hero__btn-collection"
+            onClick={() => navigate('/login')}
+          >
+            <svg
+              viewBox="0 0 18 18"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              aria-hidden="true"
+            >
+              <path d="M9 2l2.1 4.26L16 6.93l-3.5 3.41.83 4.83L9 12.84l-4.33 2.33.83-4.83L2 6.93l4.9-.67L9 2z" />
+            </svg>
+            <span>Log in to collect</span>
+          </button>
+        </div>
+      )
+    }
+
+    if (checkingOwnership) {
+      return (
+        <div className="vinyl-hero__actions anim-fade" data-delay="5">
+          <button className="btn btn--ghost" disabled>
+            <span style={{ opacity: 0.5 }}>Checking...</span>
+          </button>
+        </div>
+      )
+    }
+
+    if (inCollection) {
+      return (
+        <div className="vinyl-hero__actions anim-fade" data-delay="5">
+          <button
+            className="btn btn--primary vinyl-hero__btn-collection is-active"
+            onClick={handleRemoveFromCollection}
+            disabled={isRemoving}
+          >
+            <svg
+              viewBox="0 0 18 18"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              aria-hidden="true"
+            >
+              <path d="M9 2l2.1 4.26L16 6.93l-3.5 3.41.83 4.83L9 12.84l-4.33 2.33.83-4.83L2 6.93l4.9-.67L9 2z" />
+            </svg>
+            <span>{isRemoving ? 'Removing...' : 'In Collection'}</span>
+          </button>
+        </div>
+      )
+    }
+
+    if (inWishlist) {
+      return (
+        <div className="vinyl-hero__actions anim-fade" data-delay="5">
+          <button
+            className="btn btn--primary vinyl-hero__btn-collection"
+            onClick={handleMoveToCollection}
+            disabled={isMoving}
+          >
+            <svg
+              viewBox="0 0 18 18"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              aria-hidden="true"
+            >
+              <path d="M9 2l2.1 4.26L16 6.93l-3.5 3.41.83 4.83L9 12.84l-4.33 2.33.83-4.83L2 6.93l4.9-.67L9 2z" />
+            </svg>
+            <span>{isMoving ? 'Moving...' : 'Add to Collection'}</span>
+          </button>
+          <button
+            className="btn btn--ghost vinyl-hero__btn-wishlist is-active"
+            onClick={handleRemoveFromWishlist}
+            disabled={isRemoving || isMoving}
+          >
+            <svg
+              viewBox="0 0 18 18"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              aria-hidden="true"
+            >
+              <path d="M9 15.5s-6.5-4.35-6.5-8.18A3.32 3.32 0 0 1 5.82 4c1.3 0 2.47.75 3.18 1.93A3.65 3.65 0 0 1 12.18 4 3.32 3.32 0 0 1 15.5 7.32C15.5 11.15 9 15.5 9 15.5z" />
+            </svg>
+            <span>{isRemoving ? 'Removing...' : 'Wishlisted'}</span>
+          </button>
+        </div>
+      )
+    }
+
+    return (
+      <div className="vinyl-hero__actions anim-fade" data-delay="5">
+        <button
+          className="btn btn--primary vinyl-hero__btn-collection"
+          onClick={handleAddToCollection}
+          disabled={isAdding}
+        >
+          <svg
+            viewBox="0 0 18 18"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            aria-hidden="true"
+          >
+            <path d="M9 2l2.1 4.26L16 6.93l-3.5 3.41.83 4.83L9 12.84l-4.33 2.33.83-4.83L2 6.93l4.9-.67L9 2z" />
+          </svg>
+          <span>{isAdding ? 'Adding...' : 'Add to Collection'}</span>
+        </button>
+        <button
+          className="btn btn--ghost vinyl-hero__btn-wishlist"
+          onClick={handleAddToWishlist}
+          disabled={isAdding}
+        >
+          <svg
+            viewBox="0 0 18 18"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            aria-hidden="true"
+          >
+            <path d="M9 15.5s-6.5-4.35-6.5-8.18A3.32 3.32 0 0 1 5.82 4c1.3 0 2.47.75 3.18 1.93A3.65 3.65 0 0 1 12.18 4 3.32 3.32 0 0 1 15.5 7.32C15.5 11.15 9 15.5 9 15.5z" />
+          </svg>
+          <span>{isAdding ? 'Adding...' : 'Wishlist'}</span>
         </button>
       </div>
     )
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
-      <div className="space-y-6">
-        {/* Cover et infos principales */}
-        <div className="grid gap-6 md:grid-cols-[300px_1fr]">
-          {/* Cover */}
-          <div className="relative aspect-square w-full overflow-hidden rounded-lg border border-[var(--background-lighter)] bg-[var(--background-lighter)] md:w-[300px]">
-            <VinylImage
-              src={vinyl.coverUrl || ''}
-              alt={`${vinyl.title} - ${vinyl.artists.map((a) => a.name).join(', ')}`}
-              className="h-full w-full object-cover"
+    <main className="vinyl-page">
+      {/* BREADCRUMB */}
+      <div className="vinyl-breadcrumb">
+        <div className="vinyl-breadcrumb__inner">
+          <Link to={`/album/${vinyl.album.id}`} className="vinyl-breadcrumb__link">
+            <svg
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              aria-hidden="true"
+            >
+              <polyline points="10,3 5,8 10,13" />
+            </svg>
+            {vinyl.album.title}
+          </Link>
+          <span className="vinyl-breadcrumb__sep">/</span>
+          {/* TODO_catalogNumber: ajouter au type Vinyl */}
+          <span className="vinyl-breadcrumb__current">
+            {(vinyl as any).catalogNumber ?? vinyl.id}
+          </span>
+        </div>
+      </div>
+
+      {/* HERO */}
+      <section className="vinyl-hero">
+        <div className="vinyl-hero__bg" aria-hidden="true">
+          <div className="vinyl-hero__glow vinyl-hero__glow--1" />
+          <div className="vinyl-hero__glow vinyl-hero__glow--2" />
+          <div className="vinyl-hero__grooves" />
+        </div>
+
+        <div className="vinyl-hero__inner">
+          {/* Cover + disc */}
+          <div
+            className="vinyl-hero__cover-wrap anim-fade"
+            data-delay="0"
+            onMouseEnter={handleCoverMouseEnter}
+            onMouseLeave={handleCoverMouseLeave}
+          >
+            <div
+              className="vinyl-hero__cover"
+              style={{ '--cover-hue': coverHue } as React.CSSProperties}
+            >
+              <div className="vinyl-hero__cover-art">
+                {vinyl.coverUrl ? (
+                  <img
+                    src={vinyl.coverUrl}
+                    alt={`${vinyl.title} - ${artistNames}`}
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      borderRadius: '8px',
+                    }}
+                  />
+                ) : (
+                  <>
+                    <div className="vinyl-hero__cover-lines" />
+                    <svg
+                      className="vinyl-hero__cover-icon"
+                      viewBox="0 0 80 80"
+                      fill="none"
+                      aria-hidden="true"
+                    >
+                      <circle
+                        cx="40"
+                        cy="40"
+                        r="28"
+                        stroke="currentColor"
+                        strokeWidth="0.75"
+                        opacity="0.3"
+                      />
+                      <circle
+                        cx="40"
+                        cy="40"
+                        r="18"
+                        stroke="currentColor"
+                        strokeWidth="0.5"
+                        opacity="0.2"
+                      />
+                      <circle cx="40" cy="40" r="4" fill="currentColor" opacity="0.4" />
+                    </svg>
+                  </>
+                )}
+              </div>
+              <div className="vinyl-hero__vinyl" aria-hidden="true">
+                <div className="vinyl-hero__vinyl-disc" ref={discRef}>
+                  <div className="vinyl-hero__vinyl-grooves" />
+                  <div
+                    className="vinyl-hero__vinyl-label"
+                    style={{ '--cover-hue': coverHue } as React.CSSProperties}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Info */}
+          <div className="vinyl-hero__info">
+            <span className="vinyl-hero__tag section-tag anim-fade" data-delay="1">
+              Vinyl Release
+            </span>
+            <h1 className="vinyl-hero__title anim-fade" data-delay="2">
+              {vinyl.title}
+            </h1>
+
+            <div className="vinyl-hero__artists anim-fade" data-delay="3">
+              {vinyl.artists.map((a, i) => (
+                <span key={a.id}>
+                  <Link to={`/artist/${a.id}`} className="vinyl-hero__artist-link">
+                    {a.name}
+                  </Link>
+                  {i < vinyl.artists.length - 1 && (
+                    <span style={{ color: 'var(--text-muted)' }}> & </span>
+                  )}
+                </span>
+              ))}
+            </div>
+
+            {/* Specs bar */}
+            <div className="vinyl-hero__specs anim-fade" data-delay="4">
+              {/* TODO_catalogNumber: ajouter au type Vinyl */}
+              {(vinyl as any).catalogNumber && (
+                <>
+                  <div className="vinyl-hero__spec">
+                    <span className="vinyl-hero__spec-label">Catalog</span>
+                    <span className="vinyl-hero__spec-value">{(vinyl as any).catalogNumber}</span>
+                  </div>
+                  <div className="vinyl-hero__spec-divider" />
+                </>
+              )}
+              {/* TODO_country: ajouter au type Vinyl */}
+              {(vinyl as any).country && (
+                <>
+                  <div className="vinyl-hero__spec">
+                    <span className="vinyl-hero__spec-label">Country</span>
+                    <span className="vinyl-hero__spec-value">
+                      <span className="vinyl-hero__country-badge">{(vinyl as any).country}</span>
+                    </span>
+                  </div>
+                  <div className="vinyl-hero__spec-divider" />
+                </>
+              )}
+              {vinyl.year && (
+                <>
+                  <div className="vinyl-hero__spec">
+                    <span className="vinyl-hero__spec-label">Year</span>
+                    <span className="vinyl-hero__spec-value">{vinyl.year}</span>
+                  </div>
+                  <div className="vinyl-hero__spec-divider" />
+                </>
+              )}
+              {vinyl.label && (
+                <>
+                  <div className="vinyl-hero__spec">
+                    <span className="vinyl-hero__spec-label">Label</span>
+                    <span className="vinyl-hero__spec-value">{vinyl.label}</span>
+                  </div>
+                  <div className="vinyl-hero__spec-divider" />
+                </>
+              )}
+              {vinyl.format && (
+                <div className="vinyl-hero__spec">
+                  <span className="vinyl-hero__spec-label">Format</span>
+                  <span className="vinyl-hero__spec-value">{vinyl.format}</span>
+                </div>
+              )}
+            </div>
+
+            {renderActions()}
+          </div>
+        </div>
+      </section>
+
+      {/* TABS */}
+      <section className="vinyl-tabs">
+        <div className="vinyl-tabs__inner">
+          <div
+            className="vinyl-tabs__nav"
+            ref={tabsNavRef}
+            role="tablist"
+            aria-label="Vinyl information"
+          >
+            {(
+              [
+                {
+                  id: 'tracklist',
+                  label: 'Tracklist',
+                  icon: (
+                    <svg
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.2"
+                      aria-hidden="true"
+                    >
+                      <line x1="2" y1="4" x2="14" y2="4" />
+                      <line x1="2" y1="8" x2="14" y2="8" />
+                      <line x1="2" y1="12" x2="10" y2="12" />
+                    </svg>
+                  ),
+                },
+                {
+                  id: 'details',
+                  label: 'Details',
+                  icon: (
+                    <svg
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.2"
+                      aria-hidden="true"
+                    >
+                      <circle cx="8" cy="8" r="6.5" />
+                      <line x1="8" y1="5" x2="8" y2="8.5" />
+                      <circle cx="8" cy="11" r="0.75" fill="currentColor" stroke="none" />
+                    </svg>
+                  ),
+                },
+                {
+                  id: 'stats',
+                  label: 'Stats',
+                  icon: (
+                    <svg
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.2"
+                      aria-hidden="true"
+                    >
+                      <rect x="2" y="9" width="3" height="5" rx="0.5" />
+                      <rect x="6.5" y="5" width="3" height="9" rx="0.5" />
+                      <rect x="11" y="2" width="3" height="12" rx="0.5" />
+                    </svg>
+                  ),
+                },
+              ] as { id: TabId; label: string; icon: React.ReactNode }[]
+            ).map((tab) => (
+              <button
+                key={tab.id}
+                className={`vinyl-tabs__btn ${activeTab === tab.id ? 'is-active' : ''}`}
+                role="tab"
+                aria-selected={activeTab === tab.id}
+                aria-controls={`panel-${tab.id}`}
+                id={`tab-${tab.id}`}
+                onClick={(e) => {
+                  setActiveTab(tab.id)
+                  positionIndicator(e.currentTarget)
+                }}
+              >
+                {tab.icon}
+                {tab.label}
+              </button>
+            ))}
+            <div
+              className="vinyl-tabs__indicator"
+              style={{ left: indicatorStyle.left, width: indicatorStyle.width }}
             />
           </div>
 
-          {/* Infos principales */}
-          <div className="space-y-4">
-            <div>
-              <h1 className="text-2xl font-bold text-[var(--foreground)]">{vinyl.title}</h1>
-              <Link
-                key={vinyl.album.id}
-                className="text-xl font-medium text-[var(--foreground-muted)] transition-opacity hover:opacity-70"
-                to={`/album/${vinyl.album.id}`}
-              >
-                Voir l'album &rarr;
-              </Link>
-              <p className="mt-1 text-lg font-medium text-[var(--foreground-muted)]">
-                {vinyl.artists.map((a, index) => (
-                  <span key={a.id} className="flex items-center gap-2">
-                    <Link
-                      key={a.id}
-                      className="text-xl font-medium text-[var(--foreground-muted)] transition-opacity hover:opacity-70"
-                      to={`/artist/${a.id}`}
-                    >
-                      {a.name}
-                    </Link>
-                    {index < vinyl.artists.length - 1 && (
-                      <span className="text-[var(--foreground-muted)]">, </span>
-                    )}
-                  </span>
-                ))}
-              </p>
-              <p className="mt-1 text-sm text-[var(--foreground-muted)]">{vinyl.year}</p>
-            </div>
-
-            {/* Badges */}
-            <div className="flex flex-wrap gap-2">
-              {inCollection && (
-                <div className="inline-flex items-center gap-2 rounded-full bg-green-500/10 px-3 py-1 text-xs font-medium text-green-500">
-                  <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  <span>En collection</span>
-                </div>
-              )}
-
-              {inWishlist && (
-                <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-500">
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  <span>En wishlist</span>
-                </div>
-              )}
-            </div>
-
-            {/* Détails de l'édition */}
-            <div className="space-y-3 rounded-lg border border-[var(--background-lighter)] bg-[var(--background-lighter)] p-4">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--foreground-muted)]">
-                Détails de l'édition
-              </h2>
-              <div className="space-y-2">
-                {vinyl.label && <DetailRow label="Label" value={vinyl.label} />}
-                {vinyl.catalogNumber && (
-                  <DetailRow label="Numéro de catalogue" value={vinyl.catalogNumber} />
+          {/* Panel: Tracklist */}
+          <div
+            className={`vinyl-tabs__panel ${activeTab === 'tracklist' ? 'is-active' : ''}`}
+            role="tabpanel"
+            id="panel-tracklist"
+            aria-labelledby="tab-tracklist"
+            hidden={activeTab !== 'tracklist'}
+          >
+            {/* TODO_tracklist: ajouter tracklist (sides A/B avec tracks) au type Vinyl */}
+            {(vinyl as any).tracklist ? (
+              <div className="vinyl-tracklist">
+                {(vinyl as any).tracklist.map(
+                  (side: {
+                    label: string
+                    tracks: { position: string; name: string; duration: string }[]
+                  }) => (
+                    <div key={side.label} className="vinyl-tracklist__side">
+                      <span className="vinyl-tracklist__side-label">Side {side.label}</span>
+                      <ol className="vinyl-tracklist__list">
+                        {side.tracks.map((track) => (
+                          <li key={track.position} className="vinyl-tracklist__track">
+                            <span className="vinyl-tracklist__num">{track.position}</span>
+                            <span className="vinyl-tracklist__name">{track.name}</span>
+                            <span className="vinyl-tracklist__duration">{track.duration}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  ),
                 )}
-                {vinyl.country && <DetailRow label="Pays" value={vinyl.country} />}
-                {vinyl.format && <DetailRow label="Format" value={vinyl.format} />}
+              </div>
+            ) : (
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                No tracklist available.
+              </p>
+            )}
+          </div>
+
+          {/* Panel: Details */}
+          <div
+            className={`vinyl-tabs__panel ${activeTab === 'details' ? 'is-active' : ''}`}
+            role="tabpanel"
+            id="panel-details"
+            aria-labelledby="tab-details"
+            hidden={activeTab !== 'details'}
+          >
+            <dl className="vinyl-details">
+              {/* TODO_genres: ajouter au type Vinyl */}
+              {(vinyl as any).genres && (
+                <div className="vinyl-details__row">
+                  <dt className="vinyl-details__key">Genre</dt>
+                  <dd className="vinyl-details__val">{(vinyl as any).genres.join(', ')}</dd>
+                </div>
+              )}
+              {/* TODO_styles: ajouter au type Vinyl */}
+              {(vinyl as any).styles && (
+                <div className="vinyl-details__row">
+                  <dt className="vinyl-details__key">Style</dt>
+                  <dd className="vinyl-details__val">{(vinyl as any).styles.join(', ')}</dd>
+                </div>
+              )}
+              {/* TODO_matrix: ajouter au type Vinyl */}
+              {(vinyl as any).matrix && (
+                <div className="vinyl-details__row">
+                  <dt className="vinyl-details__key">Matrix / Runout</dt>
+                  <dd className="vinyl-details__val vinyl-details__val--mono">
+                    {(vinyl as any).matrix}
+                  </dd>
+                </div>
+              )}
+              {/* TODO_barcode: ajouter au type Vinyl */}
+              {(vinyl as any).barcode && (
+                <div className="vinyl-details__row">
+                  <dt className="vinyl-details__key">Barcode</dt>
+                  <dd className="vinyl-details__val vinyl-details__val--mono">
+                    {(vinyl as any).barcode}
+                  </dd>
+                </div>
+              )}
+              {/* TODO_weight: ajouter au type Vinyl */}
+              {(vinyl as any).weight && (
+                <div className="vinyl-details__row">
+                  <dt className="vinyl-details__key">Weight</dt>
+                  <dd className="vinyl-details__val">{(vinyl as any).weight}</dd>
+                </div>
+              )}
+              {/* TODO_color: ajouter au type Vinyl */}
+              {(vinyl as any).color && (
+                <div className="vinyl-details__row">
+                  <dt className="vinyl-details__key">Color</dt>
+                  <dd className="vinyl-details__val">{(vinyl as any).color}</dd>
+                </div>
+              )}
+              {/* TODO_notes: ajouter au type Vinyl */}
+              {(vinyl as any).notes && (
+                <div className="vinyl-details__row">
+                  <dt className="vinyl-details__key">Notes</dt>
+                  <dd className="vinyl-details__val">{(vinyl as any).notes}</dd>
+                </div>
+              )}
+            </dl>
+          </div>
+
+          {/* Panel: Stats */}
+          <div
+            className={`vinyl-tabs__panel ${activeTab === 'stats' ? 'is-active' : ''}`}
+            role="tabpanel"
+            id="panel-stats"
+            aria-labelledby="tab-stats"
+            hidden={activeTab !== 'stats'}
+          >
+            <div className="vinyl-stats">
+              {/* TODO_stats: ajouter collectionCount/wishlistCount/avgRating/reviewsCount au type Vinyl */}
+              <div className="vinyl-stats__card">
+                <span className="vinyl-stats__number">{(vinyl as any).collectionCount ?? '—'}</span>
+                <span className="vinyl-stats__label">In collections</span>
+              </div>
+              <div className="vinyl-stats__card">
+                <span className="vinyl-stats__number">{(vinyl as any).wishlistCount ?? '—'}</span>
+                <span className="vinyl-stats__label">On wishlists</span>
+              </div>
+              <div className="vinyl-stats__card">
+                <span className="vinyl-stats__number">{(vinyl as any).avgRating ?? '—'}</span>
+                <span className="vinyl-stats__label">Rating (avg)</span>
+              </div>
+              <div className="vinyl-stats__card">
+                <span className="vinyl-stats__number">{(vinyl as any).reviewsCount ?? '—'}</span>
+                <span className="vinyl-stats__label">Reviews</span>
               </div>
             </div>
           </div>
         </div>
+      </section>
 
-        {/* Actions */}
-        <div className="border-t border-[var(--background-lighter)] pt-6">{renderActions()}</div>
-      </div>
-    </div>
-  )
-}
-
-// Helper component
-function DetailRow({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="flex items-start justify-between gap-4">
-      <span className="text-sm text-[var(--foreground-muted)]">{label}</span>
-      <span className="text-sm font-medium text-[var(--foreground)] text-right">{value}</span>
-    </div>
+      {/* PARENT ALBUM */}
+      <section className="vinyl-album">
+        <div className="vinyl-album__inner">
+          <div className="vinyl-album__header anim-fade" data-delay="0">
+            <span className="section-tag">Parent Album</span>
+            <h2 className="section-title">Part of</h2>
+          </div>
+          <Link
+            to={`/album/${vinyl.album.id}`}
+            className="vinyl-album__card anim-fade"
+            data-delay="1"
+            style={{ '--cover-hue': getHueFromString(vinyl.album.id) } as React.CSSProperties}
+          >
+            <VinylCover
+              src={(vinyl.album as any).coverUrl}
+              seed={vinyl.album.id}
+              className="vinyl-album__cover"
+            />
+            <div className="vinyl-album__info">
+              <span className="vinyl-album__name">{vinyl.album.title}</span>
+              <span className="vinyl-album__artist">{artistNames}</span>
+              <div className="vinyl-album__meta">
+                {(vinyl.album as any).year && (
+                  <>
+                    <span className="vinyl-album__year">{(vinyl.album as any).year}</span>
+                    <span className="vinyl-album__dot" />
+                  </>
+                )}
+                {/* TODO_vinylCount: ajouter au type Album */}
+                {(vinyl.album as any).vinylCount && (
+                  <span className="vinyl-album__count">
+                    {(vinyl.album as any).vinylCount} vinyl releases
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="vinyl-album__arrow">
+              <svg
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                aria-hidden="true"
+              >
+                <line x1="4" y1="10" x2="16" y2="10" />
+                <polyline points="11,5 16,10 11,15" />
+              </svg>
+            </div>
+          </Link>
+        </div>
+      </section>
+    </main>
   )
 }
