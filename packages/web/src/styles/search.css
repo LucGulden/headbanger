@@ -464,7 +464,7 @@
 /* ============================================================
    ALBUMS GRID
    ============================================================ */
-.search-grid--albums {
+.search-grid--albums, .search-grid--artists {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: var(--space-md);
@@ -847,7 +847,7 @@
    ============================================================ */
 
 @media (max-width: 1024px) {
-  .search-grid--albums {
+  .search-grid--albums, .search-grid--artists {
     grid-template-columns: repeat(3, 1fr);
   }
 
@@ -861,7 +861,7 @@
 }
 
 @media (max-width: 768px) {
-  .search-grid--albums {
+  .search-grid--albums, .search-grid--artists {
     grid-template-columns: repeat(2, 1fr);
     gap: var(--space-sm);
   }
@@ -919,7 +919,7 @@
     height: 20px;
   }
 
-  .search-grid--albums {
+  .search-grid--albums, .search-grid--artists {
     grid-template-columns: repeat(2, 1fr);
   }
 

@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react'
 import { useAlbumSearch } from '../hooks/useAlbumSearch'
-import AlbumCard from './AlbumCard'
+import SearchAlbumsCard from './searchAlbumsCard'
 
 interface SearchAlbumsTabProps {
   query: string
@@ -60,7 +60,7 @@ export default function SearchAlbumsTab({ query, onCountChange }: SearchAlbumsTa
 
       {/* Loading skeletons */}
       {loading && albums.length === 0 && (
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+        <div className="search-grid search-grid--albums">
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="animate-pulse">
               <div className="aspect-square w-full rounded-lg bg-[var(--background-lighter)]" />
@@ -79,9 +79,9 @@ export default function SearchAlbumsTab({ query, onCountChange }: SearchAlbumsTa
             {hasMore ? '+' : ''} résultat{albums.length > 1 ? 's' : ''} trouvé
             {albums.length > 1 ? 's' : ''}
           </p>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+          <div className="search-grid search-grid--albums">
             {albums.map((album) => (
-              <AlbumCard key={album.id} album={album} />
+              <SearchAlbumsCard key={album.id} album={album} />
             ))}
           </div>
 

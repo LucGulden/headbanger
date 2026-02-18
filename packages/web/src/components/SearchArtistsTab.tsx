@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react'
 import { useArtistSearch } from '../hooks/useArtistSearch'
-import ArtistCard from './ArtistCard'
+import SearchArtistCard from './searchArtistsCard'
 
 interface SearchArtistsTabProps {
   query: string
@@ -60,7 +60,7 @@ export default function SearchArtistsTab({ query, onCountChange }: SearchArtists
 
       {/* Loading skeletons */}
       {loading && artists.length === 0 && (
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+        <div className="search-grid search-grid--artists">
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="animate-pulse">
               <div className="aspect-square w-full rounded-lg bg-[var(--background-lighter)]" />
@@ -78,9 +78,9 @@ export default function SearchArtistsTab({ query, onCountChange }: SearchArtists
             {hasMore ? '+' : ''} résultat{artists.length > 1 ? 's' : ''} trouvé
             {artists.length > 1 ? 's' : ''}
           </p>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-            {artists.map((artist) => (
-              <ArtistCard key={artist.id} artist={artist} />
+          <div className="search-grid search-grid--artists">
+            {artists.map((artist, i) => (
+              <SearchArtistCard key={artist.id} artist={artist} index={i} />
             ))}
           </div>
 

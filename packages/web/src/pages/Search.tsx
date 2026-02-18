@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import SearchAlbumsTab from '../components/SearchAlbumsTab'
 import SearchArtistsTab from '../components/SearchArtistsTab'
 import SearchUsersTab from '../components/SearchUsersTab'
@@ -13,34 +13,41 @@ export default function SearchPage() {
   const [query, setQuery] = useState('')
   const [inputValue, setInputValue] = useState('')
   const [activeTab, setActiveTab] = useState<SearchTab>('albums')
-  const [counts, setCounts] = useState({ albums: 0, artists: 0, users: 0 })
+  const [counts, setCounts] = useState<{
+    albums: number | null
+    artists: number | null
+    users: number | null
+  }>({ albums: null, artists: null, users: null })
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 })
 
   const inputRef = useRef<HTMLInputElement>(null)
   const tabsRef = useRef<HTMLDivElement>(null)
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   useAnimFade()
 
   const hasQuery = query.trim().length > 0
-  const totalResults = counts.albums + counts.artists + counts.users
-  const showNoResults = hasQuery && totalResults === 0
+  const allLoaded = counts.albums !== null && counts.artists !== null && counts.users !== null
+  const totalResults = (counts.albums ?? 0) + (counts.artists ?? 0) + (counts.users ?? 0)
+  const showNoResults = hasQuery && allLoaded && totalResults === 0
 
-  // Debounce input → query
   const handleInput = (val: string) => {
     setInputValue(val)
+    setCounts({ albums: null, artists: null, users: null })
     clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => setQuery(val), 150)
   }
 
   const handleClear = () => {
     setInputValue('')
+    setCounts({ albums: null, artists: null, users: null })
     setQuery('')
     inputRef.current?.focus()
   }
 
   const handleHint = (hint: string) => {
     setInputValue(hint)
+    setCounts({ albums: null, artists: null, users: null })
     setQuery(hint)
     inputRef.current?.focus()
   }
@@ -58,16 +65,15 @@ export default function SearchPage() {
     return () => document.removeEventListener('keydown', handler)
   }, [])
 
-  // Auto-switch tab vers un tab qui a des résultats
-  useEffect(() => {
-    if (!hasQuery) return
-    if (counts[activeTab] > 0) return
-    if (counts.albums > 0) setActiveTab('albums')
-    else if (counts.artists > 0) setActiveTab('artists')
-    else if (counts.users > 0) setActiveTab('users')
-  }, [counts, hasQuery, activeTab])
+  const displayTab = useMemo<SearchTab>(() => {
+    if (!allLoaded) return activeTab
+    if ((counts[activeTab] ?? 0) > 0) return activeTab
+    if ((counts.albums ?? 0) > 0) return 'albums'
+    if ((counts.artists ?? 0) > 0) return 'artists'
+    if ((counts.users ?? 0) > 0) return 'users'
+    return activeTab
+  }, [counts, allLoaded, activeTab])
 
-  // Tab indicator
   const positionIndicator = useCallback((btn: HTMLButtonElement) => {
     if (!tabsRef.current) return
     const parentRect = tabsRef.current.getBoundingClientRect()
@@ -79,7 +85,7 @@ export default function SearchPage() {
     if (!tabsRef.current) return
     const activeBtn = tabsRef.current.querySelector<HTMLButtonElement>('.search-tab.is-active')
     if (activeBtn) positionIndicator(activeBtn)
-  }, [activeTab, positionIndicator])
+  }, [displayTab, positionIndicator])
 
   useEffect(() => {
     const handleResize = () => {
@@ -98,7 +104,7 @@ export default function SearchPage() {
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     const tabs: SearchTab[] = ['albums', 'artists', 'users']
-    const currentIndex = tabs.indexOf(activeTab)
+    const currentIndex = tabs.indexOf(displayTab)
     let nextIndex = -1
     if (e.key === 'ArrowRight') nextIndex = (currentIndex + 1) % tabs.length
     else if (e.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + tabs.length) % tabs.length
@@ -131,8 +137,6 @@ export default function SearchPage() {
           <p className="search-hero__subtitle anim-fade" data-delay="1">
             Find albums, discover artists, and connect with collectors who share your taste.
           </p>
-
-          {/* Search Bar */}
           <div className="search-bar anim-fade" data-delay="2">
             <div className="search-bar__inner">
               <svg
@@ -248,16 +252,16 @@ export default function SearchPage() {
             ).map((tab) => (
               <button
                 key={tab.id}
-                className={`search-tab ${activeTab === tab.id ? 'is-active' : ''}`}
+                className={`search-tab ${displayTab === tab.id ? 'is-active' : ''}`}
                 role="tab"
-                aria-selected={activeTab === tab.id}
+                aria-selected={displayTab === tab.id}
                 aria-controls={`panel-${tab.id}`}
                 id={`tab-${tab.id}`}
                 onClick={(e) => switchTab(tab.id, e.currentTarget)}
               >
                 {tab.icon}
                 {tab.label}
-                <span className="search-tab__count">{counts[tab.id]}</span>
+                <span className="search-tab__count">{counts[tab.id] ?? 0}</span>
               </button>
             ))}
             <div
@@ -298,7 +302,7 @@ export default function SearchPage() {
           </div>
         )}
 
-        {/* No results — query mais 0 résultats */}
+        {/* No results */}
         {showNoResults && (
           <div className="search-no-results">
             <div className="search-no-results__inner">
@@ -323,15 +327,15 @@ export default function SearchPage() {
           </div>
         )}
 
-        {/* Panels — seulement quand il y a une query */}
-        {hasQuery && !showNoResults && (
+        {/* Panels — toujours montés quand il y a une query */}
+        {hasQuery && (
           <>
             <div
-              className={`search-panel ${activeTab === 'albums' ? 'is-active' : ''}`}
+              className={`search-panel ${displayTab === 'albums' ? 'is-active' : ''}`}
               role="tabpanel"
               id="panel-albums"
               aria-labelledby="tab-albums"
-              hidden={activeTab !== 'albums'}
+              hidden={displayTab !== 'albums'}
             >
               <div className="search-panel__inner">
                 <SearchAlbumsTab
@@ -342,11 +346,11 @@ export default function SearchPage() {
             </div>
 
             <div
-              className={`search-panel ${activeTab === 'artists' ? 'is-active' : ''}`}
+              className={`search-panel ${displayTab === 'artists' ? 'is-active' : ''}`}
               role="tabpanel"
               id="panel-artists"
               aria-labelledby="tab-artists"
-              hidden={activeTab !== 'artists'}
+              hidden={displayTab !== 'artists'}
             >
               <div className="search-panel__inner">
                 <SearchArtistsTab
@@ -357,18 +361,16 @@ export default function SearchPage() {
             </div>
 
             <div
-              className={`search-panel ${activeTab === 'users' ? 'is-active' : ''}`}
+              className={`search-panel ${displayTab === 'users' ? 'is-active' : ''}`}
               role="tabpanel"
               id="panel-users"
               aria-labelledby="tab-users"
-              hidden={activeTab !== 'users'}
+              hidden={displayTab !== 'users'}
             >
               <div className="search-panel__inner">
                 <SearchUsersTab
                   query={query}
-                  onCountChange={(count) =>
-                    setCounts((prev) => ({ ...prev, counts: count }) as any)
-                  }
+                  onCountChange={(count) => setCounts((prev) => ({ ...prev, users: count }))}
                 />
               </div>
             </div>

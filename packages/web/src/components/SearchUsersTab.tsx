@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react'
 import { useUserSearch } from '../hooks/useUserSearch'
-import UserListItem from './UserListItem'
+import SearchUserCard from './searchUsersCard'
 
 interface SearchUsersTabProps {
   query: string
@@ -60,7 +60,7 @@ export default function SearchUsersTab({ query, onCountChange }: SearchUsersTabP
 
       {/* Loading skeletons */}
       {loading && users.length === 0 && (
-        <div className="space-y-3">
+        <div className="search-grid search-grid--users">
           {Array.from({ length: 5 }).map((_, i) => (
             <div
               key={i}
@@ -85,9 +85,9 @@ export default function SearchUsersTab({ query, onCountChange }: SearchUsersTabP
             {users.length}
             {hasMore ? '+' : ''} résultat{users.length > 1 ? 's' : ''}
           </p>
-          <div className="space-y-3">
-            {users.map((user) => (
-              <UserListItem key={user.uid} user={user} showFollowButton={true} />
+          <div className="search-grid search-grid--users">
+            {users.map((user, i) => (
+              <SearchUserCard key={user.uid} user={user} index={i} />
             ))}
           </div>
 
