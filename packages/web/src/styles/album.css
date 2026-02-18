@@ -1,0 +1,745 @@
+/* ============================================================
+   HeadBanger — Album Detail Page
+   ============================================================ */
+
+/* ============================================================
+   ALBUM HERO
+   ============================================================ */
+.album-hero {
+  position: relative;
+  padding: calc(var(--nav-height) + var(--space-xl)) var(--space-md) var(--space-xl);
+  overflow: hidden;
+}
+
+.album-hero__bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.album-hero__glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+}
+
+.album-hero__glow--1 {
+  width: 500px;
+  height: 500px;
+  top: -5%;
+  left: -8%;
+  background: radial-gradient(circle, rgba(90, 110, 200, 0.18) 0%, transparent 70%);
+  opacity: 0.6;
+}
+
+.album-hero__glow--2 {
+  width: 400px;
+  height: 400px;
+  bottom: -10%;
+  right: -5%;
+  background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+  opacity: 0.25;
+}
+
+.album-hero__grooves {
+  position: absolute;
+  top: 50%;
+  left: 25%;
+  width: 700px;
+  height: 700px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: repeating-radial-gradient(
+    circle at center,
+    transparent 0px,
+    transparent 10px,
+    rgba(255,255,255,0.008) 10px,
+    rgba(255,255,255,0.008) 11px
+  );
+  opacity: 0.5;
+}
+
+.album-hero__inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-xl);
+  align-items: start;
+  position: relative;
+}
+
+/* --- Cover Art --- */
+.album-hero__cover-wrap {
+  position: relative;
+  width: 340px;
+  flex-shrink: 0;
+}
+
+.album-hero__cover {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: visible;
+  background: linear-gradient(
+    135deg,
+    hsl(var(--cover-hue), 35%, 20%) 0%,
+    hsl(var(--cover-hue), 45%, 8%) 100%
+  );
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.5),
+    0 0 0 1px var(--border);
+  z-index: 2;
+}
+
+.album-hero__cover-art {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  overflow: hidden;
+  z-index: 2;
+}
+
+.album-hero__cover-lines {
+  position: absolute;
+  inset: 0;
+  background: repeating-radial-gradient(
+    circle,
+    transparent 0px,
+    transparent 8px,
+    rgba(255,255,255,0.025) 8px,
+    rgba(255,255,255,0.025) 9px
+  );
+}
+
+.album-hero__cover-icon {
+  width: 50%;
+  height: 50%;
+  color: rgba(255, 255, 255, 0.15);
+  position: relative;
+  z-index: 1;
+}
+
+/* --- Vinyl peek-out effect --- */
+.album-hero__vinyl {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-30%, -50%);
+  width: 100%;
+  aspect-ratio: 1;
+  z-index: 1;
+  transition: transform 0.6s var(--ease-out);
+}
+
+.album-hero__cover-wrap:hover .album-hero__vinyl {
+  transform: translate(-15%, -50%);
+}
+
+.album-hero__vinyl-disc {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    #1a1a1a 0%,
+    #111 20%,
+    #0a0a0a 50%,
+    #111 80%,
+    #1a1a1a 100%
+  );
+  position: relative;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.6);
+}
+
+.album-hero__vinyl-grooves {
+  position: absolute;
+  inset: 10%;
+  border-radius: 50%;
+  background: repeating-radial-gradient(
+    circle at center,
+    transparent 0px,
+    transparent 3px,
+    rgba(255,255,255,0.04) 3px,
+    rgba(255,255,255,0.04) 4px
+  );
+}
+
+.album-hero__vinyl-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 28%;
+  height: 28%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: linear-gradient(
+    135deg,
+    hsl(var(--cover-hue), 40%, 25%) 0%,
+    hsl(var(--cover-hue), 50%, 15%) 100%
+  );
+}
+
+.album-hero__vinyl-label::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12%;
+  height: 12%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #0a0a0a;
+}
+
+/* --- Album Info --- */
+.album-hero__info {
+  padding-top: var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.album-hero__tag {
+  margin-bottom: 0.5rem;
+}
+
+.album-hero__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(2.2rem, 4.5vw, 3.5rem);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  color: var(--white);
+  margin-bottom: 0.6rem;
+}
+
+.album-hero__artists {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: var(--space-sm);
+}
+
+.album-hero__artist-link {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 1.2rem;
+  color: var(--accent);
+  position: relative;
+  transition: color 0.3s;
+}
+
+.album-hero__artist-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1.5px;
+  background: var(--accent);
+  border-radius: 1px;
+  transition: width 0.35s var(--ease-out);
+}
+
+.album-hero__artist-link:hover::after {
+  width: 100%;
+}
+
+.album-hero__artist-separator {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.album-hero__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-weight: 500;
+  margin-bottom: var(--space-lg);
+}
+
+.album-hero__year,
+.album-hero__releases-count,
+.album-hero__genre {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.album-hero__year svg,
+.album-hero__releases-count svg {
+  width: 15px;
+  height: 15px;
+  opacity: 0.5;
+}
+
+.album-hero__divider {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  opacity: 0.4;
+}
+
+.album-hero__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.album-hero__btn-collection svg,
+.album-hero__btn-wishlist svg {
+  width: 16px;
+  height: 16px;
+}
+
+.album-hero__btn-collection.is-active {
+  background: var(--collection);
+}
+
+.album-hero__btn-wishlist.is-active {
+  background: var(--wishlist);
+  color: var(--white);
+  border-color: var(--wishlist);
+}
+
+/* ============================================================
+   TRACKLIST
+   ============================================================ */
+.album-tracklist {
+  padding: var(--space-lg) var(--space-md) var(--space-xl);
+  border-top: 1px solid var(--border);
+}
+
+.album-tracklist__inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+
+.album-tracklist__heading {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.15rem;
+  color: var(--white);
+  margin-bottom: var(--space-md);
+  letter-spacing: -0.01em;
+}
+
+.album-tracklist__heading svg {
+  width: 18px;
+  height: 18px;
+  color: var(--accent);
+}
+
+.album-tracklist__list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.album-tracklist__track {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  transition: background 0.3s, transform 0.3s var(--ease-out);
+  cursor: default;
+}
+
+.album-tracklist__track:hover {
+  background: var(--surface-2);
+  transform: translateX(4px);
+}
+
+.album-tracklist__num {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  opacity: 0.5;
+  min-width: 28px;
+  text-align: right;
+  letter-spacing: 0.05em;
+}
+
+.album-tracklist__name {
+  flex: 1;
+  font-weight: 500;
+  font-size: 0.92rem;
+  color: var(--text);
+}
+
+.album-tracklist__track:hover .album-tracklist__name {
+  color: var(--white);
+}
+
+.album-tracklist__duration {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  opacity: 0.5;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   VINYL RELEASES SECTION
+   ============================================================ */
+.album-releases {
+  padding: var(--space-xl) var(--space-md) var(--space-2xl);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+}
+
+.album-releases__inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+
+.album-releases__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: var(--space-lg);
+  gap: var(--space-md);
+}
+
+.album-releases__sort {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.album-releases__sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  transition: all 0.3s;
+}
+
+.album-releases__sort-btn svg {
+  width: 13px;
+  height: 13px;
+}
+
+.album-releases__sort-btn:hover {
+  color: var(--white);
+  border-color: var(--border-hover);
+}
+
+.album-releases__sort-btn.is-active {
+  color: var(--accent);
+  border-color: rgba(212, 168, 67, 0.25);
+  background: var(--accent-soft);
+}
+
+/* --- Releases Grid --- */
+.album-releases__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-md);
+}
+
+/* --- Release Card --- */
+.release-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: transform 0.4s var(--ease-out), border-color 0.4s, box-shadow 0.4s;
+  position: relative;
+  text-decoration: none;
+  color: inherit;
+}
+
+.release-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0;
+  transition: opacity 0.4s var(--ease-out);
+  z-index: 1;
+  border-radius: 14px 14px 0 0;
+}
+
+.release-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--border-hover);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+}
+
+.release-card:hover::before {
+  opacity: 1;
+}
+
+.release-card__top {
+  position: relative;
+}
+
+.release-card__cover {
+  width: 100%;
+  aspect-ratio: 1;
+  background: linear-gradient(
+    135deg,
+    hsl(var(--cover-hue), 35%, 16%) 0%,
+    hsl(var(--cover-hue), 45%, 7%) 100%
+  );
+  position: relative;
+  overflow: hidden;
+}
+
+.release-card__cover-grooves {
+  position: absolute;
+  inset: 0;
+  background: repeating-radial-gradient(
+    circle at 65% 65%,
+    transparent 0px,
+    transparent 6px,
+    rgba(255,255,255,0.02) 6px,
+    rgba(255,255,255,0.02) 7px
+  );
+}
+
+.release-card__flag {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  z-index: 2;
+}
+
+.release-card__country-code {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.55rem;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--white);
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.release-card__info {
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1;
+}
+
+.release-card__catalog {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--white);
+  letter-spacing: 0.01em;
+}
+
+.release-card__label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.release-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.35rem;
+}
+
+.release-card__year {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.03em;
+}
+
+.release-card__format {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.release-card__arrow {
+  position: absolute;
+  bottom: 0.9rem;
+  right: 0.9rem;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 0.3s, transform 0.3s var(--ease-out), color 0.3s, border-color 0.3s;
+}
+
+.release-card__arrow svg {
+  width: 13px;
+  height: 13px;
+}
+
+.release-card:hover .release-card__arrow {
+  opacity: 1;
+  transform: translateX(0);
+  color: var(--accent);
+  border-color: rgba(212, 168, 67, 0.25);
+}
+
+/* ============================================================
+   RESPONSIVE — Tablet
+   ============================================================ */
+@media (max-width: 1024px) {
+  .album-hero__inner {
+    grid-template-columns: 280px 1fr;
+    gap: var(--space-lg);
+  }
+
+  .album-hero__cover-wrap {
+    width: 280px;
+  }
+
+  .album-releases__grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ============================================================
+   RESPONSIVE — Small Tablet / Landscape Mobile
+   ============================================================ */
+@media (max-width: 768px) {
+  .album-hero {
+    padding-top: calc(var(--nav-height) + var(--space-lg));
+    padding-bottom: var(--space-lg);
+  }
+
+  .album-hero__inner {
+    grid-template-columns: 1fr;
+    gap: var(--space-lg);
+    justify-items: center;
+    text-align: center;
+  }
+
+  .album-hero__cover-wrap {
+    width: 260px;
+  }
+
+  .album-hero__info {
+    align-items: center;
+  }
+
+  .album-hero__artists {
+    justify-content: center;
+  }
+
+  .album-hero__meta {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .album-hero__actions {
+    justify-content: center;
+  }
+
+  .album-releases__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .album-releases__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ============================================================
+   RESPONSIVE — Mobile
+   ============================================================ */
+@media (max-width: 640px) {
+  .album-hero__cover-wrap {
+    width: 220px;
+  }
+
+  .album-hero__title {
+    font-size: clamp(1.8rem, 8vw, 2.4rem);
+  }
+
+  .album-hero__vinyl {
+    display: none;
+  }
+
+  .album-hero__cover {
+    border-radius: 10px;
+  }
+
+  .album-hero__actions {
+    flex-direction: column;
+    width: 100%;
+    max-width: 280px;
+  }
+
+  .album-hero__actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .album-tracklist__track {
+    padding: 0.7rem 0.5rem;
+  }
+
+  .album-releases__grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-sm);
+  }
+
+  .release-card__info {
+    padding: 0.7rem 0.75rem;
+  }
+
+  .release-card__catalog {
+    font-size: 0.82rem;
+  }
+
+  .release-card__arrow {
+    display: none;
+  }
+}
+
+/* ============================================================
+   RESPONSIVE — Very small screens
+   ============================================================ */
+@media (max-width: 420px) {
+  .album-releases__grid {
+    grid-template-columns: 1fr;
+  }
+}
