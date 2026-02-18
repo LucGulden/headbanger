@@ -102,20 +102,18 @@ const makeUserVinylDbResult = (
   id: 'uv1',
   added_at: '2024-01-01T10:00:00Z',
   release_id: 'v1',
-  vinyls: [
-    {
-      id: 'v1',
-      title: 'Kind of Blue',
-      cover_url: 'cover.png',
-      year: 1959,
-      country: 'US',
-      catalog_number: 'CS 8163',
-      vinyl_artists: [
-        { position: 2, artist: [{ id: 'a2', name: 'Bill Evans', image_url: null }] },
-        { position: 1, artist: [{ id: 'a1', name: 'Miles Davis', image_url: 'miles.png' }] },
-      ],
-    },
-  ],
+  vinyls: {
+    id: 'v1',
+    title: 'Kind of Blue',
+    cover_url: 'cover.png',
+    year: 1959,
+    country: 'US',
+    catalog_number: 'CS 8163',
+    vinyl_artists: [
+      { position: 2, artist: { id: 'a2', name: 'Bill Evans', image_url: null } },
+      { position: 1, artist: { id: 'a1', name: 'Miles Davis', image_url: 'miles.png' } },
+    ],
+  },
   ...overrides,
 })
 
@@ -237,15 +235,13 @@ describe('UserVinylsService', () => {
         makeLimitChain({
           data: [
             makeUserVinylDbResult({
-              vinyls: [
-                {
-                  ...makeUserVinylDbResult().vinyls[0],
-                  vinyl_artists: [
-                    { position: 1, artist: [{ id: '', name: 'Invalid', image_url: null }] },
-                    { position: 2, artist: [{ id: 'a2', name: 'Valide', image_url: null }] },
-                  ],
-                },
-              ],
+              vinyls: {
+                ...makeUserVinylDbResult().vinyls[0],
+                vinyl_artists: [
+                  { position: 1, artist: { id: '', name: 'Invalid', image_url: null } },
+                  { position: 2, artist: { id: 'a2', name: 'Valide', image_url: null } },
+                ],
+              },
             }),
           ],
           error: null,
@@ -263,7 +259,7 @@ describe('UserVinylsService', () => {
         makeLimitChain({
           data: [
             makeUserVinylDbResult({
-              vinyls: [{ ...makeUserVinylDbResult().vinyls[0], vinyl_artists: [] }],
+              vinyls: { ...makeUserVinylDbResult().vinyls[0], vinyl_artists: [] },
             }),
           ],
           error: null,
@@ -614,47 +610,6 @@ describe('UserVinylsService', () => {
       expect(calls).toHaveLength(2)
       expect(calls).toContain('collection')
       expect(calls).toContain('wishlist')
-    })
-  })
-
-  // -----------------------------------------------------------------------
-  // transformUserVinylData — erreurs intégrité
-  // -----------------------------------------------------------------------
-
-  describe('transformUserVinylData — erreurs intégrité', () => {
-    it('lève une erreur si vinyls[0] est absent — intégrité des données', async () => {
-      mockAnonFrom.mockReturnValue(
-        makeLimitChain({
-          data: [makeUserVinylDbResult({ vinyls: [] })],
-          error: null,
-        }),
-      )
-
-      await expect(service.getUserVinyls(USER_ID, 'collection')).rejects.toThrow(
-        'Vinyl missing in user_vinyls',
-      )
-    })
-
-    it('lève une erreur si artist[0] est absent dans vinyl_artists — intégrité des données', async () => {
-      mockAnonFrom.mockReturnValue(
-        makeLimitChain({
-          data: [
-            makeUserVinylDbResult({
-              vinyls: [
-                {
-                  ...makeUserVinylDbResult().vinyls[0],
-                  vinyl_artists: [{ position: 1, artist: [] }],
-                },
-              ],
-            }),
-          ],
-          error: null,
-        }),
-      )
-
-      await expect(service.getUserVinyls(USER_ID, 'collection')).rejects.toThrow(
-        'Artist missing in vinyl_artists join — data integrity issue',
-      )
     })
   })
 })

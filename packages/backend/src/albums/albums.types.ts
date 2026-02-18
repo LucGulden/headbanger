@@ -1,4 +1,4 @@
-type ArtistJoin = { id: string; name: string; image_url: string | null }[]
+type ArtistJoin = { id: string; name: string; image_url: string | null }
 
 export type AlbumQueryResult = {
   id: string

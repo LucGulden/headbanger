@@ -42,8 +42,8 @@ const makeAlbumQueryResult = (overrides: Partial<AlbumQueryResult> = {}): AlbumQ
   cover_url: 'alb.png',
   year: 1959,
   album_artists: [
-    { position: 2, artist: [{ id: 'a2', name: 'Bill Evans', image_url: null }] },
-    { position: 1, artist: [{ id: 'a1', name: 'Miles Davis', image_url: 'miles.png' }] },
+    { position: 2, artist: { id: 'a2', name: 'Bill Evans', image_url: null } },
+    { position: 1, artist: { id: 'a1', name: 'Miles Davis', image_url: 'miles.png' } },
   ],
   ...overrides,
 })
@@ -56,7 +56,7 @@ const makeVinylQueryResult = (overrides: Partial<VinylQueryResult> = {}): VinylQ
   country: 'US',
   catalog_number: 'CS 8163',
   vinyl_artists: [
-    { position: 1, artist: [{ id: 'a1', name: 'Miles Davis', image_url: 'miles.png' }] },
+    { position: 1, artist: { id: 'a1', name: 'Miles Davis', image_url: 'miles.png' } },
   ],
   ...overrides,
 })
@@ -152,9 +152,9 @@ describe('AlbumsService', () => {
       mockSingle.mockResolvedValue({
         data: makeAlbumQueryResult({
           album_artists: [
-            { position: 1, artist: [{ id: '', name: 'Invalid', image_url: null }] },
-            { position: 2, artist: [{ id: 'a2', name: '', image_url: null }] },
-            { position: 3, artist: [{ id: 'a3', name: 'Valide', image_url: null }] },
+            { position: 1, artist: { id: '', name: 'Invalid', image_url: null } },
+            { position: 2, artist: { id: 'a2', name: '', image_url: null } },
+            { position: 3, artist: { id: 'a3', name: 'Valide', image_url: null } },
           ],
         }),
         error: null,
@@ -216,8 +216,8 @@ describe('AlbumsService', () => {
         data: [
           makeVinylQueryResult({
             vinyl_artists: [
-              { position: 2, artist: [{ id: 'a2', name: 'Bill Evans', image_url: null }] },
-              { position: 1, artist: [{ id: 'a1', name: 'Miles Davis', image_url: 'miles.png' }] },
+              { position: 2, artist: { id: 'a2', name: 'Bill Evans', image_url: null } },
+              { position: 1, artist: { id: 'a1', name: 'Miles Davis', image_url: 'miles.png' } },
             ],
           }),
         ],
@@ -249,8 +249,8 @@ describe('AlbumsService', () => {
         data: [
           makeVinylQueryResult({
             vinyl_artists: [
-              { position: 1, artist: [{ id: '', name: 'Invalid', image_url: null }] },
-              { position: 2, artist: [{ id: 'a2', name: 'Valide', image_url: null }] },
+              { position: 1, artist: { id: '', name: 'Invalid', image_url: null } },
+              { position: 2, artist: { id: 'a2', name: 'Valide', image_url: null } },
             ],
           }),
         ],
@@ -288,32 +288,6 @@ describe('AlbumsService', () => {
       const res = await service.findById('alb1')
 
       expect(res.vinyls).toHaveLength(0)
-    })
-
-    it('lève une erreur si artist[0] est absent dans album_artists — intégrité des données', async () => {
-      mockSingle.mockResolvedValue({
-        data: makeAlbumQueryResult({
-          album_artists: [{ position: 1, artist: [] }],
-        }),
-        error: null,
-      })
-      mockVinylsEq.mockResolvedValue({ data: [], error: null })
-
-      await expect(service.findById('alb1')).rejects.toThrow(
-        'Artist missing in album_artists join — data integrity issue',
-      )
-    })
-
-    it('lève une erreur si artist[0] est absent dans vinyl_artists — intégrité des données', async () => {
-      mockSingle.mockResolvedValue({ data: makeAlbumQueryResult(), error: null })
-      mockVinylsEq.mockResolvedValue({
-        data: [makeVinylQueryResult({ vinyl_artists: [{ position: 1, artist: [] }] })],
-        error: null,
-      })
-
-      await expect(service.findById('alb1')).rejects.toThrow(
-        'Artist missing in vinyl_artists join — data integrity issue',
-      )
     })
   })
 

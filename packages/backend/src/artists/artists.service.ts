@@ -26,7 +26,6 @@ export class ArtistsService {
       .from('album_artists')
       .select(
         `
-        position,
         album:albums (
           id,
           title,
@@ -79,33 +78,24 @@ export class ArtistsService {
     albumArtistsData: ArtistAlbumsQueryResult[],
   ): Artist {
     const albums: AlbumLight[] = albumArtistsData.map((aa) => {
-      const album = aa.album[0]
-      if (!album) {
-        throw new Error(`Album missing in album_artists join — data integrity issue`)
-      }
-
-      const artists: ArtistLight[] = (album.album_artists || [])
+      const artists: ArtistLight[] = (aa.album.album_artists || [])
         .sort((a, b) => a.position - b.position)
         .map((aa) => {
-          const artist = aa.artist[0]
-          if (!artist) {
-            throw new Error(`Artist missing in album_artists join — data integrity issue`)
-          }
           return {
-            id: artist.id,
-            name: artist.name,
-            imageUrl: artist.image_url,
+            id: aa.artist.id,
+            name: aa.artist.name,
+            imageUrl: aa.artist.image_url,
           }
         })
         .filter((artist) => artist.id && artist.name)
 
       return {
-        id: album.id,
-        title: album.title,
+        id: aa.album.id,
+        title: aa.album.title,
         artists:
           artists.length > 0 ? artists : [{ id: '', name: 'Artiste inconnu', imageUrl: null }],
-        coverUrl: album.cover_url,
-        year: album.year,
+        coverUrl: aa.album.cover_url,
+        year: aa.album.year,
       }
     })
 

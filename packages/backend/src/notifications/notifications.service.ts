@@ -41,14 +41,6 @@ export class NotificationsService {
             vinyl_artists(
               position,
               artist:artists(name)
-            ),
-            album:albums!vinyls_album_id_fkey (
-              id,
-              title,
-              album_artists(
-                position,
-                artist:artists(name)
-              )
             )
           )
         ),
@@ -250,61 +242,32 @@ export class NotificationsService {
   }
 
   private transformNotificationData(data: NotificationQueryResult): Notification {
-    const actor = data.actor[0]
-    if (!actor) {
-      throw new Error(`Actor missing in notification ${data.id} — data integrity issue`)
-    }
-
     const notification: Notification = {
       id: data.id,
       type: data.type,
       read: data.read,
       createdAt: data.created_at,
       actor: {
-        uid: actor.uid,
-        username: actor.username,
-        firstName: actor.first_name,
-        lastName: actor.last_name,
-        photoUrl: actor.photo_url,
+        uid: data.actor.uid,
+        username: data.actor.username,
+        firstName: data.actor.first_name,
+        lastName: data.actor.last_name,
+        photoUrl: data.actor.photo_url,
       },
     }
 
-    if (data.post?.[0]) {
-      const post = data.post[0]
-      const vinyl = post.vinyl?.[0]
-
-      if (!vinyl) {
-        throw new Error(`Vinyl not found for post ${post.id} — data integrity issue`)
-      }
+    if (data.post) {
+      const post = data.post
+      const vinyl = post.vinyl
 
       const vinylArtists = (vinyl.vinyl_artists || [])
         .sort((a, b) => a.position - b.position)
         .map((va) => {
-          const artist = va.artist[0]
-          if (!artist) {
-            throw new Error(`Artist missing in vinyl_artists join — data integrity issue`)
-          }
-          return artist.name
+          return va.artist.name
         })
         .filter(Boolean)
 
-      const album = vinyl.album?.[0]
-      if (!album) {
-        throw new Error(`Album missing in vinyl ${vinyl.id} join — data integrity issue`)
-      }
-
-      const albumArtists = (album.album_artists || [])
-        .sort((a, b) => a.position - b.position)
-        .map((aa) => {
-          const artist = aa.artist[0]
-          if (!artist) {
-            throw new Error(`Artist missing in album_artists join — data integrity issue`)
-          }
-          return artist.name
-        })
-        .filter(Boolean)
-
-      const artist = vinylArtists.join(', ') || albumArtists.join(', ') || 'Artiste inconnu'
+      const artist = vinylArtists.join(', ') || 'Artiste inconnu'
 
       notification.post = {
         id: post.id,

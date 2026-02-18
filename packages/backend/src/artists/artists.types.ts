@@ -1,5 +1,4 @@
 export type ArtistAlbumsQueryResult = {
-  position: number
   album: {
     id: string
     title: string
@@ -7,7 +6,7 @@ export type ArtistAlbumsQueryResult = {
     year: number
     album_artists: {
       position: number
-      artist: { id: string; name: string; image_url: string | null }[]
+      artist: { id: string; name: string; image_url: string | null }
     }[]
-  }[]
+  }
 }

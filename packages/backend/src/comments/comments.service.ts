@@ -171,20 +171,15 @@ export class CommentsService {
   }
 
   private transformCommentData(data: CommentQueryResult): Comment {
-    const user = data.user[0]
-    if (!user) {
-      throw new Error(`User missing in comment ${data.id} join — data integrity issue`)
-    }
-
     return {
       id: data.id,
       postId: data.post_id,
       content: data.content,
       createdAt: data.created_at,
       user: {
-        uid: user.uid,
-        username: user.username,
-        photoUrl: user.photo_url,
+        uid: data.user.uid,
+        username: data.user.username,
+        photoUrl: data.user.photo_url,
       },
     }
   }

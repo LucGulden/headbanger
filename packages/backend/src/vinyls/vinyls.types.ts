@@ -3,7 +3,7 @@ import type { DbVinyl } from '../common/database/database.types'
 export type VinylByIdQueryResult = DbVinyl & {
   vinyl_artists: {
     position: number
-    artist: { id: string; name: string; image_url: string | null }[]
+    artist: { id: string; name: string; image_url: string | null }
   }[]
   albums: {
     id: string
@@ -12,7 +12,7 @@ export type VinylByIdQueryResult = DbVinyl & {
     year: number
     album_artists: {
       position: number
-      artist: { id: string; name: string; image_url: string | null }[]
+      artist: { id: string; name: string; image_url: string | null }
     }[]
-  } | null
+  }
 }

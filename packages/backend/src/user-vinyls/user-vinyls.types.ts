@@ -11,7 +11,7 @@ export type UserVinylQueryResult = {
     catalog_number: string
     vinyl_artists: {
       position: number
-      artist: { id: string; name: string; image_url: string | null }[]
+      artist: { id: string; name: string; image_url: string | null }
     }[]
-  }[]
+  }
 }

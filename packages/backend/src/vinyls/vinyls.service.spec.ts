@@ -32,8 +32,8 @@ const makeVinylDbResult = (
   format: 'LP',
   album_id: 'alb1',
   vinyl_artists: [
-    { position: 2, artist: [{ id: 'a2', name: 'Bill Evans', image_url: null }] },
-    { position: 1, artist: [{ id: 'a1', name: 'Miles Davis', image_url: 'miles.png' }] },
+    { position: 2, artist: { id: 'a2', name: 'Bill Evans', image_url: null } },
+    { position: 1, artist: { id: 'a1', name: 'Miles Davis', image_url: 'miles.png' } },
   ],
   albums: {
     id: 'alb1',
@@ -41,8 +41,8 @@ const makeVinylDbResult = (
     cover_url: 'alb.png',
     year: 1959,
     album_artists: [
-      { position: 2, artist: [{ id: 'aa2', name: 'Bill Evans', image_url: null }] },
-      { position: 1, artist: [{ id: 'aa1', name: 'Miles Davis', image_url: 'miles.png' }] },
+      { position: 2, artist: { id: 'aa2', name: 'Bill Evans', image_url: null } },
+      { position: 1, artist: { id: 'aa1', name: 'Miles Davis', image_url: 'miles.png' } },
     ],
   },
   ...overrides,
@@ -158,9 +158,9 @@ describe('VinylsService', () => {
       mockSupabaseClient.single.mockResolvedValue({
         data: makeVinylDbResult({
           vinyl_artists: [
-            { position: 1, artist: [{ id: '', name: 'Artist valide', image_url: null }] },
-            { position: 2, artist: [{ id: 'a2', name: '', image_url: null }] },
-            { position: 3, artist: [{ id: 'a3', name: 'Artist 3', image_url: null }] },
+            { position: 1, artist: { id: '', name: 'Artist valide', image_url: null } },
+            { position: 2, artist: { id: 'a2', name: '', image_url: null } },
+            { position: 3, artist: { id: 'a3', name: 'Artist 3', image_url: null } },
           ],
         }),
         error: null,
@@ -201,8 +201,8 @@ describe('VinylsService', () => {
             cover_url: null,
             year: 2000,
             album_artists: [
-              { position: 1, artist: [{ id: 'aa1', name: '', image_url: null }] },
-              { position: 2, artist: [{ id: 'aa2', name: 'Artist valide', image_url: null }] },
+              { position: 1, artist: { id: 'aa1', name: '', image_url: null } },
+              { position: 2, artist: { id: 'aa2', name: 'Artist valide', image_url: null } },
             ],
           },
         }),
@@ -230,47 +230,6 @@ describe('VinylsService', () => {
       const res = await service.getById('v1')
 
       expect(res.coverUrl).toBeNull()
-    })
-
-    it('lève une erreur si albums est null — intégrité des données', async () => {
-      mockSupabaseClient.single.mockResolvedValue({
-        data: makeVinylDbResult({ albums: null }),
-        error: null,
-      })
-
-      await expect(service.getById('v1')).rejects.toThrow('Album not found for vinyl v1')
-    })
-
-    it('lève une erreur si artist[0] est absent dans vinyl_artists — intégrité des données', async () => {
-      mockSupabaseClient.single.mockResolvedValue({
-        data: makeVinylDbResult({
-          vinyl_artists: [{ position: 1, artist: [] }],
-        }),
-        error: null,
-      })
-
-      await expect(service.getById('v1')).rejects.toThrow(
-        'Artist missing in vinyl_artists join — data integrity issue',
-      )
-    })
-
-    it('lève une erreur si artist[0] est absent dans album_artists — intégrité des données', async () => {
-      mockSupabaseClient.single.mockResolvedValue({
-        data: makeVinylDbResult({
-          albums: {
-            id: 'alb1',
-            title: 'Kind of Blue',
-            cover_url: null,
-            year: 1959,
-            album_artists: [{ position: 1, artist: [] }],
-          },
-        }),
-        error: null,
-      })
-
-      await expect(service.getById('v1')).rejects.toThrow(
-        'Artist missing in album_artists join — data integrity issue',
-      )
     })
   })
 

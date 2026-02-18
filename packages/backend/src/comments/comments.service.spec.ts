@@ -70,7 +70,7 @@ const makeCommentDbResult = (overrides: Partial<CommentQueryResult> = {}): Comme
   user_id: 'u1',
   content: 'Super post !',
   created_at: '2024-01-01T10:00:00Z',
-  user: [{ uid: 'u1', username: 'miles', photo_url: 'avatar.png' }],
+  user: { uid: 'u1', username: 'miles', photo_url: 'avatar.png' },
   ...overrides,
 })
 
@@ -143,7 +143,7 @@ describe('CommentsService', () => {
 
     it('mappe correctement photo_url en photoUrl', async () => {
       mockAnonOrder.mockResolvedValue({
-        data: [makeCommentDbResult({ user: [{ uid: 'u1', username: 'miles', photo_url: null }] })],
+        data: [makeCommentDbResult({ user: { uid: 'u1', username: 'miles', photo_url: null } })],
         error: null,
       })
 
@@ -157,17 +157,6 @@ describe('CommentsService', () => {
 
       await expect(service.getPostComments(POST_ID)).rejects.toThrow(
         'Error fetching comments: DB error',
-      )
-    })
-
-    it('lève une erreur si user[0] est absent — intégrité des données', async () => {
-      mockAnonOrder.mockResolvedValue({
-        data: [makeCommentDbResult({ user: [] })],
-        error: null,
-      })
-
-      await expect(service.getPostComments(POST_ID)).rejects.toThrow(
-        'User missing in comment c1 join — data integrity issue',
       )
     })
   })

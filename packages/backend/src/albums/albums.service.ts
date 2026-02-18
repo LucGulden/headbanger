@@ -108,14 +108,10 @@ export class AlbumsService {
     return (album_artists || [])
       .sort((a, b) => a.position - b.position)
       .map((aa) => {
-        const artist = aa.artist[0]
-        if (!artist) {
-          throw new Error(`Artist missing in album_artists join — data integrity issue`)
-        }
         return {
-          id: artist.id,
-          name: artist.name,
-          imageUrl: artist.image_url,
+          id: aa.artist.id,
+          name: aa.artist.name,
+          imageUrl: aa.artist.image_url,
         }
       })
       .filter((artist) => artist.id && artist.name)
@@ -128,14 +124,10 @@ export class AlbumsService {
       const vinylArtists: ArtistLight[] = (vinyl.vinyl_artists || [])
         .sort((a, b) => a.position - b.position)
         .map((va) => {
-          const artist = va.artist[0]
-          if (!artist) {
-            throw new Error(`Artist missing in vinyl_artists join — data integrity issue`)
-          }
           return {
-            id: artist.id,
-            name: artist.name,
-            imageUrl: artist.image_url,
+            id: va.artist.id,
+            name: va.artist.name,
+            imageUrl: va.artist.image_url,
           }
         })
         .filter((artist) => artist.id && artist.name)
@@ -143,7 +135,7 @@ export class AlbumsService {
       return {
         id: vinyl.id,
         title: vinyl.title,
-        artists: vinylArtists.length > 0 ? vinylArtists : artists,
+        artists: vinylArtists,
         coverUrl: vinyl.cover_url,
         year: vinyl.year,
         country: vinyl.country,

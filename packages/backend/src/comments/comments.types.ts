@@ -8,5 +8,5 @@ export type CommentQueryResult = {
     uid: string
     username: string
     photo_url: string | null
-  }[]
+  }
 }

@@ -93,49 +93,36 @@ const makeNotifDbResult = (overrides: object = {}): NotificationQueryResult =>
     created_at: '2024-01-01T10:00:00Z',
     user_id: 'u1',
     actor_id: 'u2',
-    actor: [
-      {
-        uid: 'u2',
-        username: 'bill',
-        first_name: 'Bill',
-        last_name: 'Evans',
-        photo_url: 'bill.png',
-      },
-    ],
-    post: [],
-    comment: [],
+    actor: {
+      uid: 'u2',
+      username: 'bill',
+      first_name: 'Bill',
+      last_name: 'Evans',
+      photo_url: 'bill.png',
+    },
+    post: null,
+    comment: null,
     ...overrides,
   }) as unknown as NotificationQueryResult
 
 const makeNotifWithPost = (): NotificationQueryResult =>
   makeNotifDbResult({
-    post: [
-      {
-        id: 'p1',
-        vinyl_id: 'v1',
-        vinyl: [
-          {
-            id: 'v1',
-            title: 'Kind of Blue',
-            cover_url: 'cover.png',
-            vinyl_artists: [{ position: 1, artist: [{ name: 'Miles Davis' }] }],
-            album: [
-              {
-                id: 'alb1',
-                title: 'Kind of Blue',
-                album_artists: [{ position: 1, artist: [{ name: 'Miles Davis' }] }],
-              },
-            ],
-          },
-        ],
+    post: {
+      id: 'p1',
+      vinyl_id: 'v1',
+      vinyl: {
+        id: 'v1',
+        title: 'Kind of Blue',
+        cover_url: 'cover.png',
+        vinyl_artists: [{ position: 1, artist: { name: 'Miles Davis' } }],
       },
-    ],
+    },
   })
 
 const makeNotifWithComment = (): NotificationQueryResult =>
   makeNotifDbResult({
     type: 'post_comment',
-    comment: [{ id: 'c1', content: 'Super post !' }],
+    comment: { id: 'c1', content: 'Super post !' },
   })
 
 const makeCreateNotifDbResult = (
@@ -396,88 +383,6 @@ describe('NotificationsService', () => {
 
       await expect(service.getNotifications(TOKEN, USER_ID)).rejects.toThrow(
         'Error fetching notifications: DB error',
-      )
-    })
-
-    it('lève une erreur si vinyl est null pour un post — intégrité des données', async () => {
-      const notif = makeNotifDbResult({
-        post: [
-          {
-            id: 'p1',
-            vinyl_id: 'v1',
-            vinyl: [],
-          },
-        ],
-      })
-      mockAuthFrom.mockReturnValue(makeLimitChain({ data: [notif], error: null }))
-
-      await expect(service.getNotifications(TOKEN, USER_ID)).rejects.toThrow(
-        'Vinyl not found for post p1 — data integrity issue',
-      )
-    })
-    it('lève une erreur si actor[0] est absent — intégrité des données', async () => {
-      mockAuthFrom.mockReturnValue(
-        makeLimitChain({ data: [makeNotifDbResult({ actor: [] })], error: null }),
-      )
-
-      await expect(service.getNotifications(TOKEN, USER_ID)).rejects.toThrow(
-        'Actor missing in notification n1 — data integrity issue',
-      )
-    })
-
-    it('lève une erreur si artist[0] est absent dans vinyl_artists — intégrité des données', async () => {
-      const notif = makeNotifDbResult({
-        post: [
-          {
-            id: 'p1',
-            vinyl_id: 'v1',
-            vinyl: [
-              {
-                id: 'v1',
-                title: 'Album',
-                cover_url: null,
-                vinyl_artists: [{ position: 1, artist: [] }],
-                album: [{ id: 'alb1', title: 'Album', album_artists: [] }],
-              },
-            ],
-          },
-        ],
-      })
-      mockAuthFrom.mockReturnValue(makeLimitChain({ data: [notif], error: null }))
-
-      await expect(service.getNotifications(TOKEN, USER_ID)).rejects.toThrow(
-        'Artist missing in vinyl_artists join — data integrity issue',
-      )
-    })
-
-    it('lève une erreur si artist[0] est absent dans album_artists — intégrité des données', async () => {
-      const notif = makeNotifDbResult({
-        post: [
-          {
-            id: 'p1',
-            vinyl_id: 'v1',
-            vinyl: [
-              {
-                id: 'v1',
-                title: 'Album',
-                cover_url: null,
-                vinyl_artists: [],
-                album: [
-                  {
-                    id: 'alb1',
-                    title: 'Album',
-                    album_artists: [{ position: 1, artist: [] }],
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      })
-      mockAuthFrom.mockReturnValue(makeLimitChain({ data: [notif], error: null }))
-
-      await expect(service.getNotifications(TOKEN, USER_ID)).rejects.toThrow(
-        'Artist missing in album_artists join — data integrity issue',
       )
     })
   })
