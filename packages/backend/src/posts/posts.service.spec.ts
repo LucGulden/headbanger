@@ -65,32 +65,20 @@ const makePostDbResult = (overrides: Partial<PostQueryResult> = {}): PostQueryRe
   vinyl_id: 'v1',
   type: 'collection_add',
   created_at: '2024-01-01T10:00:00Z',
-  user: [{ uid: 'u1', username: 'miles', photo_url: 'avatar.png' }],
-  vinyl: [
-    {
-      id: 'v1',
-      title: 'Kind of Blue',
-      cover_url: 'cover.png',
-      year: 1959,
-      country: 'US',
-      catalog_number: 'CS 8163',
-      album_id: 'alb1',
-      vinyl_artists: [
-        { position: 2, artist: [{ id: 'a2', name: 'Bill Evans', image_url: null }] },
-        { position: 1, artist: [{ id: 'a1', name: 'Miles Davis', image_url: 'miles.png' }] },
-      ],
-      album: [
-        {
-          id: 'alb1',
-          title: 'Kind of Blue',
-          cover_url: 'alb.png',
-          album_artists: [
-            { position: 1, artist: [{ id: 'a1', name: 'Miles Davis', image_url: 'miles.png' }] },
-          ],
-        },
-      ],
-    },
-  ],
+  user: { uid: 'u1', username: 'miles', photo_url: 'avatar.png' },
+  vinyl: {
+    id: 'v1',
+    title: 'Kind of Blue',
+    cover_url: 'cover.png',
+    year: 1959,
+    country: 'US',
+    catalog_number: 'CS 8163',
+    album_id: 'alb1',
+    vinyl_artists: [
+      { position: 2, artist: { id: 'a2', name: 'Bill Evans', image_url: null } },
+      { position: 1, artist: { id: 'a1', name: 'Miles Davis', image_url: 'miles.png' } },
+    ],
+  },
   ...overrides,
 })
 
@@ -354,22 +342,6 @@ describe('PostsService', () => {
       expect(res[0].vinyl.country).toBe('US')
       expect(res[0].vinyl.catalogNumber).toBe('CS 8163')
     })
-
-    it('lève une erreur si user[0] est absent — intégrité des données', async () => {
-      setupFetchPosts([makePostDbResult({ user: [] })])
-
-      await expect(service.getProfileFeed(USER_ID)).rejects.toThrow(
-        'User missing in post post1 join — data integrity issue',
-      )
-    })
-
-    it('lève une erreur si vinyl[0] est absent — intégrité des données', async () => {
-      setupFetchPosts([makePostDbResult({ vinyl: [] })])
-
-      await expect(service.getProfileFeed(USER_ID)).rejects.toThrow(
-        'Vinyl missing in post post1 join — data integrity issue',
-      )
-    })
   })
 
   // -----------------------------------------------------------------------
@@ -393,16 +365,14 @@ describe('PostsService', () => {
     it('filtre les vinyl_artists avec id ou name vide', async () => {
       setupFetchPosts([
         makePostDbResult({
-          vinyl: [
-            {
-              ...makePostDbResult().vinyl[0],
-              vinyl_artists: [
-                { position: 1, artist: [{ id: '', name: 'Invalid', image_url: null }] },
-                { position: 2, artist: [{ id: 'a2', name: '', image_url: null }] },
-                { position: 3, artist: [{ id: 'a3', name: 'Valide', image_url: null }] },
-              ],
-            },
-          ],
+          vinyl: {
+            ...makePostDbResult().vinyl[0],
+            vinyl_artists: [
+              { position: 1, artist: { id: '', name: 'Invalid', image_url: null } },
+              { position: 2, artist: { id: 'a2', name: '', image_url: null } },
+              { position: 3, artist: { id: 'a3', name: 'Valide', image_url: null } },
+            ],
+          },
         }),
       ])
 
@@ -412,43 +382,14 @@ describe('PostsService', () => {
       expect(res[0].vinyl.artists[0].name).toBe('Valide')
     })
 
-    it('utilise album_artists en fallback si vinyl_artists est vide', async () => {
-      setupFetchPosts([
-        makePostDbResult({
-          vinyl: [
-            {
-              ...makePostDbResult().vinyl[0],
-              vinyl_artists: [],
-              album: [
-                {
-                  id: 'alb1',
-                  title: 'Kind of Blue',
-                  cover_url: null,
-                  album_artists: [
-                    { position: 1, artist: [{ id: 'a1', name: 'Miles Davis', image_url: null }] },
-                  ],
-                },
-              ],
-            },
-          ],
-        }),
-      ])
-
-      const res = await service.getProfileFeed(USER_ID)
-
-      expect(res[0].vinyl.artists[0].name).toBe('Miles Davis')
-    })
-
     it('retourne "Artiste inconnu" si vinyl_artists et album_artists sont vides', async () => {
       setupFetchPosts([
         makePostDbResult({
-          vinyl: [
-            {
-              ...makePostDbResult().vinyl[0],
-              vinyl_artists: [],
-              album: [{ id: 'alb1', title: 'Kind of Blue', cover_url: null, album_artists: [] }],
-            },
-          ],
+          vinyl: {
+            ...makePostDbResult().vinyl[0],
+            vinyl_artists: [],
+            album: [{ id: 'alb1', title: 'Kind of Blue', cover_url: null, album_artists: [] }],
+          },
         }),
       ])
 
@@ -456,66 +397,6 @@ describe('PostsService', () => {
 
       expect(res[0].vinyl.artists).toHaveLength(1)
       expect(res[0].vinyl.artists[0]).toEqual({ id: '', name: 'Artiste inconnu', imageUrl: null })
-    })
-
-    it('lève une erreur si album est absent dans le join — intégrité des données', async () => {
-      setupFetchPosts([
-        makePostDbResult({
-          vinyl: [
-            {
-              ...makePostDbResult().vinyl[0],
-              vinyl_artists: [],
-              album: [],
-            },
-          ],
-        }),
-      ])
-
-      await expect(service.getProfileFeed(USER_ID)).rejects.toThrow(
-        'Album missing in vinyl v1 join — data integrity issue',
-      )
-    })
-
-    it('lève une erreur si artist[0] est absent dans vinyl_artists — intégrité des données', async () => {
-      setupFetchPosts([
-        makePostDbResult({
-          vinyl: [
-            {
-              ...makePostDbResult().vinyl[0],
-              vinyl_artists: [{ position: 1, artist: [] }],
-            },
-          ],
-        }),
-      ])
-
-      await expect(service.getProfileFeed(USER_ID)).rejects.toThrow(
-        'Artist missing in vinyl_artists join — data integrity issue',
-      )
-    })
-
-    it('lève une erreur si artist[0] est absent dans album_artists — intégrité des données', async () => {
-      setupFetchPosts([
-        makePostDbResult({
-          vinyl: [
-            {
-              ...makePostDbResult().vinyl[0],
-              vinyl_artists: [],
-              album: [
-                {
-                  id: 'alb1',
-                  title: 'Kind of Blue',
-                  cover_url: null,
-                  album_artists: [{ position: 1, artist: [] }],
-                },
-              ],
-            },
-          ],
-        }),
-      ])
-
-      await expect(service.getProfileFeed(USER_ID)).rejects.toThrow(
-        'Artist missing in album_artists join — data integrity issue',
-      )
     })
   })
 

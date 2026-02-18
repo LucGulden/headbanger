@@ -1,6 +1,6 @@
 import { PostType } from '@headbanger/shared'
 
-type ArtistJoin = { id: string; name: string; image_url: string | null }[]
+type ArtistJoin = { id: string; name: string; image_url: string | null }
 
 export type PostQueryResult = {
   id: string
@@ -12,7 +12,7 @@ export type PostQueryResult = {
     uid: string
     username: string
     photo_url: string | null
-  }[]
+  }
   vinyl: {
     id: string
     title: string
@@ -25,16 +25,5 @@ export type PostQueryResult = {
       position: number
       artist: ArtistJoin
     }[]
-    album:
-      | {
-          id: string
-          title: string
-          cover_url: string | null
-          album_artists: {
-            position: number
-            artist: ArtistJoin
-          }[]
-        }[]
-      | null
-  }[]
+  }
 }

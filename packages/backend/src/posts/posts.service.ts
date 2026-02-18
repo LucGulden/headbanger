@@ -166,19 +166,6 @@ export class PostsService {
               name,
               image_url
             )
-          ),
-          album:albums!vinyls_album_id_fkey (
-            id,
-            title,
-            cover_url,
-            album_artists(
-              position,
-              artist:artists(
-                id,
-                name,
-                image_url
-              )
-            )
           )
         )
       `,
@@ -202,54 +189,18 @@ export class PostsService {
     likesCountMap: Map<string, number>,
     commentsCountMap: Map<string, number>,
   ): PostWithDetails {
-    const user = data.user[0]
-    if (!user) {
-      throw new Error(`User missing in post ${data.id} join — data integrity issue`)
-    }
-
-    const vinyl = data.vinyl[0]
-    if (!vinyl) {
-      throw new Error(`Vinyl missing in post ${data.id} join — data integrity issue`)
-    }
-
-    const album = vinyl.album?.[0]
-    if (!album) {
-      throw new Error(`Album missing in vinyl ${vinyl.id} join — data integrity issue`)
-    }
-
-    const vinylArtists: ArtistLight[] = (vinyl.vinyl_artists || [])
+    const vinylArtists: ArtistLight[] = (data.vinyl.vinyl_artists || [])
       .sort((a, b) => a.position - b.position)
       .map((va) => {
-        const artist = va.artist[0]
-        if (!artist) {
-          throw new Error(`Artist missing in vinyl_artists join — data integrity issue`)
-        }
         return {
-          id: artist.id,
-          name: artist.name,
-          imageUrl: artist.image_url,
+          id: va.artist.id,
+          name: va.artist.name,
+          imageUrl: va.artist.image_url,
         }
       })
       .filter((artist) => artist.id && artist.name)
 
     let artists = vinylArtists
-
-    if (artists.length === 0) {
-      artists = (album.album_artists || [])
-        .sort((a, b) => a.position - b.position)
-        .map((aa) => {
-          const artist = aa.artist[0]
-          if (!artist) {
-            throw new Error(`Artist missing in album_artists join — data integrity issue`)
-          }
-          return {
-            id: artist.id,
-            name: artist.name,
-            imageUrl: artist.image_url,
-          }
-        })
-        .filter((artist) => artist.id && artist.name)
-    }
 
     if (artists.length === 0) {
       artists = [{ id: '', name: 'Artiste inconnu', imageUrl: null }]
@@ -263,18 +214,18 @@ export class PostsService {
       likesCount: likesCountMap.get(data.id) ?? 0,
       commentsCount: commentsCountMap.get(data.id) ?? 0,
       user: {
-        uid: user.uid,
-        username: user.username,
-        photoUrl: user.photo_url,
+        uid: data.user.uid,
+        username: data.user.username,
+        photoUrl: data.user.photo_url,
       },
       vinyl: {
-        id: vinyl.id,
-        title: vinyl.title,
+        id: data.vinyl.id,
+        title: data.vinyl.title,
         artists,
-        coverUrl: vinyl.cover_url,
-        year: vinyl.year,
-        country: vinyl.country,
-        catalogNumber: vinyl.catalog_number,
+        coverUrl: data.vinyl.cover_url,
+        year: data.vinyl.year,
+        country: data.vinyl.country,
+        catalogNumber: data.vinyl.catalog_number,
       },
     }
   }
