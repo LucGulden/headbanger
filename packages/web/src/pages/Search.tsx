@@ -1,104 +1,380 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import SearchAlbumsTab from '../components/SearchAlbumsTab'
 import SearchArtistsTab from '../components/SearchArtistsTab'
 import SearchUsersTab from '../components/SearchUsersTab'
+import { useAnimFade } from '../hooks/useAnimFade'
+import '../styles/search.css'
 
 type SearchTab = 'albums' | 'artists' | 'users'
 
-export default function Search() {
-  const [activeTab, setActiveTab] = useState<SearchTab>('albums')
+const HINTS = ['Radiohead', 'Kind of Blue', 'Daft Punk', 'Björk']
+
+export default function SearchPage() {
   const [query, setQuery] = useState('')
+  const [inputValue, setInputValue] = useState('')
+  const [activeTab, setActiveTab] = useState<SearchTab>('albums')
+  const [counts, setCounts] = useState({ albums: 0, artists: 0, users: 0 })
+  const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 })
+
+  const inputRef = useRef<HTMLInputElement>(null)
+  const tabsRef = useRef<HTMLDivElement>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+
+  useAnimFade()
+
+  const hasQuery = query.trim().length > 0
+  const totalResults = counts.albums + counts.artists + counts.users
+  const showNoResults = hasQuery && totalResults === 0
+
+  // Debounce input → query
+  const handleInput = (val: string) => {
+    setInputValue(val)
+    clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => setQuery(val), 150)
+  }
+
+  const handleClear = () => {
+    setInputValue('')
+    setQuery('')
+    inputRef.current?.focus()
+  }
+
+  const handleHint = (hint: string) => {
+    setInputValue(hint)
+    setQuery(hint)
+    inputRef.current?.focus()
+  }
+
+  // Ctrl+K / Cmd+K
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        inputRef.current?.focus()
+        inputRef.current?.select()
+      }
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [])
+
+  // Auto-switch tab vers un tab qui a des résultats
+  useEffect(() => {
+    if (!hasQuery) return
+    if (counts[activeTab] > 0) return
+    if (counts.albums > 0) setActiveTab('albums')
+    else if (counts.artists > 0) setActiveTab('artists')
+    else if (counts.users > 0) setActiveTab('users')
+  }, [counts, hasQuery, activeTab])
+
+  // Tab indicator
+  const positionIndicator = useCallback((btn: HTMLButtonElement) => {
+    if (!tabsRef.current) return
+    const parentRect = tabsRef.current.getBoundingClientRect()
+    const btnRect = btn.getBoundingClientRect()
+    setIndicatorStyle({ left: btnRect.left - parentRect.left, width: btnRect.width })
+  }, [])
+
+  useEffect(() => {
+    if (!tabsRef.current) return
+    const activeBtn = tabsRef.current.querySelector<HTMLButtonElement>('.search-tab.is-active')
+    if (activeBtn) positionIndicator(activeBtn)
+  }, [activeTab, positionIndicator])
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (!tabsRef.current) return
+      const activeBtn = tabsRef.current.querySelector<HTMLButtonElement>('.search-tab.is-active')
+      if (activeBtn) positionIndicator(activeBtn)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [positionIndicator])
+
+  const switchTab = (tab: SearchTab, btn: HTMLButtonElement) => {
+    setActiveTab(tab)
+    positionIndicator(btn)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const tabs: SearchTab[] = ['albums', 'artists', 'users']
+    const currentIndex = tabs.indexOf(activeTab)
+    let nextIndex = -1
+    if (e.key === 'ArrowRight') nextIndex = (currentIndex + 1) % tabs.length
+    else if (e.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + tabs.length) % tabs.length
+    else if (e.key === 'Home') nextIndex = 0
+    else if (e.key === 'End') nextIndex = tabs.length - 1
+    if (nextIndex >= 0) {
+      e.preventDefault()
+      const btns = tabsRef.current?.querySelectorAll<HTMLButtonElement>('.search-tab')
+      if (btns?.[nextIndex]) {
+        btns[nextIndex].focus()
+        switchTab(tabs[nextIndex], btns[nextIndex])
+      }
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-[var(--background)] px-6 py-8 sm:px-8">
-      <div className="mx-auto max-w-5xl">
-        {/* Header avec input de recherche */}
-        <div className="mb-8">
-          <h1 className="mb-4 text-3xl font-bold text-[var(--foreground)]">Rechercher</h1>
+    <main className="search-page">
+      {/* HERO */}
+      <section className="search-hero">
+        <div className="search-hero__bg" aria-hidden="true">
+          <div className="search-hero__glow search-hero__glow--1" />
+          <div className="search-hero__glow search-hero__glow--2" />
+          <div className="search-hero__grooves" />
+        </div>
+        <div className="search-hero__inner">
+          <h1 className="search-hero__title anim-fade" data-delay="0">
+            <span>Explore the</span>
+            <span className="search-hero__title-accent">collection.</span>
+          </h1>
+          <p className="search-hero__subtitle anim-fade" data-delay="1">
+            Find albums, discover artists, and connect with collectors who share your taste.
+          </p>
 
-          {/* Barre de recherche */}
-          <div className="relative">
-            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+          {/* Search Bar */}
+          <div className="search-bar anim-fade" data-delay="2">
+            <div className="search-bar__inner">
               <svg
-                className="h-5 w-5 text-[var(--foreground-muted)]"
-                fill="none"
+                className="search-bar__icon"
                 viewBox="0 0 24 24"
+                fill="none"
                 stroke="currentColor"
+                strokeWidth="1.8"
+                aria-hidden="true"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
+                <circle cx="10.5" cy="10.5" r="7" />
+                <line x1="15.5" y1="15.5" x2="21" y2="21" />
               </svg>
+              <input
+                ref={inputRef}
+                className="search-bar__input"
+                type="search"
+                value={inputValue}
+                onChange={(e) => handleInput(e.target.value)}
+                placeholder="Search albums, artists, or users..."
+                autoComplete="off"
+                aria-label="Search HeadBanger"
+              />
+              {inputValue && (
+                <button
+                  className="search-bar__clear"
+                  onClick={handleClear}
+                  aria-label="Clear search"
+                >
+                  <svg
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    aria-hidden="true"
+                  >
+                    <line x1="5" y1="5" x2="15" y2="15" />
+                    <line x1="15" y1="5" x2="5" y2="15" />
+                  </svg>
+                </button>
+              )}
             </div>
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={
-                activeTab === 'albums'
-                  ? 'Rechercher un album ou un artiste...'
-                  : activeTab === 'artists'
-                    ? 'Rechercher un artiste...'
-                    : "Rechercher par nom d'utilisateur ou nom..."
-              }
-              className="w-full rounded-lg border border-[var(--background-lighter)] bg-[var(--background-light)] py-3 pl-12 pr-4 text-[var(--foreground)] placeholder:text-[var(--foreground-muted)] focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20"
+            <div className="search-bar__glow" />
+          </div>
+        </div>
+      </section>
+
+      {/* RESULTS */}
+      <section className="search-results">
+        {/* Tabs */}
+        <div className="search-tabs-wrap">
+          <div
+            className="search-tabs"
+            ref={tabsRef}
+            role="tablist"
+            aria-label="Search categories"
+            onKeyDown={handleKeyDown}
+          >
+            {(
+              [
+                {
+                  id: 'albums',
+                  label: 'Albums',
+                  icon: (
+                    <svg
+                      viewBox="0 0 20 20"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.4"
+                      aria-hidden="true"
+                    >
+                      <circle cx="10" cy="10" r="8" />
+                      <circle cx="10" cy="10" r="3" />
+                      <circle cx="10" cy="10" r="1" fill="currentColor" stroke="none" />
+                    </svg>
+                  ),
+                },
+                {
+                  id: 'artists',
+                  label: 'Artists',
+                  icon: (
+                    <svg
+                      viewBox="0 0 20 20"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.4"
+                      aria-hidden="true"
+                    >
+                      <circle cx="10" cy="8" r="4" />
+                      <path d="M2 18c0-4 3.5-7 8-7s8 3 8 7" />
+                    </svg>
+                  ),
+                },
+                {
+                  id: 'users',
+                  label: 'Users',
+                  icon: (
+                    <svg
+                      viewBox="0 0 20 20"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.4"
+                      aria-hidden="true"
+                    >
+                      <circle cx="7" cy="8" r="3.5" />
+                      <circle cx="14" cy="8" r="3.5" />
+                      <path d="M0 18c0-3.5 2.5-6 7-6 1.5 0 3 .5 4 1.5" />
+                      <path d="M10 18c0-3.5 2-6 4-6s4 2.5 4 6" />
+                    </svg>
+                  ),
+                },
+              ] as { id: SearchTab; label: string; icon: React.ReactNode }[]
+            ).map((tab) => (
+              <button
+                key={tab.id}
+                className={`search-tab ${activeTab === tab.id ? 'is-active' : ''}`}
+                role="tab"
+                aria-selected={activeTab === tab.id}
+                aria-controls={`panel-${tab.id}`}
+                id={`tab-${tab.id}`}
+                onClick={(e) => switchTab(tab.id, e.currentTarget)}
+              >
+                {tab.icon}
+                {tab.label}
+                <span className="search-tab__count">{counts[tab.id]}</span>
+              </button>
+            ))}
+            <div
+              className="search-tab__indicator"
+              style={{ left: indicatorStyle.left, width: indicatorStyle.width }}
             />
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="mb-8 border-b border-[var(--background-lighter)]">
-          <div className="flex gap-8">
-            <button
-              onClick={() => setActiveTab('albums')}
-              className={`relative py-4 text-sm font-semibold transition-colors ${
-                activeTab === 'albums'
-                  ? 'text-[var(--primary)]'
-                  : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
-              }`}
-            >
-              Albums
-              {activeTab === 'albums' && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--primary)]" />
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab('artists')}
-              className={`relative py-4 text-sm font-semibold transition-colors ${
-                activeTab === 'artists'
-                  ? 'text-[var(--primary)]'
-                  : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
-              }`}
-            >
-              Artistes
-              {activeTab === 'artists' && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--primary)]" />
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab('users')}
-              className={`relative py-4 text-sm font-semibold transition-colors ${
-                activeTab === 'users'
-                  ? 'text-[var(--primary)]'
-                  : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
-              }`}
-            >
-              Utilisateurs
-              {activeTab === 'users' && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--primary)]" />
-              )}
-            </button>
+        {/* Empty state — pas de query */}
+        {!hasQuery && (
+          <div className="search-empty">
+            <div className="search-empty__inner">
+              <div className="search-empty__vinyl">
+                <div className="search-empty__disc">
+                  <div className="search-empty__disc-groove" />
+                  <div className="search-empty__disc-groove search-empty__disc-groove--2" />
+                  <div className="search-empty__disc-label" />
+                </div>
+              </div>
+              <h2 className="search-empty__title">Start typing to explore</h2>
+              <p className="search-empty__desc">
+                Search through thousands of albums, artists, and collectors in the HeadBanger
+                community.
+              </p>
+              <div className="search-empty__hints">
+                {HINTS.map((hint) => (
+                  <button
+                    key={hint}
+                    className="search-empty__hint"
+                    onClick={() => handleHint(hint)}
+                  >
+                    {hint}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Contenu des tabs */}
-        {activeTab === 'albums' && <SearchAlbumsTab query={query} />}
-        {activeTab === 'artists' && <SearchArtistsTab query={query} />}
-        {activeTab === 'users' && <SearchUsersTab query={query} />}
-      </div>
-    </div>
+        {/* No results — query mais 0 résultats */}
+        {showNoResults && (
+          <div className="search-no-results">
+            <div className="search-no-results__inner">
+              <svg
+                className="search-no-results__icon"
+                viewBox="0 0 48 48"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                aria-hidden="true"
+              >
+                <circle cx="20" cy="20" r="14" />
+                <line x1="30" y1="30" x2="42" y2="42" />
+                <line x1="15" y1="16" x2="25" y2="24" opacity="0.4" />
+                <line x1="25" y1="16" x2="15" y2="24" opacity="0.4" />
+              </svg>
+              <h2 className="search-no-results__title">No results found</h2>
+              <p className="search-no-results__desc">
+                Try adjusting your search or check for typos.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Panels — seulement quand il y a une query */}
+        {hasQuery && !showNoResults && (
+          <>
+            <div
+              className={`search-panel ${activeTab === 'albums' ? 'is-active' : ''}`}
+              role="tabpanel"
+              id="panel-albums"
+              aria-labelledby="tab-albums"
+              hidden={activeTab !== 'albums'}
+            >
+              <div className="search-panel__inner">
+                <SearchAlbumsTab
+                  query={query}
+                  onCountChange={(count) => setCounts((prev) => ({ ...prev, albums: count }))}
+                />
+              </div>
+            </div>
+
+            <div
+              className={`search-panel ${activeTab === 'artists' ? 'is-active' : ''}`}
+              role="tabpanel"
+              id="panel-artists"
+              aria-labelledby="tab-artists"
+              hidden={activeTab !== 'artists'}
+            >
+              <div className="search-panel__inner">
+                <SearchArtistsTab
+                  query={query}
+                  onCountChange={(count) => setCounts((prev) => ({ ...prev, artists: count }))}
+                />
+              </div>
+            </div>
+
+            <div
+              className={`search-panel ${activeTab === 'users' ? 'is-active' : ''}`}
+              role="tabpanel"
+              id="panel-users"
+              aria-labelledby="tab-users"
+              hidden={activeTab !== 'users'}
+            >
+              <div className="search-panel__inner">
+                <SearchUsersTab
+                  query={query}
+                  onCountChange={(count) =>
+                    setCounts((prev) => ({ ...prev, counts: count }) as any)
+                  }
+                />
+              </div>
+            </div>
+          </>
+        )}
+      </section>
+    </main>
   )
 }

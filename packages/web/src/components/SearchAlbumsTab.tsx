@@ -4,13 +4,18 @@ import AlbumCard from './AlbumCard'
 
 interface SearchAlbumsTabProps {
   query: string
+  onCountChange: (count: number) => void
 }
 
-export default function SearchAlbumsTab({ query }: SearchAlbumsTabProps) {
+export default function SearchAlbumsTab({ query, onCountChange }: SearchAlbumsTabProps) {
   const { albums, loading, loadingMore, hasMore, error, loadMore } = useAlbumSearch({ query })
   const loadMoreRef = useRef<HTMLDivElement>(null)
 
   const hasSearched = query.trim().length > 0
+
+  useEffect(() => {
+    if (!loading) onCountChange?.(albums.length)
+  }, [albums.length, loading, onCountChange])
 
   // Infinite scroll avec IntersectionObserver
   useEffect(() => {
@@ -101,19 +106,6 @@ export default function SearchAlbumsTab({ query }: SearchAlbumsTabProps) {
           <h3 className="mb-2 text-xl font-semibold text-[var(--foreground)]">Aucun résultat</h3>
           <p className="text-[var(--foreground-muted)]">
             Aucun album trouvé pour "{query}". Essayez un autre nom d'album ou d'artiste.
-          </p>
-        </div>
-      )}
-
-      {/* État initial - Pas de recherche */}
-      {!loading && !hasSearched && (
-        <div className="py-16 text-center">
-          <div className="mb-4 text-6xl">💿</div>
-          <h3 className="mb-2 text-xl font-semibold text-[var(--foreground)]">
-            Recherchez un album
-          </h3>
-          <p className="text-[var(--foreground-muted)]">
-            Tapez le nom d'un album ou d'un artiste pour commencer
           </p>
         </div>
       )}

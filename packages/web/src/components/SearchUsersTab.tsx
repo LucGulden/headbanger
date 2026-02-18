@@ -4,13 +4,18 @@ import UserListItem from './UserListItem'
 
 interface SearchUsersTabProps {
   query: string
+  onCountChange: (count: number) => void
 }
 
-export default function SearchUsersTab({ query }: SearchUsersTabProps) {
+export default function SearchUsersTab({ query, onCountChange }: SearchUsersTabProps) {
   const { users, loading, loadingMore, hasMore, error, loadMore } = useUserSearch({ query })
   const loadMoreRef = useRef<HTMLDivElement>(null)
 
   const hasSearched = query.trim().length > 0
+
+  useEffect(() => {
+    if (!loading) onCountChange?.(users.length)
+  }, [users.length, loading, onCountChange])
 
   // Infinite scroll avec IntersectionObserver
   useEffect(() => {
@@ -107,19 +112,6 @@ export default function SearchUsersTab({ query }: SearchUsersTabProps) {
           <h3 className="mb-2 text-xl font-semibold text-[var(--foreground)]">Aucun résultat</h3>
           <p className="text-[var(--foreground-muted)]">
             Aucun utilisateur trouvé pour "{query}". Essayez un autre nom ou nom d'utilisateur.
-          </p>
-        </div>
-      )}
-
-      {/* État initial - Pas de recherche */}
-      {!loading && !hasSearched && (
-        <div className="py-16 text-center">
-          <div className="mb-4 text-6xl">👥</div>
-          <h3 className="mb-2 text-xl font-semibold text-[var(--foreground)]">
-            Recherchez des utilisateurs
-          </h3>
-          <p className="text-[var(--foreground-muted)]">
-            Tapez un nom ou un nom d'utilisateur pour commencer
           </p>
         </div>
       )}
