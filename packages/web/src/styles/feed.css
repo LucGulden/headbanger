@@ -1145,4 +1145,39 @@
   .feed-post__comments-list {
     max-height: 240px;
   }
+
+  
+  .feed-comment__delete {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  opacity: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s, opacity 0.2s;
+}
+
+.feed-comment__delete svg {
+  width: 14px;
+  height: 14px;
+}
+
+.feed-comment:hover .feed-comment__delete {
+  opacity: 1;
+}
+
+.feed-comment__delete:hover {
+  color: var(--wishlist);
+}
+
+.feed-comment__delete:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
 }

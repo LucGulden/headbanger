@@ -1,8 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import Avatar from './Avatar'
-import Input from './Input'
-import Button from './Button'
 import { uploadProfilePhoto, generateImagePreview } from '../lib/api/storage'
 import {
   updateUserProfile,
@@ -16,6 +13,7 @@ import type { User } from '@headbanger/shared'
 interface EditProfileFormProps {
   user: User
   onSuccess?: () => void
+  onError?: (msg: string) => void
 }
 
 interface FormData {
@@ -25,7 +23,7 @@ interface FormData {
   bio: string
 }
 
-export default function EditProfileForm({ user, onSuccess }: EditProfileFormProps) {
+export default function EditProfileForm({ user, onSuccess, onError }: EditProfileFormProps) {
   const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { updateAppUser } = useUserStore()
@@ -156,9 +154,9 @@ export default function EditProfileForm({ user, onSuccess }: EditProfileFormProp
       }
     } catch (error) {
       console.error('Erreur lors de la mise à jour du profil:', error)
-      setErrors({
-        submit: error instanceof Error ? error.message : 'Erreur lors de la mise à jour du profil',
-      })
+      const msg = error instanceof Error ? error.message : 'Erreur lors de la mise à jour du profil'
+      setErrors({ submit: msg })
+      onError?.(msg)
     } finally {
       setLoading(false)
     }
@@ -180,118 +178,238 @@ export default function EditProfileForm({ user, onSuccess }: EditProfileFormProp
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="settings__form">
       {/* Erreur globale */}
       {errors.submit && (
-        <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-500">
-          {errors.submit}
+        <div
+          className="settings__card"
+          style={{ borderColor: 'var(--wishlist)', marginBottom: 'var(--space-md)' }}
+        >
+          <p style={{ color: 'var(--wishlist)', fontSize: '0.88rem' }}>{errors.submit}</p>
         </div>
       )}
 
-      {/* Photo de profil */}
-      <div>
-        <label className="mb-2 block text-sm font-medium text-[var(--foreground)]">
-          Photo de profil
-        </label>
-        <div className="flex items-center gap-6">
-          <Avatar src={photoPreview} username={formData.username} size="xl" />
-          <div className="flex flex-col gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={loading}
-            >
-              Changer la photo
-            </Button>
-            <p className="text-xs text-[var(--foreground-muted)]">JPG, PNG ou GIF. Max 5MB.</p>
-            {errors.photo && <p className="text-xs text-red-500">{errors.photo}</p>}
+      {/* Avatar */}
+      <div className="settings__card anim-fade" data-delay="2">
+        <h2 className="settings__card-title">Profile Picture</h2>
+        <p className="settings__card-desc">Upload a profile picture. JPG, PNG or GIF. Max 5MB.</p>
+        <div className="settings__avatar-area">
+          <div className="settings__avatar">
+            {photoPreview ? (
+              <img src={photoPreview} alt="Profile picture preview" />
+            ) : (
+              <svg
+                className="settings__avatar-placeholder"
+                viewBox="0 0 120 120"
+                fill="none"
+                aria-hidden="true"
+              >
+                <rect width="120" height="120" rx="60" fill="#1e1e26" />
+                <circle cx="60" cy="46" r="20" fill="#2a2a35" />
+                <ellipse cx="60" cy="95" rx="32" ry="22" fill="#2a2a35" />
+                <text
+                  x="60"
+                  y="56"
+                  textAnchor="middle"
+                  fill="#d4a843"
+                  fontFamily="'Clash Display', sans-serif"
+                  fontWeight="600"
+                  fontSize="28"
+                >
+                  {formData.username.slice(0, 2).toUpperCase()}
+                </text>
+              </svg>
+            )}
           </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFileSelect}
-            className="hidden"
-          />
+          <div className="settings__avatar-actions">
+            <label className="btn btn--primary settings__avatar-upload-btn" htmlFor="avatarInput">
+              <svg
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                aria-hidden="true"
+              >
+                <path d="M1 11v3a1 1 0 001 1h12a1 1 0 001-1v-3" />
+                <polyline points="4,5 8,1 12,5" />
+                <line x1="8" y1="1" x2="8" y2="11" />
+              </svg>
+              Upload
+            </label>
+            <input
+              ref={fileInputRef}
+              id="avatarInput"
+              type="file"
+              accept="image/jpeg,image/png,image/gif"
+              onChange={handleFileSelect}
+              className="settings__avatar-input"
+              aria-label="Upload profile picture"
+            />
+            <button
+              type="button"
+              className="btn btn--ghost settings__avatar-remove-btn"
+              onClick={() => {
+                setPhotoFile(null)
+                setPhotoPreview(null)
+              }}
+            >
+              Remove
+            </button>
+          </div>
+          {errors.photo && <span className="settings__error is-visible">{errors.photo}</span>}
         </div>
       </div>
 
-      {/* Username */}
-      <div>
-        <Input
-          label="Nom d'utilisateur"
-          type="text"
-          name="username"
-          value={formData.username}
-          onChange={handleChange}
-          error={errors.username}
-          disabled={loading || checkingUsername}
-        />
-        {checkingUsername && (
-          <p className="mt-1 text-xs text-[var(--foreground-muted)]">Vérification...</p>
-        )}
-        {!checkingUsername &&
-          formData.username !== user.username &&
-          formData.username.length >= 3 &&
-          usernameAvailable && (
-            <p className="mt-1 text-xs text-green-500">✓ Nom d'utilisateur disponible</p>
-          )}
+      {/* Profile info */}
+      <div className="settings__card anim-fade" data-delay="3">
+        <h2 className="settings__card-title">Profile Information</h2>
+        <p className="settings__card-desc">
+          This information will be visible on your public profile.
+        </p>
+
+        <div className="settings__fields">
+          {/* Username */}
+          <div className="settings__field">
+            <label className="settings__label" htmlFor="username">
+              Username
+              <span className="settings__label-required">Required</span>
+            </label>
+            <div className="settings__input-wrap">
+              <span className="settings__input-prefix">@</span>
+              <input
+                id="username"
+                name="username"
+                type="text"
+                className={`settings__input settings__input--prefixed ${errors.username ? 'is-error' : usernameAvailable && formData.username !== user.username && formData.username.length >= 3 ? 'is-valid' : ''}`}
+                value={formData.username}
+                onChange={handleChange}
+                disabled={loading || checkingUsername}
+                required
+                minLength={3}
+                maxLength={30}
+                autoComplete="username"
+                spellCheck={false}
+              />
+            </div>
+            <span className="settings__hint">
+              Lowercase letters, numbers, and hyphens only. 3–30 characters.
+            </span>
+            {checkingUsername && <span className="settings__hint">Checking availability…</span>}
+            <span
+              className={`settings__error ${errors.username ? 'is-visible' : ''}`}
+              role="alert"
+              aria-live="polite"
+            >
+              {errors.username}
+            </span>
+          </div>
+
+          {/* First / Last name */}
+          <div className="settings__field-row">
+            <div className="settings__field">
+              <label className="settings__label" htmlFor="firstName">
+                First Name
+              </label>
+              <input
+                id="firstName"
+                name="firstName"
+                type="text"
+                className="settings__input"
+                value={formData.firstName}
+                onChange={handleChange}
+                disabled={loading}
+                maxLength={50}
+                autoComplete="given-name"
+              />
+            </div>
+            <div className="settings__field">
+              <label className="settings__label" htmlFor="lastName">
+                Last Name
+              </label>
+              <input
+                id="lastName"
+                name="lastName"
+                type="text"
+                className="settings__input"
+                value={formData.lastName}
+                onChange={handleChange}
+                disabled={loading}
+                maxLength={50}
+                autoComplete="family-name"
+              />
+            </div>
+          </div>
+
+          {/* Bio */}
+          <div className="settings__field">
+            <label className="settings__label" htmlFor="bio">
+              Bio
+            </label>
+            <textarea
+              id="bio"
+              name="bio"
+              className="settings__textarea"
+              value={formData.bio}
+              onChange={handleChange}
+              disabled={loading}
+              maxLength={300}
+              rows={4}
+              spellCheck
+            />
+            <div className="settings__textarea-footer">
+              <span
+                className={`settings__char-count ${formData.bio.length >= 255 && formData.bio.length < 300 ? 'is-near-limit' : ''} ${formData.bio.length >= 300 ? 'is-at-limit' : ''}`}
+              >
+                {formData.bio.length} / 300
+              </span>
+            </div>
+            <span className={`settings__error ${errors.bio ? 'is-visible' : ''}`}>
+              {errors.bio}
+            </span>
+          </div>
+        </div>
       </div>
 
-      {/* First Name */}
-      <Input
-        label="Prénom (optionnel)"
-        type="text"
-        name="firstName"
-        value={formData.firstName}
-        onChange={handleChange}
-        disabled={loading}
-      />
-
-      {/* Last Name */}
-      <Input
-        label="Nom (optionnel)"
-        type="text"
-        name="lastName"
-        value={formData.lastName}
-        onChange={handleChange}
-        disabled={loading}
-      />
-
-      {/* Bio */}
-      <div>
-        <label className="mb-2 block text-sm font-medium text-[var(--foreground)]">
-          Bio (optionnel)
-        </label>
-        <textarea
-          name="bio"
-          value={formData.bio}
-          onChange={handleChange}
+      {/* Actions */}
+      <div className="settings__actions anim-fade" data-delay="4">
+        <button
+          type="button"
+          className="btn btn--ghost"
+          onClick={() => {
+            setFormData({
+              username: user.username,
+              firstName: user.firstName || '',
+              lastName: user.lastName || '',
+              bio: user.bio || '',
+            })
+            setPhotoFile(null)
+            setPhotoPreview(user.photoUrl || null)
+            setErrors({})
+          }}
           disabled={loading}
-          maxLength={200}
-          rows={4}
-          className="w-full rounded-lg border border-[var(--background-lighter)] bg-[var(--background-light)] px-4 py-3 text-[var(--foreground)] placeholder-[var(--foreground-muted)] focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 disabled:cursor-not-allowed disabled:opacity-50"
-          placeholder="Parlez-nous de votre passion pour les vinyles..."
-        />
-        <div className="mt-1 flex items-center justify-between">
-          <p className="text-xs text-[var(--foreground-muted)]">
-            {formData.bio.length}/200 caractères
-          </p>
-          {errors.bio && <p className="text-xs text-red-500">{errors.bio}</p>}
-        </div>
+        >
+          Discard Changes
+        </button>
+        <button
+          type="submit"
+          className="btn btn--primary"
+          disabled={loading || checkingUsername || !usernameAvailable}
+        >
+          <span>{loading ? 'Saving…' : 'Save Changes'}</span>
+          {!loading && (
+            <svg
+              className="settings__save-icon"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              aria-hidden="true"
+            >
+              <polyline points="3,8.5 6.5,12 13,4" />
+            </svg>
+          )}
+        </button>
       </div>
-
-      {/* Bouton de soumission */}
-      <Button
-        type="submit"
-        loading={loading}
-        disabled={loading || checkingUsername || !usernameAvailable}
-        className="w-full"
-      >
-        Enregistrer les modifications
-      </Button>
     </form>
   )
 }
