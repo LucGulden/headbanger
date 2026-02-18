@@ -5,7 +5,6 @@ Interface utilisateur HeadBanger : gestion collection vinyle + réseau social.
 ## Stack
 - React 18 + TypeScript
 - Vite
-- Tailwind CSS
 - Zustand (state)
 - Socket.IO Client (notifications)
 

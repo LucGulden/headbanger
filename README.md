@@ -4,7 +4,7 @@ Monorepo pour HeadBanger : gestion de collection vinyle, feed social, follows, l
 
 ## Stack technique
 
-- **Web** : React 18 + TypeScript + Vite + Tailwind CSS + Zustand
+- **Web** : React 18 + TypeScript + Vite + Zustand
 - **Backend** : NestJS + Fastify + Socket.IO + Redis
 - **Database** : Supabase (PostgreSQL + Auth + Storage)
 - **Shared** : Types TypeScript partagés
