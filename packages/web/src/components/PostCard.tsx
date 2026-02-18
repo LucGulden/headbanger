@@ -1,23 +1,20 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import Avatar from './Avatar'
 import { likePost, unlikePost, hasLikedPost, getLikesCount } from '../lib/api/postLikes'
-import { addComment, getCommentsCount } from '../lib/api/comments'
-import type { Comment } from '@headbanger/shared'
+import { addComment, getCommentsCount, getComments } from '../lib/api/comments'
+import type { Comment, PostWithDetails } from '@headbanger/shared'
 import { getRelativeTimeString } from '../utils/date-utils'
+import { getHueFromString } from '../utils/hue'
 import CommentItem from './CommentItem'
-import Button from './Button'
 import { useUserStore } from '../stores/userStore'
-import type { PostWithDetails } from '@headbanger/shared'
+import VinylCover from './VinylCover'
 
-// Type pour les commentaires optimistes (en cours de publication)
-type OptimisticComment = Comment & {
-  isPending: boolean
-  tempId: string
-}
-
-// Générateur d'ID temporaire unique
+type OptimisticComment = Comment & { isPending: boolean; tempId: string }
 const generateTempId = () => `temp_${Date.now()}_${Math.random()}`
+
+function getInitials(username: string): string {
+  return username.slice(0, 2).toUpperCase()
+}
 
 interface PostCardProps {
   post: PostWithDetails
@@ -37,71 +34,48 @@ export default function PostCard({ post, currentUserId, priority = false }: Post
   const [isCommenting, setIsCommenting] = useState(false)
   const [loadingComments, setLoadingComments] = useState(false)
 
-  // Vérifier si l'utilisateur a liké ce post
+  const coverHue = getHueFromString(post.vinyl.id)
+  const authorHue = getHueFromString(post.user.username)
+  const authorInitials = getInitials(post.user.username)
+
+  const isCollection = post.type === 'collection_add'
+  const actionLabel = isCollection ? 'added to collection' : 'wishlisted'
+  const tagClass = isCollection
+    ? 'feed-post__record-tag--collection'
+    : 'feed-post__record-tag--wishlist'
+  const tagText = isCollection ? 'Collection' : 'Wishlist'
+
   useEffect(() => {
     if (!currentUserId) return
-
-    const checkLike = async () => {
-      const liked = await hasLikedPost(post.id)
-      setIsLiked(liked)
-    }
-
-    checkLike()
+    hasLikedPost(post.id).then(setIsLiked)
   }, [currentUserId, post.id])
 
-  // Charger les commentaires quand la section s'ouvre
   useEffect(() => {
     if (!showComments) return
-
-    const loadComments = async () => {
-      setLoadingComments(true)
-      try {
-        const { getComments } = await import('../lib/api/comments')
-        const data = await getComments(post.id)
-        setComments(
-          data.map((c) => ({
-            ...c,
-            isPending: false,
-            tempId: '',
-          })),
-        )
-      } catch (error) {
-        console.error('Erreur chargement commentaires:', error)
-      } finally {
-        setLoadingComments(false)
-      }
-    }
-
-    loadComments()
+    setLoadingComments(true)
+    getComments(post.id)
+      .then((data) => setComments(data.map((c) => ({ ...c, isPending: false, tempId: '' }))))
+      .catch((err) => console.error(err))
+      .finally(() => setLoadingComments(false))
   }, [showComments, post.id])
 
   const handleLike = async () => {
     if (!currentUserId || isLiking) return
-
     const wasLiked = isLiked
-    const previousCount = likesCount
-
-    // 1. Optimistic UI
+    const prevCount = likesCount
     setIsLiked(!wasLiked)
-    setLikesCount(wasLiked ? previousCount - 1 : previousCount + 1)
+    setLikesCount(wasLiked ? prevCount - 1 : prevCount + 1)
     setIsLiking(true)
-
     try {
-      // 2. API call
       if (wasLiked) {
         await unlikePost(post.id)
       } else {
         await likePost(post.id)
       }
-
-      // 3. Refresh count réel
-      const realCount = await getLikesCount(post.id)
-      setLikesCount(realCount)
-    } catch (error) {
-      // Rollback on error
+      setLikesCount(await getLikesCount(post.id))
+    } catch {
       setIsLiked(wasLiked)
-      setLikesCount(previousCount)
-      console.error('Erreur lors du like:', error)
+      setLikesCount(prevCount)
     } finally {
       setIsLiking(false)
     }
@@ -109,277 +83,228 @@ export default function PostCard({ post, currentUserId, priority = false }: Post
 
   const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault()
-
     if (!currentUserId || !commentText.trim() || isCommenting || !appUser) return
-
     const tempId = generateTempId()
-    const commentContent = commentText.trim()
-
-    // 1. Créer le commentaire optimiste
-    const optimisticComment: OptimisticComment = {
+    const content = commentText.trim()
+    const optimistic: OptimisticComment = {
       id: tempId,
       postId: post.id,
-      content: commentContent,
+      content,
       createdAt: new Date().toISOString(),
-      user: {
-        uid: currentUserId,
-        username: appUser.username,
-        photoUrl: appUser.photoUrl,
-      },
+      user: { uid: currentUserId, username: appUser.username, photoUrl: appUser.photoUrl },
       isPending: true,
       tempId,
     }
-
-    // Ajout optimiste
-    setComments((prev) => [...prev, optimisticComment])
+    setComments((prev) => [...prev, optimistic])
     setCommentsCount((prev) => prev + 1)
     setCommentText('')
     setIsCommenting(true)
-
     try {
-      // 2. API call (récupère le vrai commentaire)
-      const newComment = await addComment(post.id, commentContent)
-
-      // 3. Remplacer l'optimiste par le vrai
+      const newComment = await addComment(post.id, content)
       setComments((prev) =>
         prev.map((c) =>
           c.tempId === tempId ? { ...newComment, isPending: false, tempId: '' } : c,
         ),
       )
-
-      // 4. Refresh count réel
-      const realCount = await getCommentsCount(post.id)
-      setCommentsCount(realCount)
-    } catch (error) {
-      // Rollback on error
+      setCommentsCount(await getCommentsCount(post.id))
+    } catch {
       setComments((prev) => prev.filter((c) => c.tempId !== tempId))
       setCommentsCount((prev) => Math.max(0, prev - 1))
-      console.error("Erreur lors de l'ajout du commentaire:", error)
-      alert("Impossible d'ajouter le commentaire")
     } finally {
       setIsCommenting(false)
     }
   }
 
   const handleDeleteComment = async (commentId: string) => {
-    // 1. Retirer de l'UI
     setComments((prev) => prev.filter((c) => c.id !== commentId))
     setCommentsCount((prev) => Math.max(0, prev - 1))
-
-    // 2. Refresh count réel (pour être cohérent avec le pattern)
     try {
-      const realCount = await getCommentsCount(post.id)
-      setCommentsCount(realCount)
-    } catch (error) {
-      console.error('Erreur refresh count:', error)
+      setCommentsCount(await getCommentsCount(post.id))
+    } catch (err) {
+      console.error(err)
     }
   }
 
-  const postTypeText = post.type === 'collection_add' ? 'a ajouté' : 'souhaite ajouter'
-  const collectionText = post.type === 'collection_add' ? 'sa collection' : 'sa wishlist'
-
   return (
-    <div className="rounded-2xl border border-[var(--background-lighter)] bg-[var(--background-light)] p-6 transition-shadow hover:shadow-lg">
+    <article className="feed-post">
       {/* Header */}
-      <div className="flex items-start gap-3 mb-4">
-        <Link to={`/profile/${post.user.username}`} className="flex-shrink-0">
-          <Avatar src={post.user.photoUrl} username={post.user.username} size="md" />
-        </Link>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Link
-              to={`/profile/${post.user.username}`}
-              className="font-semibold text-[var(--foreground)] hover:text-[var(--primary)] transition-colors"
-            >
-              {post.user.username}
-            </Link>
-            <span className="text-sm text-[var(--foreground-muted)]">
-              {getRelativeTimeString(post.createdAt)}
-            </span>
+      <div className="feed-post__header">
+        <Link to={`/profile/${post.user.username}`}>
+          <div
+            className="feed-post__avatar"
+            style={{ '--avatar-hue': authorHue } as React.CSSProperties}
+          >
+            {authorInitials}
           </div>
-
-          <p className="mt-1 text-[var(--foreground-muted)]">
-            {postTypeText}{' '}
-            <span className="font-semibold text-[var(--foreground)]">{post.vinyl.title}</span> de{' '}
-            {post.vinyl.artists.map((artist, index) => (
-              <span key={artist.id}>
-                <span className="font-semibold text-[var(--foreground)]">{artist.name}</span>
-                {index < post.vinyl.artists.length - 1 && ', '}
-              </span>
-            ))}{' '}
-            à {collectionText}
-          </p>
+        </Link>
+        <div className="feed-post__user-info">
+          <Link to={`/profile/${post.user.username}`}>
+            <span className="feed-post__author">{post.user.username}</span>
+          </Link>
+          <span className="feed-post__action-label">{actionLabel}</span>
         </div>
+        <time className="feed-post__time">{getRelativeTimeString(post.createdAt)}</time>
       </div>
 
-      {/* Album Cover */}
+      {/* Record Card */}
       <Link
         to={`/vinyl/${post.vinyl.id}`}
-        className="block mb-4 relative w-full max-w-md mx-auto aspect-square group"
+        className="feed-post__record"
+        style={{ '--cover-hue': coverHue } as React.CSSProperties}
       >
-        <img
+        <VinylCover
           src={post.vinyl.coverUrl}
+          seed={post.vinyl.id}
           alt={`${post.vinyl.title} - ${post.vinyl.artists.map((a) => a.name).join(', ')}`}
-          className="rounded-xl shadow-md object-cover w-full h-full transition-transform group-hover:scale-[1.02]"
-          loading={priority ? 'eager' : 'lazy'}
+          className="feed-post__cover"
+          priority={priority}
         />
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100">
-          <svg
-            className="w-12 h-12 text-white drop-shadow-lg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-            />
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-            />
-          </svg>
+        <div className="feed-post__record-info">
+          <span className="feed-post__record-title">{post.vinyl.title}</span>
+          <span className="feed-post__record-artist">
+            {post.vinyl.artists.map((a) => a.name).join(', ')}
+          </span>
+          {/* TODO_vinylMeta: ajouter year/label/detail au type PostWithDetails */}
+          <span className="feed-post__record-meta">TODO_year · TODO_label · TODO_detail</span>
+          <div className={`feed-post__record-tag ${tagClass}`}>{tagText}</div>
         </div>
       </Link>
 
-      {/* Actions (Like, Comment) */}
-      <div className="flex items-center gap-6 mb-4 pt-2 border-t border-[var(--background-lighter)]">
-        {/* Like Button */}
+      {/* Post text — TODO_postContent: vérifier nom du champ dans PostWithDetails */}
+      {(post as any).content && <p className="feed-post__text">{(post as any).content}</p>}
+
+      {/* Actions */}
+      <div className="feed-post__actions">
         <button
+          className={`feed-post__action-btn feed-post__like-btn ${isLiked ? 'is-liked' : ''}`}
           onClick={handleLike}
           disabled={!currentUserId || isLiking}
-          className="flex items-center gap-2 text-[var(--foreground-muted)] hover:text-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isLiking ? (
-            <svg
-              className="h-6 w-6 animate-spin text-red-500"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
-            </svg>
-          ) : (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className={`h-6 w-6 transition-all ${isLiked ? 'fill-red-500 text-red-500' : 'fill-none'}`}
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-              />
-            </svg>
-          )}
-          <span className={isLiked ? 'text-red-500 font-semibold' : ''}>{likesCount}</span>
-        </button>
-
-        {/* Comment Button */}
-        <button
-          onClick={() => setShowComments(!showComments)}
-          className="flex items-center gap-2 text-[var(--foreground-muted)] hover:text-[var(--primary)] transition-colors"
         >
           <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6"
+            viewBox="0 0 20 20"
             fill="none"
-            viewBox="0 0 24 24"
             stroke="currentColor"
-            strokeWidth={2}
+            strokeWidth="1.4"
+            aria-hidden="true"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-            />
+            <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" />
+          </svg>
+          <span>{likesCount}</span>
+        </button>
+
+        <button
+          className={`feed-post__action-btn feed-post__comment-btn ${showComments ? 'is-open' : ''}`}
+          onClick={() => setShowComments((v) => !v)}
+          aria-expanded={showComments}
+        >
+          <svg
+            viewBox="0 0 20 20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            aria-hidden="true"
+          >
+            <path d="M2 3h16a1 1 0 011 1v10a1 1 0 01-1 1H6l-3 3v-3H2a1 1 0 01-1-1V4a1 1 0 011-1z" />
           </svg>
           <span>{commentsCount}</span>
         </button>
+
+        {/* TODO_shares: ajouter champ shares à PostWithDetails + API */}
+        <button className="feed-post__action-btn">
+          <svg
+            viewBox="0 0 20 20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            aria-hidden="true"
+          >
+            <path d="M17 7v6a2 2 0 01-2 2H7" />
+            <path d="M3 11l4 4 4-4" />
+            <path d="M3 13V5a2 2 0 012-2h8" />
+          </svg>
+          <span>0</span>
+        </button>
       </div>
 
-      {/* Comments Section */}
-      {showComments && (
-        <div className="border-t border-[var(--background-lighter)] pt-4">
-          {/* Loading State */}
+      {/* Comments */}
+      <div className={`feed-post__comments ${showComments ? 'is-open' : ''}`}>
+        <div className="feed-post__comments-list">
           {loadingComments && (
-            <div className="text-center py-4 text-[var(--foreground-muted)]">
-              Chargement des commentaires...
-            </div>
-          )}
-
-          {/* Comments List */}
-          {!loadingComments && comments.length > 0 && (
-            <div className="space-y-1 mb-4 max-h-96 overflow-y-auto">
-              {comments.map((comment) => (
-                <CommentItem
-                  key={comment.isPending ? comment.tempId : comment.id}
-                  comment={comment}
-                  currentUserId={currentUserId}
-                  isPending={comment.isPending}
-                  onDelete={() => handleDeleteComment(comment.id)}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Empty State */}
-          {!loadingComments && comments.length === 0 && (
-            <p className="text-sm text-[var(--foreground-muted)] text-center py-2">
-              Aucun commentaire pour le moment
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', padding: '0.5rem 0' }}>
+              Loading comments...
             </p>
           )}
-
-          {/* Add Comment Form */}
-          {currentUserId && (
-            <form onSubmit={handleAddComment} className="flex gap-2 mt-4">
-              <input
-                type="text"
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                placeholder="Ajouter un commentaire..."
-                className="flex-1 rounded-lg border border-[var(--background-lighter)] bg-[var(--background)] px-4 py-2 text-[var(--foreground)] placeholder:text-[var(--foreground-muted)] focus:border-[var(--primary)] focus:outline-none"
-                disabled={isCommenting}
+          {!loadingComments &&
+            comments.map((comment) => (
+              <CommentItem
+                key={comment.isPending ? comment.tempId : comment.id}
+                comment={comment}
+                currentUserId={currentUserId}
+                isPending={comment.isPending}
+                onDelete={() => handleDeleteComment(comment.id)}
               />
-              <Button
-                type="submit"
-                disabled={!commentText.trim() || isCommenting}
-                variant="primary"
-              >
-                {isCommenting ? 'Envoi...' : 'Envoyer'}
-              </Button>
-            </form>
-          )}
-
-          {!currentUserId && (
-            <p className="text-sm text-[var(--foreground-muted)] text-center py-2">
-              <Link to="/login" className="text-[var(--primary)] hover:underline">
-                Connectez-vous
-              </Link>{' '}
-              pour commenter
+            ))}
+          {!loadingComments && comments.length === 0 && (
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', padding: '0.5rem 0' }}>
+              No comments yet
             </p>
           )}
         </div>
-      )}
-    </div>
+
+        {currentUserId && appUser ? (
+          <div className="feed-post__comment-input">
+            <div
+              className="feed-comment__avatar feed-comment__avatar--self"
+              style={{ '--avatar-hue': getHueFromString(appUser.username) } as React.CSSProperties}
+            >
+              {getInitials(appUser.username)}
+            </div>
+            <form className="feed-post__comment-field" onSubmit={handleAddComment}>
+              <textarea
+                className="feed-post__comment-textarea"
+                value={commentText}
+                onChange={(e) => {
+                  setCommentText(e.target.value)
+                  e.target.style.height = 'auto'
+                  e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    handleAddComment(e as any)
+                  }
+                }}
+                placeholder="Add a comment..."
+                rows={1}
+                disabled={isCommenting}
+              />
+              <button
+                type="submit"
+                className="feed-post__comment-send"
+                aria-label="Send comment"
+                disabled={!commentText.trim() || isCommenting}
+              >
+                <svg
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  aria-hidden="true"
+                >
+                  <path d="M2 10l7-7v4.5c6 .5 9 3.5 9 9.5-2-4-5-5.5-9-5.5V16z" />
+                </svg>
+              </button>
+            </form>
+          </div>
+        ) : (
+          <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', padding: '0.7rem 0' }}>
+            <Link to="/login" style={{ color: 'var(--accent)' }}>
+              Log in
+            </Link>{' '}
+            to comment
+          </p>
+        )}
+      </div>
+    </article>
   )
 }

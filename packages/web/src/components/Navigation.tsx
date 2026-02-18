@@ -4,14 +4,7 @@ import { useNotificationsStore } from '../stores/notificationsStore'
 import { useUserStore } from '../stores/userStore'
 import { useAuthStore } from '../stores/useAuthStore'
 import '../styles/nav.css'
-
-function getAvatarHue(username: string): number {
-  let hash = 0
-  for (let i = 0; i < username.length; i++) {
-    hash = username.charCodeAt(i) + ((hash << 5) - hash)
-  }
-  return Math.abs(hash) % 360
-}
+import { getHueFromString } from '../utils/hue'
 
 function getInitials(username: string): string {
   return username.slice(0, 2).toUpperCase()
@@ -23,14 +16,13 @@ export default function Navigation() {
   const { unreadCount } = useNotificationsStore()
   const navigate = useNavigate()
 
-  const [scrolled, setScrolled] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   const username = appUser?.username || ''
-  const avatarHue = getAvatarHue(username)
+  const avatarHue = getHueFromString(username)
   const initials = getInitials(username)
 
   // Close dropdown on outside click

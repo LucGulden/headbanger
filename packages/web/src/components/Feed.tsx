@@ -2,22 +2,25 @@ import { useRef, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import PostCard from './PostCard'
 import { useFeedPagination } from '../hooks/useFeedPagination'
-import Button from './Button'
 import { useAuth } from '../hooks/useAuth'
+import { useAnimFade } from '../hooks/useAnimFade'
 
 interface FeedProps {
-  userId?: string // Optionnel : seulement pour feed profil
-  profileFeed?: boolean // Par défaut false (feed global)
+  userId?: string
+  profileFeed?: boolean
 }
+
+type FilterType = 'all' | 'collection_add' | 'wishlist_add'
 
 export default function Feed({ userId, profileFeed = false }: FeedProps) {
   const { user: currentUser } = useAuth()
+  const [filter, setFilter] = useState<FilterType>('all')
 
   const { posts, loading, loadingMore, hasMore, error, refreshing, loadMore, refresh } =
     useFeedPagination(userId, profileFeed)
 
-  // Intersection Observer pour infinite scroll
   const observerTarget = useRef<HTMLDivElement>(null)
+  useAnimFade([posts.length > 0])
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -28,20 +31,14 @@ export default function Feed({ userId, profileFeed = false }: FeedProps) {
       },
       { threshold: 1.0 },
     )
-
-    if (observerTarget.current) {
-      observer.observe(observerTarget.current)
-    }
-
+    if (observerTarget.current) observer.observe(observerTarget.current)
     return () => observer.disconnect()
   }, [hasMore, loadingMore, loadMore])
 
-  // Pull-to-refresh state
   const [pullStartY, setPullStartY] = useState(0)
   const [pullCurrentY, setPullCurrentY] = useState(0)
   const [isPulling, setIsPulling] = useState(false)
 
-  // Handle touch events for pull-to-refresh
   const handleTouchStart = (e: React.TouchEvent) => {
     if (window.scrollY === 0) {
       setPullStartY(e.touches[0].clientY)
@@ -54,42 +51,66 @@ export default function Feed({ userId, profileFeed = false }: FeedProps) {
       setIsPulling(false)
       return
     }
-
-    const currentY = e.touches[0].clientY
-    const pullDistance = currentY - pullStartY
-
-    if (pullDistance > 0 && pullDistance < 150) {
-      setPullCurrentY(pullDistance)
-    }
+    const d = e.touches[0].clientY - pullStartY
+    if (d > 0 && d < 150) setPullCurrentY(d)
   }
 
   const handleTouchEnd = () => {
-    if (isPulling && pullCurrentY > 80) {
-      refresh()
-    }
-
+    if (isPulling && pullCurrentY > 80) refresh()
     setIsPulling(false)
     setPullStartY(0)
     setPullCurrentY(0)
   }
 
+  const filteredPosts = filter === 'all' ? posts : posts.filter((p) => p.type === filter)
+
   // Loading skeleton
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div>
+        <div className="feed-filters">
+          <button className="feed-filter is-active">All</button>
+          <button className="feed-filter">
+            <span className="feed-filter__dot feed-filter__dot--collection" />
+            Collection
+          </button>
+          <button className="feed-filter">
+            <span className="feed-filter__dot feed-filter__dot--wishlist" />
+            Wishlist
+          </button>
+        </div>
         {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="rounded-2xl border border-[var(--background-lighter)] bg-[var(--background-light)] p-6 animate-pulse"
-          >
-            <div className="flex items-start gap-3 mb-4">
-              <div className="h-10 w-10 rounded-full bg-[var(--background-lighter)]" />
-              <div className="flex-1">
-                <div className="h-4 bg-[var(--background-lighter)] rounded w-32 mb-2" />
-                <div className="h-3 bg-[var(--background-lighter)] rounded w-64" />
+          <div key={i} className="feed-post" style={{ marginTop: i > 1 ? '1rem' : 0 }}>
+            <div className="feed-post__header">
+              <div className="feed-post__avatar" style={{ background: 'var(--surface-3)' }} />
+              <div style={{ flex: 1 }}>
+                <div
+                  style={{
+                    height: '0.85rem',
+                    background: 'var(--surface-3)',
+                    borderRadius: 4,
+                    width: '30%',
+                    marginBottom: '0.4rem',
+                  }}
+                />
+                <div
+                  style={{
+                    height: '0.75rem',
+                    background: 'var(--surface-3)',
+                    borderRadius: 4,
+                    width: '60%',
+                  }}
+                />
               </div>
             </div>
-            <div className="w-full max-w-md mx-auto h-80 bg-[var(--background-lighter)] rounded-xl" />
+            <div
+              style={{
+                height: '88px',
+                background: 'var(--surface-3)',
+                borderRadius: '12px',
+                margin: '1rem 0',
+              }}
+            />
           </div>
         ))}
       </div>
@@ -99,146 +120,136 @@ export default function Feed({ userId, profileFeed = false }: FeedProps) {
   // Error state
   if (error) {
     return (
-      <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-8 text-center">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-12 w-12 mx-auto mb-4 text-red-500"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-        <p className="text-red-500 font-semibold mb-4">{error.message}</p>
-        <Button onClick={refresh} variant="primary">
-          Réessayer
-        </Button>
-      </div>
-    )
-  }
-
-  // Empty state
-  if (posts.length === 0) {
-    return (
-      <div className="rounded-2xl border border-[var(--background-lighter)] bg-[var(--background-light)] p-12 text-center">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-20 w-20 mx-auto mb-6 text-[var(--foreground-muted)]"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-          />
-        </svg>
-        {profileFeed ? (
-          <>
-            <h3 className="text-2xl font-bold text-[var(--foreground)] mb-3">
-              Aucune activité récente
-            </h3>
-            <p className="text-[var(--foreground-muted)] mb-6 max-w-md mx-auto">
-              Cet utilisateur n'a pas encore d'activité visible.
-            </p>
-          </>
-        ) : (
-          <>
-            <h3 className="text-2xl font-bold text-[var(--foreground)] mb-3">
-              Votre feed est vide
-            </h3>
-            <p className="text-[var(--foreground-muted)] mb-6 max-w-md mx-auto">
-              Suivez des utilisateurs pour voir leur activité ! Découvrez de nouveaux
-              collectionneurs et explorez leurs vinyles.
-            </p>
-            <Link
-              to="/users"
-              className="inline-block px-6 py-3 bg-[var(--primary)] text-white rounded-lg hover:bg-[#d67118] transition-colors font-semibold"
-            >
-              Découvrir des utilisateurs
-            </Link>
-          </>
-        )}
+      <div className="feed-empty">
+        <h2 className="feed-empty__title">Something went wrong</h2>
+        <p className="feed-empty__desc">{error.message}</p>
+        <button className="btn btn--primary" onClick={refresh}>
+          Try again
+        </button>
       </div>
     )
   }
 
   return (
-    <div
-      className="space-y-6"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-    >
+    <div onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
       {/* Pull-to-refresh indicator */}
       {(isPulling || refreshing) && (
         <div
-          className="flex justify-center py-4 transition-all"
           style={{
+            display: 'flex',
+            justifyContent: 'center',
+            padding: '1rem 0',
             transform: `translateY(${isPulling ? pullCurrentY / 2 : 0}px)`,
             opacity: isPulling ? Math.min(pullCurrentY / 80, 1) : 1,
+            transition: refreshing ? 'none' : undefined,
           }}
         >
           <div
-            className={`h-8 w-8 rounded-full border-4 border-[var(--primary)] border-t-transparent ${
-              refreshing ? 'animate-spin' : ''
-            }`}
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: '50%',
+              border: '3px solid var(--accent)',
+              borderTopColor: 'transparent',
+              animation: refreshing ? 'vinyl-spin 0.8s linear infinite' : undefined,
+            }}
           />
         </div>
       )}
 
-      {/* Posts List */}
-      {posts.map((post, index) => (
-        <PostCard
-          key={post.id}
-          post={post}
-          currentUserId={currentUser?.id}
-          priority={index === 0}
-        />
-      ))}
+      {/* Filters */}
+      <div className="feed-filters anim-fade" data-delay="0">
+        <button
+          className={`feed-filter ${filter === 'all' ? 'is-active' : ''}`}
+          onClick={() => setFilter('all')}
+          aria-pressed={filter === 'all'}
+        >
+          All
+        </button>
+        <button
+          className={`feed-filter ${filter === 'collection_add' ? 'is-active' : ''}`}
+          onClick={() => setFilter('collection_add')}
+          aria-pressed={filter === 'collection_add'}
+        >
+          <span className="feed-filter__dot feed-filter__dot--collection" />
+          Collection
+        </button>
+        <button
+          className={`feed-filter ${filter === 'wishlist_add' ? 'is-active' : ''}`}
+          onClick={() => setFilter('wishlist_add')}
+          aria-pressed={filter === 'wishlist_add'}
+        >
+          <span className="feed-filter__dot feed-filter__dot--wishlist" />
+          Wishlist
+        </button>
+      </div>
 
-      {/* Intersection Observer target pour infinite scroll */}
-      {hasMore && (
-        <div ref={observerTarget} className="h-10 flex justify-center items-center">
-          {loadingMore && (
-            <div className="flex items-center gap-2 text-[var(--foreground-muted)]">
+      {/* Empty state */}
+      {filteredPosts.length === 0 && (
+        <div className="feed-empty" id="feedEmpty">
+          <div className="feed-empty__disc">
+            <div className="feed-empty__disc-groove" />
+            <div className="feed-empty__disc-groove feed-empty__disc-groove--2" />
+            <div className="feed-empty__disc-label" />
+          </div>
+          <h2 className="feed-empty__title">
+            {profileFeed ? 'No activity yet' : 'Your feed is quiet'}
+          </h2>
+          <p className="feed-empty__desc">
+            {profileFeed
+              ? 'This user has no visible activity yet.'
+              : 'Follow more collectors to fill your feed with the records that matter.'}
+          </p>
+          {!profileFeed && (
+            <Link to="/search" className="btn btn--primary">
+              Discover collectors
               <svg
-                className="animate-spin h-5 w-5"
-                xmlns="http://www.w3.org/2000/svg"
+                className="btn__arrow"
+                viewBox="0 0 16 16"
                 fill="none"
-                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                aria-hidden="true"
               >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                />
+                <line x1="1" y1="8" x2="13" y2="8" />
+                <polyline points="9,4 13,8 9,12" />
               </svg>
-              <span>Chargement...</span>
-            </div>
+            </Link>
           )}
         </div>
       )}
 
-      {/* End of feed message */}
-      {!hasMore && posts.length > 0 && (
-        <div className="text-center py-8">
-          <p className="text-[var(--foreground-muted)]">Vous avez atteint la fin du feed</p>
+      {/* Posts */}
+      <div className="feed-posts" id="feedPosts">
+        {filteredPosts.map((post, index) => (
+          <PostCard
+            key={post.id}
+            post={post}
+            currentUserId={currentUser?.id}
+            priority={index === 0}
+          />
+        ))}
+      </div>
+
+      {/* Infinite scroll target */}
+      {hasMore && (
+        <div ref={observerTarget} className="feed-load-more">
+          {loadingMore && (
+            <button className="feed-load-more__btn is-loading" disabled>
+              <span className="feed-load-more__text">Load more</span>
+              <span className="feed-load-more__loader" aria-hidden="true">
+                <span />
+                <span />
+                <span />
+              </span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {!hasMore && filteredPosts.length > 0 && (
+        <div className="feed-load-more">
+          <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>You're all caught up</p>
         </div>
       )}
     </div>

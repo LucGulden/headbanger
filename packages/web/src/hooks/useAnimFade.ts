@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
 
-export function useAnimFade() {
+export function useAnimFade(deps: unknown[] = []) {
   useEffect(() => {
-    const elements = document.querySelectorAll('.anim-fade')
+    const elements = document.querySelectorAll('.anim-fade:not(.is-visible)')
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -20,5 +20,5 @@ export function useAnimFade() {
 
     elements.forEach((el) => observer.observe(el))
     return () => observer.disconnect()
-  }, [])
+  }, deps)
 }

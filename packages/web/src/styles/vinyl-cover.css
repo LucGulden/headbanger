@@ -1,0 +1,76 @@
+/* ============================================================
+   HeadBanger — VinylCover
+   Placeholder CSS + image réelle avec fade-in
+   ============================================================ */
+.vinyl-cover {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    135deg,
+    hsl(var(--cover-hue, 220), 40%, 20%) 0%,
+    hsl(var(--cover-hue, 220), 50%, 10%) 100%
+  );
+  border-radius: 8px;
+}
+
+.vinyl-cover__grooves {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  width: 80%;
+  height: 80%;
+  margin: auto;
+  background: repeating-radial-gradient(
+    circle,
+    transparent 0px,
+    transparent 4px,
+    rgba(255, 255, 255, 0.04) 4px,
+    rgba(255, 255, 255, 0.04) 5px
+  );
+}
+
+.vinyl-cover__vinyl {
+  position: absolute;
+  top: 50%;
+  right: -20px;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  transition: right 0.4s var(--ease-out);
+  pointer-events: none;
+}
+
+.vinyl-cover__vinyl::before {
+  content: '';
+  position: absolute;
+  inset: 15%;
+  border-radius: 50%;
+  background: repeating-radial-gradient(
+    circle,
+    transparent 0px,
+    transparent 3px,
+    rgba(255, 255, 255, 0.03) 3px,
+    rgba(255, 255, 255, 0.03) 4px
+  );
+}
+
+.vinyl-cover__vinyl::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--accent);
+  opacity: 0.5;
+}
+
+/* Peek effect — déclenché par le parent */
+.feed-post__record:hover .vinyl-cover__vinyl {
+  right: -30px;
+}
