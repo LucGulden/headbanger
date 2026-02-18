@@ -23,7 +23,8 @@
   --primary-20: color-mix(in srgb, var(--primary) 20%, transparent);
 
   /* Fonts */
-  --font-geist-sans: system-ui, -apple-system, sans-serif;
+  --font-geist-sans: 'Outfit', system-ui, -apple-system, sans-serif;
+  --font-display: 'Playfair Display', Georgia, serif;
   --font-geist-mono: 'Courier New', monospace;
 }
 
@@ -89,4 +90,53 @@ a, button, input, textarea, select {
 
 .animate-shimmer {
   animation: shimmer 2s infinite;
+}
+
+/* ── Landing Page ── */
+
+/* Vinyl record spin */
+@keyframes vinyl-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-vinyl-spin {
+  animation: vinyl-spin 8s linear infinite;
+}
+
+.animate-vinyl-spin-slow {
+  animation: vinyl-spin 20s linear infinite;
+}
+
+/* Noise grain overlay */
+.grain-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Font utilities */
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* Gradient text helper */
+.text-gradient-warm {
+  background: linear-gradient(135deg, #E67E22 0%, #F4A460 50%, #E67E22 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glow effects */
+.glow-primary {
+  box-shadow: 0 0 60px rgba(230, 126, 34, 0.15), 0 0 120px rgba(230, 126, 34, 0.05);
+}
+
+.glow-primary-strong {
+  box-shadow: 0 0 40px rgba(230, 126, 34, 0.3), 0 0 80px rgba(230, 126, 34, 0.1);
 }
